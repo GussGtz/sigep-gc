@@ -1,0 +1,9 @@
+{
+  "name": "sigep-gc",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "npm install --include=dev --prefix vue-app && npm run --prefix vue-app build && npm install --omit=dev --prefix Backend_SIGEP-GC",
+    "start": "node Backend_SIGEP-GC/server.js"
+  }
+}
