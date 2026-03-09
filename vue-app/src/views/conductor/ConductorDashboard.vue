@@ -208,9 +208,6 @@ const loadingEntregas = ref(true)
 const gpsActivo       = ref(false)
 const watchId         = ref(null)
 
-// Clave localStorage por usuario para no mezclar sesiones
-const turnoKey = computed(() => `turno_conductor_${auth.user?.id || 'anon'}`)
-
 const initials  = computed(() =>
   (auth.user?.nombre || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 )
@@ -223,18 +220,27 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('es', { weekday: 'long', day: '2-digit', month: 'short' })
 }
 
-function toggleTurno() {
+async function toggleTurno() {
   toggling.value = true
-  enRuta.value = !enRuta.value
-  // Persistir estado del turno en localStorage
-  localStorage.setItem(turnoKey.value, enRuta.value ? '1' : '0')
-  if (enRuta.value) {
-    toast.add({ type: 'success', title: 'Turno iniciado', message: 'Estás en ruta. El GPS se activará al iniciar una entrega.' })
-  } else {
-    stopGPS()
-    toast.add({ type: 'info', title: 'Turno finalizado', message: 'Has cerrado sesión de trabajo.' })
+  try {
+    const { data } = await axios.patch('/api/usuarios/turno/toggle')
+    enRuta.value = data.en_turno
+    // Sincronizar en el store de auth para que persista en localStorage
+    if (auth.user) {
+      auth.user.en_turno = data.en_turno
+      localStorage.setItem('sgpv_user', JSON.stringify(auth.user))
+    }
+    if (enRuta.value) {
+      toast.add({ type: 'success', title: 'Turno iniciado', message: 'Estás en ruta. El GPS se activará al iniciar una entrega.' })
+    } else {
+      stopGPS()
+      toast.add({ type: 'info', title: 'Turno finalizado', message: 'Has cerrado sesión de trabajo.' })
+    }
+  } catch {
+    toast.add({ type: 'error', title: 'Error', message: 'No se pudo cambiar el estado del turno.' })
+  } finally {
+    toggling.value = false
   }
-  toggling.value = false
 }
 
 function startGPS(pedidoId) {
@@ -281,10 +287,19 @@ async function iniciarEntrega(e) {
       toast.add({ type: 'error', title: 'Error', message: 'No se pudo iniciar la entrega. Intenta de nuevo.' })
       return
     }
-    // Actualizar estado local inmediatamente
+    // Actualizar estado local
     e.estado = 'en_camino'
-    enRuta.value = true
-    localStorage.setItem(turnoKey.value, '1')
+    // Asegurar que el turno también esté activo en DB si no lo estaba
+    if (!enRuta.value) {
+      try {
+        const { data } = await axios.patch('/api/usuarios/turno/toggle')
+        enRuta.value = data.en_turno
+        if (auth.user) {
+          auth.user.en_turno = data.en_turno
+          localStorage.setItem('sgpv_user', JSON.stringify(auth.user))
+        }
+      } catch {}
+    }
     startGPS(e.pedido_id)
   }
   router.push(`/conductor/entrega/${e.id}`)
@@ -314,15 +329,17 @@ async function fetchEntregas() {
 }
 
 onMounted(async () => {
-  // Restaurar estado del turno desde localStorage mientras carga la BD
-  if (localStorage.getItem(turnoKey.value) === '1') enRuta.value = true
+  // Restaurar turno desde el perfil del usuario (fuente de verdad = DB via /me)
+  // auth.user ya fue cargado por verifyToken() en el router guard
+  enRuta.value = auth.user?.en_turno === true
+
   await fetchEntregas()
-  // fetchEntregas es la fuente de verdad: si no hay en_camino, el turno es falso
-  // (evita que quede "en ruta" si el admin cambió el estado manualmente)
-  const hayActiva = entregas.value.some(e => e.estado === 'en_camino')
-  if (!hayActiva) {
-    enRuta.value = false
-    localStorage.removeItem(turnoKey.value)
+
+  // Si hay entrega en_camino, reactivar GPS aunque el turno esté activo
+  const activa = entregas.value.find(e => e.estado === 'en_camino')
+  if (activa) {
+    enRuta.value = true
+    startGPS(activa.pedido_id)
   }
 })
 onUnmounted(stopGPS)

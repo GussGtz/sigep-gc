@@ -88,6 +88,8 @@ async function initDB() {
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS merma_descripcion TEXT          DEFAULT NULL`,
       // Foto de entrega (puede ser grande, base64 JPEG comprimido ~150KB)
       `ALTER TABLE entregas ADD COLUMN IF NOT EXISTS foto_base64 TEXT DEFAULT NULL`,
+      // Turno activo del conductor (persiste entre sesiones)
+      `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS en_turno BOOLEAN DEFAULT false`,
     ];
     for (const sql of alteraciones) {
       await pool.query(sql);

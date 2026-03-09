@@ -219,7 +219,9 @@
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-bold text-gray-900 text-sm">Conductores registrados</h3>
-            <span class="text-xs text-gray-400">{{ conductores.length }} activos</span>
+            <span class="text-xs text-gray-400">
+              {{ conductores.filter(c => c.en_turno).length }} en turno · {{ conductores.length }} total
+            </span>
           </div>
           <div class="divide-y divide-gray-50">
             <div v-if="conductores.length === 0" class="py-8 text-center text-sm text-gray-400">
@@ -228,13 +230,24 @@
             <div
               v-for="c in conductores" :key="c.id"
               class="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors"
+              :class="c.en_turno ? 'bg-emerald-50/40' : ''"
             >
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold">
+                <div
+                  class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2"
+                  :class="c.en_turno ? 'bg-emerald-600 ring-emerald-300' : 'bg-gray-900 ring-transparent'"
+                >
                   {{ iniciales(c.nombre) }}
                 </div>
                 <div>
-                  <p class="text-sm font-semibold text-gray-900">{{ c.nombre }}</p>
+                  <div class="flex items-center gap-2">
+                    <p class="text-sm font-semibold text-gray-900">{{ c.nombre }}</p>
+                    <span v-if="c.en_turno"
+                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                      <span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                      En turno
+                    </span>
+                  </div>
                   <p class="text-xs text-gray-400">{{ c.email }}</p>
                 </div>
               </div>
@@ -284,7 +297,9 @@
                   class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10 text-gray-700"
                 >
                   <option value="">Seleccionar conductor...</option>
-                  <option v-for="c in conductores" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+                  <option v-for="c in conductores" :key="c.id" :value="c.id">
+                    {{ c.nombre }}{{ c.en_turno ? ' ● En turno' : '' }}
+                  </option>
                 </select>
               </div>
               <div>

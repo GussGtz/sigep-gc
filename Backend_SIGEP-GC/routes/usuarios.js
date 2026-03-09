@@ -8,7 +8,7 @@ const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 router.get('/', verifyToken, isAdmin, async (req, res) => {
   try {
     const { role_id } = req.query;
-    let query  = 'SELECT id, nombre, email, role_id, departamento, activo, fecha_creacion FROM usuarios';
+    let query  = 'SELECT id, nombre, email, role_id, departamento, activo, en_turno, fecha_creacion FROM usuarios';
     const vals = [];
     if (role_id) {
       query += ' WHERE role_id = $1';
@@ -19,6 +19,20 @@ router.get('/', verifyToken, isAdmin, async (req, res) => {
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener usuarios', error: err.message });
+  }
+});
+
+/* PATCH /api/usuarios/turno/toggle — conductor activa/desactiva su propio turno */
+router.patch('/turno/toggle', verifyToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'UPDATE usuarios SET en_turno = NOT en_turno WHERE id = $1 RETURNING id, en_turno',
+      [req.user.id]
+    );
+    if (!rows.length) return res.status(404).json({ message: 'Usuario no encontrado' });
+    res.json({ en_turno: rows[0].en_turno });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al cambiar estado de turno', error: err.message });
   }
 });
 
@@ -49,7 +63,7 @@ router.put('/:id', verifyToken, isAdmin, async (req, res) => {
     );
 
     const { rows } = await pool.query(
-      'SELECT id, nombre, email, role_id, departamento, activo FROM usuarios WHERE id = $1',
+      'SELECT id, nombre, email, role_id, departamento, activo, en_turno FROM usuarios WHERE id = $1',
       [id]
     );
 
