@@ -190,8 +190,8 @@ app.use('/api/gps',            require('./routes/gps'));
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '..', 'vue-app', 'dist');
   app.use(express.static(distPath));
-  // SPA fallback — todas las rutas no-API devuelven index.html
-  app.get('*', (req, res) => {
+  // SPA fallback — Express 5 no acepta '*', usar app.use() sin path
+  app.use((req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
