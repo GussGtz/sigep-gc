@@ -201,16 +201,19 @@
               <span class="text-xs text-gray-500">{{ conductoresGPS }} en ruta</span>
             </div>
           </div>
-          <div id="mapa-conductores" class="w-full h-72 z-0"></div>
-          <div v-if="conductoresGPS === 0"
-            class="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style="margin-top: 57px; height: 288px;">
-            <div class="bg-white/90 rounded-xl px-4 py-3 text-center shadow">
-              <div class="flex items-center justify-center mb-2">
-                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+          <!-- Contenedor del mapa + overlay — relative para posicionamiento correcto -->
+          <div class="relative">
+            <div id="mapa-conductores" class="w-full h-72 z-0"></div>
+            <!-- Overlay "sin conductores": cubre SOLO el mapa, no el header -->
+            <div v-if="conductoresGPS === 0"
+              class="absolute inset-0 flex items-center justify-center bg-gray-50/80 z-10">
+              <div class="bg-white rounded-xl px-5 py-4 text-center shadow-sm border border-gray-100">
+                <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                </svg>
+                <p class="text-sm text-gray-500 font-medium">Sin conductores activos</p>
+                <p class="text-xs text-gray-400 mt-0.5">Los conductores aparecerán aquí cuando inicien su turno</p>
               </div>
-              <p class="text-sm text-gray-500 font-medium">Sin conductores activos</p>
-              <p class="text-xs text-gray-400">Los conductores aparecerán aquí cuando compartan ubicación</p>
             </div>
           </div>
         </div>

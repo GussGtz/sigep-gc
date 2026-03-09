@@ -16,7 +16,7 @@
         </div>
       </div>
       <!-- GPS status pill -->
-      <div v-if="gpsActivo"
+      <div v-if="gpsStore.isTracking"
         class="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-200">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
         GPS
@@ -39,7 +39,7 @@
     </header>
 
     <main class="pt-14 pb-6">
-      <div class="max-w-lg mx-auto px-4 py-6 space-y-5">
+      <div class="max-lg mx-auto px-4 py-6 space-y-5">
 
         <!-- ── Turno card ── -->
         <div class="bg-white rounded-2xl border shadow-soft p-5 transition-colors"
@@ -64,7 +64,7 @@
               :class="enRuta
                 ? 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'
                 : 'bg-[#1B3A5C] text-white hover:bg-[#15304D] shadow-sm'">
-              {{ enRuta ? 'Finalizar' : 'Iniciar turno' }}
+              {{ toggling ? '...' : enRuta ? 'Finalizar' : 'Iniciar turno' }}
             </button>
           </div>
 
@@ -189,24 +189,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import StatusBadge        from '../../components/shared/StatusBadge.vue'
+import StatusBadge          from '../../components/shared/StatusBadge.vue'
 import { useAuthStore }      from '../../stores/auth.js'
 import { useWebSocketStore } from '../../stores/websocket.js'
+import { useGpsStore }       from '../../stores/gps.js'
 import axios from 'axios'
 
-const auth    = useAuthStore()
-const wsStore = useWebSocketStore()
-const router  = useRouter()
-const toast   = inject('toast')
+const auth     = useAuthStore()
+const wsStore  = useWebSocketStore()
+const gpsStore = useGpsStore()
+const router   = useRouter()
+const toast    = inject('toast')
 
 const enRuta          = ref(false)
 const toggling        = ref(false)
 const entregas        = ref([])
 const loadingEntregas = ref(true)
-const gpsActivo       = ref(false)
-const watchId         = ref(null)
 
 const initials  = computed(() =>
   (auth.user?.nombre || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -220,20 +220,26 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('es', { weekday: 'long', day: '2-digit', month: 'short' })
 }
 
+// ── Toggle turno: llama al backend y activa/desactiva GPS ──────────────────
 async function toggleTurno() {
   toggling.value = true
   try {
     const { data } = await axios.patch('/api/usuarios/turno/toggle')
     enRuta.value = data.en_turno
-    // Sincronizar en el store de auth para que persista en localStorage
+
+    // Sincronizar en auth store / localStorage
     if (auth.user) {
       auth.user.en_turno = data.en_turno
       localStorage.setItem('sgpv_user', JSON.stringify(auth.user))
     }
+
     if (enRuta.value) {
-      toast.add({ type: 'success', title: 'Turno iniciado', message: 'Estás en ruta. El GPS se activará al iniciar una entrega.' })
+      // Buscar entrega activa para pasar el pedido_id al GPS
+      const activa = entregas.value.find(e => e.estado === 'en_camino')
+      gpsStore.startTracking(wsStore, activa?.pedido_id ?? null)
+      toast.add({ type: 'success', title: 'Turno iniciado', message: 'El GPS está activo. El admin puede ver tu posición.' })
     } else {
-      stopGPS()
+      gpsStore.stopTracking()
       toast.add({ type: 'info', title: 'Turno finalizado', message: 'Has cerrado sesión de trabajo.' })
     }
   } catch {
@@ -243,53 +249,18 @@ async function toggleTurno() {
   }
 }
 
-function startGPS(pedidoId) {
-  if (!navigator.geolocation) {
-    toast.add({ type: 'warning', title: 'GPS no disponible', message: 'Este dispositivo no soporta geolocalización.' })
-    return
-  }
-  if (watchId.value !== null) stopGPS()
-  watchId.value = navigator.geolocation.watchPosition(
-    ({ coords }) => {
-      wsStore.send({
-        type:      'location_update',
-        lat:       coords.latitude,
-        lng:       coords.longitude,
-        pedido_id: pedidoId || null
-      })
-    },
-    (err) => {
-      console.warn('[GPS] Error:', err.message)
-      if (err.code === 1) {
-        gpsActivo.value = false
-        toast.add({ type: 'warning', title: 'GPS bloqueado', message: 'Permite el acceso a tu ubicación para el tracking.' })
-      }
-    },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
-  )
-  gpsActivo.value = true
-}
-
-function stopGPS() {
-  if (watchId.value !== null) {
-    navigator.geolocation.clearWatch(watchId.value)
-    watchId.value   = null
-    gpsActivo.value = false
-  }
-}
-
-// Iniciar una entrega específica — llama al backend y actualiza estado en DB
+// ── Iniciar entrega específica ─────────────────────────────────────────────
 async function iniciarEntrega(e) {
   if (e.estado !== 'en_camino') {
     try {
       await axios.put(`/api/entregas/${e.id}/iniciar`)
-    } catch (err) {
+    } catch {
       toast.add({ type: 'error', title: 'Error', message: 'No se pudo iniciar la entrega. Intenta de nuevo.' })
       return
     }
-    // Actualizar estado local
     e.estado = 'en_camino'
-    // Asegurar que el turno también esté activo en DB si no lo estaba
+
+    // Activar turno en DB si no estaba activo
     if (!enRuta.value) {
       try {
         const { data } = await axios.patch('/api/usuarios/turno/toggle')
@@ -300,23 +271,25 @@ async function iniciarEntrega(e) {
         }
       } catch {}
     }
-    startGPS(e.pedido_id)
+
+    // Actualizar pedido_id en el GPS (el watch sigue corriendo, solo cambia el ID)
+    if (gpsStore.isTracking) {
+      gpsStore.updatePedidoId(e.pedido_id)
+    } else {
+      gpsStore.startTracking(wsStore, e.pedido_id)
+    }
   }
+
+  // Navegar a la página de entrega — el GPS NO se detiene al desmontar
   router.push(`/conductor/entrega/${e.id}`)
 }
 
+// ── Cargar entregas ────────────────────────────────────────────────────────
 async function fetchEntregas() {
   loadingEntregas.value = true
   try {
     const { data } = await axios.get('/api/entregas/conductor/mis-entregas')
     entregas.value = Array.isArray(data) ? data : []
-    // Restablecer turno desde DB (fuente de verdad) si hay entrega activa
-    const activa = entregas.value.find(e => e.estado === 'en_camino')
-    if (activa) {
-      enRuta.value = true
-      localStorage.setItem(turnoKey.value, '1')
-      startGPS(activa.pedido_id)
-    }
   } catch (err) {
     entregas.value = []
     const msg = err.response?.status === 401
@@ -328,19 +301,25 @@ async function fetchEntregas() {
   }
 }
 
+// ── Montar: restaurar estado desde DB ────────────────────────────────────
 onMounted(async () => {
-  // Restaurar turno desde el perfil del usuario (fuente de verdad = DB via /me)
-  // auth.user ya fue cargado por verifyToken() en el router guard
+  // enRuta viene del perfil del usuario (auth.user.en_turno se llena desde /me en el router guard)
   enRuta.value = auth.user?.en_turno === true
 
   await fetchEntregas()
 
-  // Si hay entrega en_camino, reactivar GPS aunque el turno esté activo
-  const activa = entregas.value.find(e => e.estado === 'en_camino')
-  if (activa) {
-    enRuta.value = true
-    startGPS(activa.pedido_id)
+  // Si el turno está activo, asegurar que el GPS esté corriendo
+  if (enRuta.value && !gpsStore.isTracking) {
+    const activa = entregas.value.find(e => e.estado === 'en_camino')
+    gpsStore.startTracking(wsStore, activa?.pedido_id ?? null)
+  }
+  // Si hay entrega en_camino pero el GPS ya corre, sólo actualizar el pedido_id
+  else if (enRuta.value && gpsStore.isTracking) {
+    const activa = entregas.value.find(e => e.estado === 'en_camino')
+    if (activa) gpsStore.updatePedidoId(activa.pedido_id)
   }
 })
-onUnmounted(stopGPS)
+
+// ⚠️ NO hay onUnmounted(stopGPS) — el GPS continúa al navegar a ConductorEntrega
+// Solo se detiene cuando el conductor pulsa "Finalizar turno" o hace logout
 </script>

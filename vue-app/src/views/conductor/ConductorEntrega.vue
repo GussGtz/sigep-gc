@@ -130,16 +130,20 @@
 
 <script setup>
 import { ref, onMounted, inject } from 'vue'
-import { useRoute, useRouter }   from 'vue-router'
-import { useAuthStore }          from '../../stores/auth.js'
-import { useNotificationsStore } from '../../stores/notifications.js'
+import { useRoute, useRouter }    from 'vue-router'
+import { useAuthStore }           from '../../stores/auth.js'
+import { useNotificationsStore }  from '../../stores/notifications.js'
+import { useGpsStore }            from '../../stores/gps.js'
+import { useWebSocketStore }      from '../../stores/websocket.js'
 import axios from 'axios'
 
-const route   = useRoute()
-const router  = useRouter()
-const auth    = useAuthStore()
-const notifs  = useNotificationsStore()
-const toast   = inject('toast')
+const route    = useRoute()
+const router   = useRouter()
+const auth     = useAuthStore()
+const notifs   = useNotificationsStore()
+const gpsStore = useGpsStore()
+const wsStore  = useWebSocketStore()
+const toast    = inject('toast')
 
 const loading     = ref(true)
 const enviando    = ref(false)
@@ -216,10 +220,21 @@ onMounted(async () => {
   try {
     const { data } = await axios.get(`/api/entregas/${route.params.id}`)
     entrega.value = data
+
+    // Continuar (o iniciar) GPS tracking con el pedido_id de esta entrega
+    // El tracking vive en el store y persiste aunque el dashboard haya sido desmontado
+    if (gpsStore.isTracking) {
+      // Ya está rastreando — solo actualizar el pedido_id
+      gpsStore.updatePedidoId(data.pedido_id)
+    } else if (auth.user?.en_turno) {
+      // El turno está activo pero el GPS no corrió (ej. primera carga directa a esta URL)
+      gpsStore.startTracking(wsStore, data.pedido_id)
+    }
   } catch {
     entrega.value = null
   } finally {
     loading.value = false
   }
 })
+// ⚠️ NO hay onUnmounted para GPS — el tracking continúa al volver al dashboard
 </script>
