@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Backend SIGEP-GC",
+      "runtimeExecutable": "C:/nvm4w/nodejs/node.exe",
+      "runtimeArgs": ["Backend_SIGEP-GC/node_modules/nodemon/bin/nodemon.js", "Backend_SIGEP-GC/server.js"],
+      "port": 3000
+    },
+    {
+      "name": "VITREX Vue App",
+      "runtimeExecutable": "C:/nvm4w/nodejs/node.exe",
+      "runtimeArgs": ["vue-app/node_modules/vite/bin/vite.js", "--config", "vue-app/vite.config.js", "--host", "0.0.0.0"],
+      "port": 5173
+    },
+    {
+      "name": "Frontend SIGEP-GC (legacy)",
+      "runtimeExecutable": "C:/nvm4w/nodejs/node.exe",
+      "runtimeArgs": ["Backend_SIGEP-GC/node_modules/serve/build/main.js", "Frondend_SIGEP-GC-main", "-p", "5500", "--no-clipboard"],
+      "port": 5500
+    }
+  ]
+}

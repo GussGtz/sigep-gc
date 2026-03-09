@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(printf '%s' 'const { Pool } = require\\(\"\"pg\"\"\\);:*)",
+      "Bash(python3:*)",
+      "Bash(node --version)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); fs.writeFileSync\\(''C:/Users/Gustavo/Desktop/Proyecto glass-caribe/Frondend_SIGEP-GC-main/js/index.js'', ''// placeholder'', ''utf8''\\); console.log\\(''OK''\\)\")",
+      "Bash(npm install)",
+      "Bash(node -e \"const {Pool}=require\\(''pg''\\); console.log\\(''pg OK''\\)\")",
+      "Bash(node -e \":*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where npm)",
+      "Bash(/c/nvm4w/nodejs/node.exe -e \":*)",
+      "Bash(powershell -Command \"Restart-Service -Name ''postgresql-x64-17'' -Force\")",
+      "Bash(/c/nvm4w/nodejs/npm.cmd install)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(taskkill /PID 12700 /F)",
+      "Bash(cmd /c \"taskkill /PID 12700 /F\")",
+      "Bash(cmd /c \"taskkill /PID 12700 /F 2>&1\")",
+      "Bash(cmd /c \"taskkill /PID 12700 /F & netstat -ano | findstr :3000\")",
+      "Bash(npm install ws)",
+      "Bash(dir \"C:\\\\Users\\\\Gustavo\\\\Desktop\\\\Proyecto glass-caribe\\\\vue-app\\\\public\" /b /s)",
+      "Bash(xargs cat)",
+      "Bash(npm install vue3-recaptcha2 --save)",
+      "Bash(node -e \"const m = require\\(''C:/Users/Gustavo/Desktop/Proyecto glass-caribe/vue-app/node_modules/vue3-recaptcha2''\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const d=JSON.parse\\(fs.readFileSync\\(''/dev/stdin'',''utf8''\\)\\); console.log\\(JSON.stringify\\({main:d.main,module:d.module,exports:d.exports,types:d.types},null,2\\)\\)\")",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\Gustavo\\\\Desktop\\\\Proyecto glass-caribe\\\\vue-app\\\\node_modules\\\\.vite\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Cache cleared\")",
+      "Bash(npm uninstall vue3-recaptcha2)"
+    ]
+  }
+}

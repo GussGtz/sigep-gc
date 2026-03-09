@@ -1,0 +1,32 @@
+# Dependencias
+node_modules/
+vue-app/node_modules/
+Backend_SIGEP-GC/node_modules/
+
+# Variables de entorno (NUNCA subir al repo)
+.env
+.env.local
+.env.*.local
+Backend_SIGEP-GC/.env
+
+# Build de Vue (Render lo genera durante el deploy)
+vue-app/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos temporales del proyecto original HTML/vanilla (no se usa en deploy)
+Frondend_SIGEP-GC-main/
+nul
+test_node.txt

@@ -1,0 +1,350 @@
+<template>
+  <!-- ══ MOBILE TOP BAR (< lg) ══ -->
+  <header class="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06]
+                 flex items-center px-4 gap-3 shadow-soft">
+    <button @click="drawerOpen = !drawerOpen"
+      class="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+
+    <div class="flex items-center gap-2 flex-1">
+      <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="7" fill="#1B3A5C"/>
+        <rect x="4.5" y="4.5" width="19" height="19" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+        <line x1="14" y1="4.5" x2="14" y2="23.5" stroke="white" stroke-width="1.5"/>
+        <line x1="4.5" y1="14" x2="23.5" y2="14" stroke="white" stroke-width="1.5"/>
+        <rect x="6" y="6" width="7" height="7" rx="0.75" fill="white" fill-opacity="0.18"/>
+      </svg>
+      <span class="font-serif font-bold text-gray-900">SGPV</span>
+    </div>
+
+    <!-- Mobile Bell -->
+    <div class="relative" ref="mobileBellRef">
+      <button @click="mobileBell = !mobileBell"
+        class="relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        <span v-if="notifs.unreadCount > 0"
+          class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+          {{ notifs.unreadCount > 9 ? '9+' : notifs.unreadCount }}
+        </span>
+      </button>
+      <Transition name="slide">
+        <div v-if="mobileBell"
+          class="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-2xl shadow-float overflow-hidden z-50">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <h3 class="font-semibold text-sm text-gray-900">Notificaciones</h3>
+            <button v-if="notifs.unreadCount > 0" @click="notifs.markAllAsRead()"
+              class="text-xs text-[#1B3A5C] font-medium hover:underline">Marcar todas</button>
+          </div>
+          <div class="max-h-64 overflow-y-auto divide-y divide-gray-50">
+            <p v-if="notifs.notifications.length === 0" class="py-8 text-center text-gray-400 text-xs">Sin notificaciones</p>
+            <div v-for="n in notifs.notifications.slice(0,15)" :key="n.id"
+              @click="notifs.markAsRead(n.id)"
+              class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+              :class="{ 'bg-blue-50/40': !n._read }">
+              <span class="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center" v-html="notifIcon(n.type)"></span>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs text-gray-700 leading-relaxed">{{ n.message }}</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">{{ formatTime(n.createdAt) }}</p>
+              </div>
+              <div v-if="!n._read" class="w-1.5 h-1.5 rounded-full bg-[#1B3A5C] mt-2 flex-shrink-0"></div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+  </header>
+
+  <!-- ══ MOBILE DRAWER OVERLAY ══ -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="drawerOpen" class="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-50 lg:hidden"
+        @click="drawerOpen = false">
+        <aside class="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-modal flex flex-col"
+          @click.stop>
+          <div class="px-5 pt-6 pb-4 border-b border-black/[0.05]">
+            <div class="flex items-center gap-3">
+              <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="8" fill="#1B3A5C"/>
+                <rect x="5.5" y="5.5" width="25" height="25" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
+                <line x1="18" y1="5.5" x2="18" y2="30.5" stroke="white" stroke-width="1.75"/>
+                <line x1="5.5" y1="18" x2="30.5" y2="18" stroke="white" stroke-width="1.75"/>
+                <rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="white" fill-opacity="0.18"/>
+              </svg>
+              <div>
+                <p class="font-serif font-bold text-gray-900 text-base leading-none">SGPV</p>
+                <p class="text-[10px] text-gray-400 tracking-widest uppercase mt-0.5">Glass Caribe</p>
+              </div>
+            </div>
+          </div>
+          <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+            <router-link v-for="tab in navTabs" :key="tab.to" :to="tab.to"
+              @click="drawerOpen = false"
+              class="sidebar-link relative"
+              :class="isActive(tab.to) ? 'active' : ''">
+              <span class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px]" v-html="tabIcon(tab.icon)"></span>
+              <span class="flex-1">{{ tab.label }}</span>
+              <span v-if="tab.to === '/chat' && chat.unreadTotal > 0"
+                class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
+                {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
+              </span>
+            </router-link>
+          </nav>
+          <div class="px-4 py-4 border-t border-black/[0.05]">
+            <div class="flex items-center gap-2.5 mb-3">
+              <div class="w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs">
+                {{ initials }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-gray-900 truncate">{{ auth.user?.nombre }}</p>
+                <p class="text-[11px] text-gray-400 truncate">{{ roleLabel }}</p>
+              </div>
+            </div>
+            <button @click="handleLogout"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+              Cerrar sesión
+            </button>
+          </div>
+        </aside>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- ══ DESKTOP SIDEBAR (≥ lg) ══ -->
+  <aside class="hidden lg:flex fixed left-0 top-0 bottom-0 w-60 bg-white border-r border-black/[0.05] z-40 flex-col">
+
+    <!-- Logo -->
+    <div class="px-5 pt-6 pb-5 border-b border-black/[0.05]">
+      <div class="flex items-center gap-3">
+        <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="8" fill="#1B3A5C"/>
+          <rect x="5.5" y="5.5" width="25" height="25" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
+          <line x1="18" y1="5.5" x2="18" y2="30.5" stroke="white" stroke-width="1.75"/>
+          <line x1="5.5" y1="18" x2="30.5" y2="18" stroke="white" stroke-width="1.75"/>
+          <rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="white" fill-opacity="0.18"/>
+        </svg>
+        <div>
+          <p class="font-serif font-bold text-gray-900 text-base leading-none">SGPV</p>
+          <p class="text-[10px] text-gray-400 tracking-widest uppercase mt-0.5">Glass Caribe</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav links -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <router-link v-for="tab in navTabs" :key="tab.to" :to="tab.to"
+        class="sidebar-link relative"
+        :class="isActive(tab.to) ? 'active' : ''">
+        <span class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px]" v-html="tabIcon(tab.icon)"></span>
+        <span class="flex-1">{{ tab.label }}</span>
+        <span v-if="tab.to === '/chat' && chat.unreadTotal > 0"
+          class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
+          {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
+        </span>
+        <!-- Left active bar -->
+        <span v-if="isActive(tab.to)"
+          class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#1B3A5C]">
+        </span>
+      </router-link>
+    </nav>
+
+    <!-- Bottom: Bell + User -->
+    <div class="px-3 pb-4 pt-3 border-t border-black/[0.05] space-y-1">
+
+      <!-- Bell button -->
+      <div class="relative" ref="desktopBellRef">
+        <button @click="desktopBell = !desktopBell"
+          class="w-full sidebar-link">
+          <span class="relative w-5 h-5 flex-shrink-0 flex items-center justify-center">
+            <svg class="w-4.5 h-4.5 w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <span v-if="notifs.unreadCount > 0"
+              class="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center leading-none">
+              {{ notifs.unreadCount > 9 ? '9+' : notifs.unreadCount }}
+            </span>
+          </span>
+          <span>Notificaciones</span>
+        </button>
+        <Transition name="slide">
+          <div v-if="desktopBell"
+            class="absolute bottom-full left-0 mb-2 w-[300px] bg-white border border-gray-200 rounded-2xl shadow-float overflow-hidden z-50">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h3 class="font-semibold text-sm text-gray-900">Notificaciones</h3>
+              <button v-if="notifs.unreadCount > 0" @click="notifs.markAllAsRead()"
+                class="text-xs text-[#1B3A5C] font-medium hover:underline">Marcar todas</button>
+            </div>
+            <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">
+              <p v-if="notifs.notifications.length === 0" class="py-8 text-center text-gray-400 text-xs">Sin notificaciones</p>
+              <div v-for="n in notifs.notifications.slice(0,15)" :key="n.id"
+                @click="notifs.markAsRead(n.id)"
+                class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                :class="{ 'bg-blue-50/40': !n._read }">
+                <span class="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center" v-html="notifIcon(n.type)"></span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs text-gray-700 leading-relaxed">{{ n.message }}</p>
+                  <p class="text-[11px] text-gray-400 mt-0.5">{{ formatTime(n.createdAt) }}</p>
+                </div>
+                <div v-if="!n._read" class="w-1.5 h-1.5 rounded-full bg-[#1B3A5C] mt-2 flex-shrink-0"></div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
+
+      <!-- User button -->
+      <div class="relative" ref="desktopMenuRef">
+        <button @click="desktopMenu = !desktopMenu"
+          class="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors group">
+          <div class="w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+            {{ initials }}
+          </div>
+          <div class="flex-1 text-left min-w-0">
+            <p class="text-xs font-semibold text-gray-900 truncate leading-none">{{ auth.user?.nombre }}</p>
+            <p class="text-[11px] text-gray-400 truncate leading-none mt-0.5">{{ roleLabel }}</p>
+          </div>
+          <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
+          </svg>
+        </button>
+        <Transition name="slide">
+          <div v-if="desktopMenu"
+            class="absolute bottom-full left-0 mb-2 w-52 bg-white border border-gray-200 rounded-2xl shadow-float overflow-hidden z-50">
+            <div class="px-4 py-3 border-b border-gray-100">
+              <p class="text-sm font-semibold text-gray-900 truncate">{{ auth.user?.nombre }}</p>
+              <p class="text-xs text-gray-500 truncate">{{ auth.user?.email }}</p>
+            </div>
+            <button @click="handleLogout"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+              Cerrar sesión
+            </button>
+          </div>
+        </Transition>
+      </div>
+    </div>
+  </aside>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore }          from '../../stores/auth.js'
+import { useNotificationsStore } from '../../stores/notifications.js'
+import { useChatStore }          from '../../stores/chat.js'
+
+defineEmits(['toggleSidebar'])
+
+const route  = useRoute()
+const router = useRouter()
+const auth   = useAuthStore()
+const notifs = useNotificationsStore()
+const chat   = useChatStore()
+
+const drawerOpen    = ref(false)
+const mobileBell    = ref(false)
+const desktopBell   = ref(false)
+const desktopMenu   = ref(false)
+
+const mobileBellRef  = ref(null)
+const desktopBellRef = ref(null)
+const desktopMenuRef = ref(null)
+
+const navTabs = computed(() => {
+  const role = auth.user?.role_id
+  const dept = auth.user?.departamento
+  if (role === 1) return [
+    { to: '/admin',             label: 'Dashboard',   icon: 'dashboard'  },
+    { to: '/admin/pedidos',     label: 'Pedidos',     icon: 'clipboard'  },
+    { to: '/admin/inventario',  label: 'Inventario',  icon: 'archive'    },
+    { to: '/admin/conductores', label: 'Conductores', icon: 'truck'      },
+    { to: '/admin/usuarios',    label: 'Usuarios',    icon: 'users'      },
+    { to: '/chat',              label: 'Chat',        icon: 'chat'       },
+  ]
+  if (dept === 'ventas') return [
+    { to: '/ventas', label: 'Mis Pedidos', icon: 'clipboard' },
+    { to: '/chat',   label: 'Chat',        icon: 'chat'      },
+  ]
+  if (dept === 'produccion') return [
+    { to: '/produccion', label: 'Producción', icon: 'cog'  },
+    { to: '/chat',       label: 'Chat',       icon: 'chat' },
+  ]
+  if (role === 3) return [
+    { to: '/conductor', label: 'Mis Entregas', icon: 'truck' },
+    { to: '/chat',      label: 'Chat',         icon: 'chat'  },
+  ]
+  return []
+})
+
+const roleLabel = computed(() => {
+  if (auth.user?.role_id === 1) return 'Administrador'
+  const dept = auth.user?.departamento
+  return dept ? dept.charAt(0).toUpperCase() + dept.slice(1) : 'Colaborador'
+})
+
+const initials = computed(() =>
+  (auth.user?.nombre || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+)
+
+function isActive(path) {
+  if (path === '/admin') return route.path === '/admin'
+  return route.path.startsWith(path)
+}
+
+function tabIcon(name) {
+  const icons = {
+    dashboard: `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>`,
+    clipboard:  `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>`,
+    archive:    `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>`,
+    truck:      `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 18H5a2 2 0 01-2-2V6a2 2 0 012-2h11a2 2 0 012 2v2m0 8h2a2 2 0 002-2v-4l-3-4h-5V8m0 10a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0z"/></svg>`,
+    users:      `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`,
+    chat:       `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>`,
+    cog:        `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`,
+  }
+  return icons[name] || icons.clipboard
+}
+
+function notifIcon(t) {
+  const icons = {
+    comment:       `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>`,
+    status_change: `<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`,
+    delivery_done: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+  }
+  return icons[t] || `<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>`
+}
+function formatTime(ts) {
+  if (!ts) return ''
+  const diff = (Date.now() - new Date(ts).getTime()) / 1000
+  if (diff < 60)    return 'Ahora'
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
+  return new Date(ts).toLocaleDateString('es')
+}
+
+async function handleLogout() {
+  notifs.clear()
+  await auth.logout()
+  router.push('/login')
+}
+
+function onClickOutside(e) {
+  if (mobileBellRef.value  && !mobileBellRef.value.contains(e.target))  mobileBell.value  = false
+  if (desktopBellRef.value && !desktopBellRef.value.contains(e.target)) desktopBell.value = false
+  if (desktopMenuRef.value && !desktopMenuRef.value.contains(e.target)) desktopMenu.value = false
+}
+onMounted(()   => document.addEventListener('mousedown', onClickOutside))
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
+</script>

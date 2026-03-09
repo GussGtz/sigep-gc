@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sigep-gc
+    runtime: node
+    # 1. Instala deps del frontend y lo compila
+    # 2. Instala deps del backend
+    buildCommand: >
+      cd vue-app && npm install && npm run build &&
+      cd ../Backend_SIGEP-GC && npm install --omit=dev
+    startCommand: node Backend_SIGEP-GC/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Estas las configuras manualmente en el dashboard de Render:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: VITE_RECAPTCHA_SITE_KEY
+        sync: false
