@@ -7,12 +7,34 @@ const generateToken = require('../utils/generateToken');
 const register = async (req, res) => {
   const { nombre, email, password, role_id, departamento } = req.body;
 
-  if (!nombre || !email || !password || !departamento) {
-    return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+  if (!nombre || !email || !password) {
+    return res.status(400).json({ message: 'Nombre, email y contraseña son obligatorios' });
   }
 
-  if (!['ventas', 'contabilidad', 'produccion'].includes(departamento)) {
-    return res.status(400).json({ message: 'Departamento invalido' });
+  // ── Determinar rol (solo admin puede asignar rol distinto a 2) ──
+  let rolAsignado = 2;
+  const authHeader = req.headers.authorization;
+  if (authHeader && role_id) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Ahora permite role_id 1, 2 y 3 (conductor)
+      if (decoded.role_id === 1 && [1, 2, 3].includes(Number(role_id))) {
+        rolAsignado = Number(role_id);
+      }
+    } catch {}
+  }
+
+  const esConductor = rolAsignado === 3;
+
+  // ── Departamento: requerido solo para no-conductores ──
+  if (!esConductor) {
+    if (!departamento) {
+      return res.status(400).json({ message: 'El departamento es obligatorio' });
+    }
+    if (!['ventas', 'contabilidad', 'produccion'].includes(departamento)) {
+      return res.status(400).json({ message: 'Departamento invalido' });
+    }
   }
 
   try {
@@ -24,22 +46,9 @@ const register = async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
 
-    // Solo el admin autenticado puede asignar role_id diferente a 2
-    let rolAsignado = 2;
-    const authHeader = req.headers.authorization;
-    if (authHeader && role_id) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded.role_id === 1 && [1, 2].includes(Number(role_id))) {
-          rolAsignado = Number(role_id);
-        }
-      } catch {}
-    }
-
     const insert = await pool.query(
       'INSERT INTO usuarios (nombre, email, password_hash, role_id, departamento) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [nombre, email, hash, rolAsignado, departamento]
+      [nombre, email, hash, rolAsignado, esConductor ? null : departamento]
     );
 
     const user = await pool.query(

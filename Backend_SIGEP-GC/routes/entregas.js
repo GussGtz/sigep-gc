@@ -59,9 +59,30 @@ router.get('/:id', verifyToken, async (req, res) => {
 })
 
 // POST /api/entregas — asignar entrega (admin)
+// Acepta pedido_id (entero) O numero_pedido (string) para compatibilidad con el formulario
 router.post('/', verifyToken, isAdmin, async (req, res) => {
-  const { pedido_id, conductor_id } = req.body
-  if (!pedido_id || !conductor_id) return res.status(400).json({ message: 'Faltan campos requeridos' })
+  let { pedido_id, numero_pedido, conductor_id } = req.body
+
+  // Si vienen como numero_pedido, buscar el pedido_id real
+  if (!pedido_id && numero_pedido) {
+    try {
+      const p = await pool.query(
+        'SELECT id FROM pedidos WHERE numero_pedido = $1',
+        [String(numero_pedido).trim()]
+      )
+      if (!p.rows.length) {
+        return res.status(404).json({ message: `Pedido #${numero_pedido} no encontrado` })
+      }
+      pedido_id = p.rows[0].id
+    } catch (err) {
+      return res.status(500).json({ message: 'Error al buscar pedido' })
+    }
+  }
+
+  if (!pedido_id || !conductor_id) {
+    return res.status(400).json({ message: 'Faltan campos requeridos (pedido y conductor)' })
+  }
+
   try {
     const { rows } = await pool.query(
       `INSERT INTO entregas (pedido_id, conductor_id, estado)
@@ -72,6 +93,26 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
   } catch (err) {
     console.error('[ERROR crear entrega]', err.message)
     res.status(500).json({ message: 'Error al asignar entrega' })
+  }
+})
+
+// PATCH /api/entregas/:id/estado — admin cambia estado manualmente
+router.patch('/:id/estado', verifyToken, isAdmin, async (req, res) => {
+  const { estado } = req.body
+  const estadosValidos = ['asignada', 'en_camino', 'entregada', 'incidencia']
+  if (!estadosValidos.includes(estado)) {
+    return res.status(400).json({ message: `Estado inválido. Use: ${estadosValidos.join(', ')}` })
+  }
+  try {
+    const { rows } = await pool.query(
+      'UPDATE entregas SET estado=$1 WHERE id=$2 RETURNING *',
+      [estado, req.params.id]
+    )
+    if (!rows.length) return res.status(404).json({ message: 'Entrega no encontrada' })
+    res.json(rows[0])
+  } catch (err) {
+    console.error('[ERROR patch estado]', err.message)
+    res.status(500).json({ message: 'Error al actualizar estado' })
   }
 })
 
@@ -106,6 +147,18 @@ router.put('/:id/entregar', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('[ERROR entregar]', err.message)
     res.status(500).json({ message: 'Error al registrar entrega' })
+  }
+})
+
+// DELETE /api/entregas/:id — eliminar entrega (admin)
+router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM entregas WHERE id=$1', [req.params.id])
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Entrega no encontrada' })
+    res.json({ message: 'Entrega eliminada correctamente' })
+  } catch (err) {
+    console.error('[ERROR delete entrega]', err.message)
+    res.status(500).json({ message: 'Error al eliminar entrega' })
   }
 })
 

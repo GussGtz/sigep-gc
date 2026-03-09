@@ -657,7 +657,14 @@ function abrirModalNuevo() {
 }
 function abrirEditar(u) {
   editando.value = true
-  formUser.value = { id: u.id, nombre: u.nombre, email: u.email, password: '', role_id: u.role_id, departamento: u.departamento || 'ventas' }
+  formUser.value = {
+    id: u.id,
+    nombre: u.nombre,
+    email: u.email,
+    password: '',
+    role_id: u.role_id,
+    departamento: u.role_id === 3 ? '' : (u.departamento || 'ventas')
+  }
   modalError.value = ''
   userFormErrors.value = {}
   showModal.value = true
@@ -692,7 +699,12 @@ async function guardarUsuario() {
   guardando.value = true
   try {
     if (editando.value) {
-      const payload = { nombre: formUser.value.nombre, email: formUser.value.email, role_id: formUser.value.role_id, departamento: formUser.value.departamento }
+      const payload = {
+        nombre: formUser.value.nombre,
+        email: formUser.value.email,
+        role_id: formUser.value.role_id,
+        departamento: formUser.value.role_id === 3 ? null : formUser.value.departamento
+      }
       await axios.put(`/api/usuarios/${formUser.value.id}`, payload)
       const idx = usuarios.value.findIndex(u => u.id === formUser.value.id)
       if (idx !== -1) usuarios.value[idx] = { ...usuarios.value[idx], ...payload }

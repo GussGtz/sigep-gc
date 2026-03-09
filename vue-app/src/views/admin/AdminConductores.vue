@@ -62,9 +62,9 @@
               class="px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900/10 min-w-[160px]"
             >
               <option value="">Todos los estados</option>
-              <option value="pendiente">Pendiente</option>
+              <option value="asignada">Asignada</option>
               <option value="en_camino">En Camino</option>
-              <option value="entregado">Entregado</option>
+              <option value="entregada">Entregada</option>
               <option value="incidencia">Incidencia</option>
             </select>
             <!-- Limpiar -->
@@ -130,8 +130,8 @@
               </div>
               <!-- Cliente / Destino -->
               <div class="col-span-1">
-                <p class="text-sm text-gray-700 font-medium truncate">{{ e.cliente || e.destino || '—' }}</p>
-                <p class="text-xs text-gray-400 truncate">{{ e.direccion || '' }}</p>
+                <p class="text-sm text-gray-700 font-medium truncate">{{ e.cliente_nombre || '—' }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ e.direccion_entrega || '' }}</p>
               </div>
               <!-- Fecha -->
               <div class="col-span-1">
@@ -288,22 +288,6 @@
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cliente / Destino</label>
-                <input
-                  v-model="nuevaEntrega.cliente"
-                  placeholder="Nombre del cliente"
-                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Dirección</label>
-                <input
-                  v-model="nuevaEntrega.direccion"
-                  placeholder="Dirección de entrega"
-                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
-                />
-              </div>
-              <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha de entrega</label>
                 <input
                   v-model="nuevaEntrega.fecha_entrega"
@@ -363,11 +347,11 @@
                 </div>
                 <div class="p-3 bg-gray-50 rounded-xl">
                   <p class="text-xs text-gray-400 mb-1">Cliente</p>
-                  <p class="text-sm font-semibold text-gray-900">{{ entregaSeleccionada.cliente || '—' }}</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ entregaSeleccionada.cliente_nombre || '—' }}</p>
                 </div>
                 <div class="col-span-2 p-3 bg-gray-50 rounded-xl">
                   <p class="text-xs text-gray-400 mb-1">Dirección</p>
-                  <p class="text-sm font-semibold text-gray-900">{{ entregaSeleccionada.direccion || '—' }}</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ entregaSeleccionada.direccion_entrega || '—' }}</p>
                 </div>
               </div>
               <!-- Cambiar estado -->
@@ -524,15 +508,13 @@ const modalError         = ref('')
 const nuevaEntrega = ref({
   numero_pedido: '',
   conductor_id: '',
-  cliente: '',
-  direccion: '',
   fecha_entrega: ''
 })
 
 const estadosOpciones = [
-  { value: 'pendiente',   label: 'Pendiente'  },
+  { value: 'asignada',    label: 'Asignada'   },
   { value: 'en_camino',   label: 'En Camino'  },
-  { value: 'entregado',   label: 'Entregado'  },
+  { value: 'entregada',   label: 'Entregada'  },
   { value: 'incidencia',  label: 'Incidencia' },
 ]
 
@@ -546,8 +528,8 @@ const stats = computed(() => [
     iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600'
   },
   {
-    label: 'Pendientes',
-    value: entregas.value.filter(e => e.estado === 'pendiente').length,
+    label: 'Asignadas',
+    value: entregas.value.filter(e => e.estado === 'asignada').length,
     sub: 'por salir',
     icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
     iconBg: 'bg-orange-100', iconColor: 'text-orange-600'
@@ -561,7 +543,7 @@ const stats = computed(() => [
   },
   {
     label: 'Entregadas',
-    value: entregas.value.filter(e => e.estado === 'entregado').length,
+    value: entregas.value.filter(e => e.estado === 'entregada').length,
     sub: 'completadas',
     icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
     iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600'
@@ -576,7 +558,7 @@ const entregasFiltradas = computed(() => {
     list = list.filter(e =>
       (e.numero_pedido?.toString() || '').includes(q) ||
       (e.conductor_nombre || '').toLowerCase().includes(q) ||
-      (e.cliente || '').toLowerCase().includes(q)
+      (e.cliente_nombre || '').toLowerCase().includes(q)
     )
   }
   if (filtroEstado.value) list = list.filter(e => e.estado === filtroEstado.value)
@@ -591,21 +573,21 @@ const entregasPagina = computed(() => {
 
 /* ── Helpers visuales ── */
 function estadoLabel(e) {
-  return { pendiente: 'Pendiente', en_camino: 'En Camino', entregado: 'Entregado', incidencia: 'Incidencia' }[e] || e
+  return { asignada: 'Asignada', en_camino: 'En Camino', entregada: 'Entregada', incidencia: 'Incidencia' }[e] || e
 }
 function estadoClase(e) {
   return {
-    pendiente:  'bg-amber-50 text-amber-700',
+    asignada:   'bg-amber-50 text-amber-700',
     en_camino:  'bg-blue-50 text-blue-700',
-    entregado:  'bg-emerald-50 text-emerald-700',
+    entregada:  'bg-emerald-50 text-emerald-700',
     incidencia: 'bg-red-50 text-red-700',
   }[e] || 'bg-gray-100 text-gray-600'
 }
 function estadoDot(e) {
   return {
-    pendiente:  'bg-amber-400',
+    asignada:   'bg-amber-400',
     en_camino:  'bg-blue-400',
-    entregado:  'bg-emerald-400',
+    entregada:  'bg-emerald-400',
     incidencia: 'bg-red-400',
   }[e] || 'bg-gray-400'
 }
@@ -644,7 +626,7 @@ async function fetchConductores() {
 
 /* ── Acciones ── */
 function abrirModalNuevo() {
-  nuevaEntrega.value = { numero_pedido: '', conductor_id: '', cliente: '', direccion: '', fecha_entrega: '' }
+  nuevaEntrega.value = { numero_pedido: '', conductor_id: '', fecha_entrega: '' }
   modalError.value = ''
   showModal.value = true
 }

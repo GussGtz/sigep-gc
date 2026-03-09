@@ -208,6 +208,9 @@ const loadingEntregas = ref(true)
 const gpsActivo       = ref(false)
 const watchId         = ref(null)
 
+// Clave localStorage por usuario para no mezclar sesiones
+const turnoKey = computed(() => `turno_conductor_${auth.user?.id || 'anon'}`)
+
 const initials  = computed(() =>
   (auth.user?.nombre || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 )
@@ -223,6 +226,8 @@ function formatDate(d) {
 function toggleTurno() {
   toggling.value = true
   enRuta.value = !enRuta.value
+  // Persistir estado del turno en localStorage
+  localStorage.setItem(turnoKey.value, enRuta.value ? '1' : '0')
   if (enRuta.value) {
     toast.add({ type: 'success', title: 'Turno iniciado', message: 'Estás en ruta. El GPS se activará al iniciar una entrega.' })
   } else {
@@ -267,9 +272,19 @@ function stopGPS() {
   }
 }
 
-function iniciarEntrega(e) {
+// Iniciar una entrega específica — llama al backend y actualiza estado en DB
+async function iniciarEntrega(e) {
   if (e.estado !== 'en_camino') {
+    try {
+      await axios.put(`/api/entregas/${e.id}/iniciar`)
+    } catch (err) {
+      toast.add({ type: 'error', title: 'Error', message: 'No se pudo iniciar la entrega. Intenta de nuevo.' })
+      return
+    }
+    // Actualizar estado local inmediatamente
+    e.estado = 'en_camino'
     enRuta.value = true
+    localStorage.setItem(turnoKey.value, '1')
     startGPS(e.pedido_id)
   }
   router.push(`/conductor/entrega/${e.id}`)
@@ -280,10 +295,11 @@ async function fetchEntregas() {
   try {
     const { data } = await axios.get('/api/entregas/conductor/mis-entregas')
     entregas.value = Array.isArray(data) ? data : []
-    // Auto-restablecer turno si hay una entrega en camino
+    // Restablecer turno desde DB (fuente de verdad) si hay entrega activa
     const activa = entregas.value.find(e => e.estado === 'en_camino')
     if (activa) {
       enRuta.value = true
+      localStorage.setItem(turnoKey.value, '1')
       startGPS(activa.pedido_id)
     }
   } catch (err) {
@@ -297,6 +313,17 @@ async function fetchEntregas() {
   }
 }
 
-onMounted(fetchEntregas)
+onMounted(async () => {
+  // Restaurar estado del turno desde localStorage mientras carga la BD
+  if (localStorage.getItem(turnoKey.value) === '1') enRuta.value = true
+  await fetchEntregas()
+  // fetchEntregas es la fuente de verdad: si no hay en_camino, el turno es falso
+  // (evita que quede "en ruta" si el admin cambió el estado manualmente)
+  const hayActiva = entregas.value.some(e => e.estado === 'en_camino')
+  if (!hayActiva) {
+    enRuta.value = false
+    localStorage.removeItem(turnoKey.value)
+  }
+})
 onUnmounted(stopGPS)
 </script>
