@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════
-   VITREX SIGEP — Service Worker v2
+   Glass Caribe — Service Worker v3
    Responsabilidad:
      1. Push Notifications — mostrar notificaciones nativas
      2. GPS Reminder — notificación persistente con botón "Abrir GPS"
    ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'vitrex-sw-v2'
+const CACHE_NAME = 'glass-caribe-sw-v3'
 
 // Activar inmediatamente sin esperar a que las páginas se recarguen
 self.addEventListener('install',  () => self.skipWaiting())
@@ -18,12 +18,12 @@ self.addEventListener('push', e => {
 
   const isGpsReminder = data.tag === 'gps-reminder'
 
-  const title   = data.title || 'VITREX SIGEP'
+  const title   = data.title || 'Glass Caribe'
   const options = {
     body:     data.body  || '',
-    icon:     '/icons/icon-192.png',
-    badge:    '/icons/icon-192.png',
-    tag:      data.tag   || 'vitrex-notif',
+    icon:     '/icons/icon.svg',
+    badge:    '/icons/icon.svg',
+    tag:      data.tag   || 'glass-caribe-notif',
     renotify: true,
     vibrate:  [200, 100, 200],
     data:     { url: data.url || '/' },

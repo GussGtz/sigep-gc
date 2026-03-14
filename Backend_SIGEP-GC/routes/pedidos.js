@@ -107,7 +107,7 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
       for (const u of usuarios) {
         const url = u.role_id === 3 ? '/conductor' : '/admin/pedidos';
         global.sendPushToUser(u.id, {
-          title: 'VITREX SIGEP',
+          title: 'Glass Caribe',
           body: `${resultado.creados} pedido(s) importados desde Excel por ${userName}`,
           url
         });

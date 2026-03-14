@@ -4,11 +4,8 @@
     <!-- ── Header fijo ── -->
     <header class="fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06] flex items-center px-4 gap-3 shadow-soft">
       <div class="flex items-center gap-2 flex-1">
-        <svg class="w-7 h-7" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="7" fill="#1B3A5C"/>
-          <path stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 10h14M7 14h10M7 18h7"/>
-        </svg>
-        <span class="font-serif font-bold text-gray-900 text-sm">Mis Pedidos</span>
+        <img src="/icons/icon.svg" class="w-7 h-7 rounded-lg" alt="Glass Caribe"/>
+        <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
       </div>
       <!-- User avatar dropdown -->
       <div class="relative" ref="userMenuRef">

@@ -123,7 +123,7 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
         const { rows: pInfo } = await pool.query('SELECT numero_pedido FROM pedidos WHERE id = $1', [pedido_id])
         const nPedido = pInfo[0]?.numero_pedido || pedido_id
         global.sendPushToUser(conductor_id, {
-          title: 'VITREX SIGEP — Nueva Entrega',
+          title: 'Glass Caribe — Nueva Entrega',
           body:  `Se te asignó la entrega del pedido #${nPedido}`,
           url:   '/conductor'
         })
@@ -226,7 +226,7 @@ router.put('/:id/no-entregada', verifyToken, async (req, res) => {
         const { rows: admins } = await pool.query('SELECT id FROM usuarios WHERE role_id=1 AND activo=true')
         for (const admin of admins) {
           global.sendPushToUser(admin.id, {
-            title: 'VITREX — Incidencia de Entrega',
+            title: 'Glass Caribe — Incidencia de Entrega',
             body:  `No se pudo entregar pedido #${numeroPedido}: "${razon.trim()}"`,
             url:   '/admin/pedidos'
           })

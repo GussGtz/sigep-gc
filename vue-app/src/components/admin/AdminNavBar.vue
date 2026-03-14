@@ -10,14 +10,8 @@
     </button>
 
     <div class="flex items-center gap-2 flex-1">
-      <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="28" height="28" rx="7" fill="#1B3A5C"/>
-        <rect x="4.5" y="4.5" width="19" height="19" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
-        <line x1="14" y1="4.5" x2="14" y2="23.5" stroke="white" stroke-width="1.5"/>
-        <line x1="4.5" y1="14" x2="23.5" y2="14" stroke="white" stroke-width="1.5"/>
-        <rect x="6" y="6" width="7" height="7" rx="0.75" fill="white" fill-opacity="0.18"/>
-      </svg>
-      <span class="font-serif font-bold text-gray-900">SGPV</span>
+      <img src="/icons/icon.svg" class="w-7 h-7 rounded-lg flex-shrink-0" alt="Glass Caribe"/>
+      <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
     </div>
 
     <!-- Mobile Bell -->
@@ -69,17 +63,8 @@
           @click.stop>
           <div class="px-5 pt-6 pb-4 border-b border-black/[0.05]">
             <div class="flex items-center gap-3">
-              <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="36" height="36" rx="8" fill="#1B3A5C"/>
-                <rect x="5.5" y="5.5" width="25" height="25" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
-                <line x1="18" y1="5.5" x2="18" y2="30.5" stroke="white" stroke-width="1.75"/>
-                <line x1="5.5" y1="18" x2="30.5" y2="18" stroke="white" stroke-width="1.75"/>
-                <rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="white" fill-opacity="0.18"/>
-              </svg>
-              <div>
-                <p class="font-serif font-bold text-gray-900 text-base leading-none">SGPV</p>
-                <p class="text-[10px] text-gray-400 tracking-widest uppercase mt-0.5">Glass Caribe</p>
-              </div>
+              <img src="/icons/icon.svg" class="w-9 h-9 rounded-xl flex-shrink-0" alt="Glass Caribe"/>
+              <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
             </div>
           </div>
           <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
@@ -184,17 +169,8 @@
     <!-- Logo -->
     <div class="px-5 pt-6 pb-5 border-b border-black/[0.05]">
       <div class="flex items-center gap-3">
-        <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="36" height="36" rx="8" fill="#1B3A5C"/>
-          <rect x="5.5" y="5.5" width="25" height="25" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
-          <line x1="18" y1="5.5" x2="18" y2="30.5" stroke="white" stroke-width="1.75"/>
-          <line x1="5.5" y1="18" x2="30.5" y2="18" stroke="white" stroke-width="1.75"/>
-          <rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="white" fill-opacity="0.18"/>
-        </svg>
-        <div>
-          <p class="font-serif font-bold text-gray-900 text-base leading-none">SGPV</p>
-          <p class="text-[10px] text-gray-400 tracking-widest uppercase mt-0.5">Glass Caribe</p>
-        </div>
+        <img src="/icons/icon.svg" class="w-9 h-9 rounded-xl flex-shrink-0" alt="Glass Caribe"/>
+        <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
       </div>
     </div>
 

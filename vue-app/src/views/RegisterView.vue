@@ -14,15 +14,8 @@
 
       <!-- Logo mark -->
       <div class="relative z-10 flex items-center gap-3">
-        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="32" height="32" rx="7" fill="white" fill-opacity="0.14"/>
-          <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" stroke="white" stroke-opacity="0.25"/>
-          <rect x="5" y="5" width="22" height="22" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
-          <line x1="16" y1="5" x2="16" y2="27" stroke="white" stroke-width="1.5"/>
-          <line x1="5" y1="16" x2="27" y2="16" stroke="white" stroke-width="1.5"/>
-          <rect x="6.5" y="6.5" width="8" height="8" rx="0.75" fill="white" fill-opacity="0.2"/>
-        </svg>
-        <span class="text-white/75 text-sm font-semibold tracking-wide">Glass Caribe</span>
+        <img src="/icons/icon.svg" class="w-8 h-8 rounded-lg" alt="Glass Caribe"/>
+        <span class="text-white/90 text-sm font-semibold tracking-wide">Glass Caribe</span>
       </div>
 
       <!-- Main heading -->
@@ -54,21 +47,9 @@
             <h2 class="font-serif text-2xl font-bold text-gray-900">Crear cuenta</h2>
             <p class="text-gray-400 text-sm mt-1">Completa el formulario para unirte</p>
           </div>
-          <!-- Glass Caribe SVG logo -->
+          <!-- Glass Caribe logo -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <svg class="w-11 h-11" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="24" cy="24" r="21" stroke="#1B3A5C" stroke-width="2"/>
-              <ellipse cx="24" cy="24" rx="11" ry="21" stroke="#1B3A5C" stroke-width="2"/>
-              <line x1="3" y1="24" x2="45" y2="24" stroke="#1B3A5C" stroke-width="1.5"/>
-              <path d="M24 3C20 9 20 39 24 45" stroke="#1B3A5C" stroke-width="1.5"/>
-              <path d="M24 3C28 9 28 39 24 45" stroke="#1B3A5C" stroke-width="1.5"/>
-              <line x1="6" y1="14" x2="42" y2="14" stroke="#1B3A5C" stroke-width="1" stroke-dasharray="2 2"/>
-              <line x1="6" y1="34" x2="42" y2="34" stroke="#1B3A5C" stroke-width="1" stroke-dasharray="2 2"/>
-            </svg>
-            <div class="leading-none">
-              <p class="text-base font-bold text-gray-900 tracking-tight" style="font-family: 'Playfair Display', serif">GLASS</p>
-              <p class="text-xs text-gray-400 tracking-widest uppercase">Caribe</p>
-            </div>
+            <img src="/icons/icon.svg" class="w-11 h-11 rounded-xl" alt="Glass Caribe"/>
           </div>
         </div>
 
@@ -213,7 +194,7 @@
         </div>
 
         <p class="text-center text-xs text-gray-300 mt-8">
-          SGPV · Glass Caribe © 2025
+          Glass Caribe © 2025
         </p>
       </div>
     </div>

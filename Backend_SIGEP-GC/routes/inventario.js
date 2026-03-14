@@ -127,7 +127,7 @@ router.post('/movimiento', verifyToken, isAdmin, async (req, res) => {
             );
             for (const admin of admins) {
               global.sendPushToUser(admin.id, {
-                title: 'VITREX SIGEP — Stock Bajo',
+                title: 'Glass Caribe — Stock Bajo',
                 body:  `${nombreMat}: ${stockActual} m² disponible`,
                 url:   '/admin/inventario'
               });

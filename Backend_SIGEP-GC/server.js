@@ -252,7 +252,7 @@ setInterval(async () => {
     `);
     for (const row of rows) {
       global.sendPushToUser(row.id, {
-        title:  'VITREX — GPS inactivo',
+        title:  'Glass Caribe — GPS inactivo',
         body:   'Abre la app para continuar el seguimiento de tu ruta.',
         url:    '/conductor',
         tag:    'gps-reminder'

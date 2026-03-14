@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="40" fill="#111827"/>
-  <text x="96" y="130" font-family="Arial, sans-serif" font-weight="900"
-        font-size="110" text-anchor="middle" fill="white">V</text>
+  <!-- Background -->
+  <rect width="192" height="192" rx="40" fill="#1B3A5C"/>
+  <!-- Shield shape -->
+  <path d="M96 26 L158 52 L158 104 Q158 152 96 170 Q34 152 34 104 L34 52 Z"
+        fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.55)" stroke-width="5"
+        stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Subtle horizontal glass line -->
+  <line x1="44" y1="90" x2="148" y2="90" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+  <!-- GC initials -->
+  <text x="96" y="130" font-family="Arial Black, Arial, sans-serif" font-weight="900"
+        font-size="68" text-anchor="middle" fill="white" letter-spacing="-2">GC</text>
 </svg>

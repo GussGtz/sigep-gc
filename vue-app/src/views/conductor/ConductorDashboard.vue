@@ -4,13 +4,8 @@
     <!-- ── Mobile Top Bar ── -->
     <header class="fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06] flex items-center px-4 gap-3 shadow-soft">
       <div class="flex items-center gap-2.5 flex-1">
-        <svg class="w-7 h-7" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="7" fill="#1B3A5C"/>
-          <rect x="4.5" y="4.5" width="19" height="19" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
-          <line x1="14" y1="4.5" x2="14" y2="23.5" stroke="white" stroke-width="1.5"/>
-          <line x1="4.5" y1="14" x2="23.5" y2="14" stroke="white" stroke-width="1.5"/>
-          <rect x="6" y="6" width="7" height="7" rx="0.75" fill="white" fill-opacity="0.18"/>
-        </svg>
+        <img src="/icons/icon.svg" class="w-7 h-7 rounded-lg" alt="Glass Caribe"/>
+        <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
       </div>
       <!-- GPS status pill -->
       <div v-if="gpsStore.isTracking"

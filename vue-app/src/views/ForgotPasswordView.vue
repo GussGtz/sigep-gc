@@ -191,7 +191,7 @@
         </div>
 
         <p class="text-center text-xs text-gray-400 mt-6">
-          SGPV · Glass Caribe © {{ new Date().getFullYear() }}
+          Glass Caribe © {{ new Date().getFullYear() }}
         </p>
       </div>
     </div>

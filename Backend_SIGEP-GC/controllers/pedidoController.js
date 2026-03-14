@@ -20,7 +20,7 @@ async function crearNotificacion({ tipo, mensaje, pedidoId, pedidoNumero, creado
       for (const u of usuarios) {
         const url = u.role_id === 3 ? '/conductor' : (pedidoId ? '/admin/pedidos' : '/');
         global.sendPushToUser(u.id, {
-          title: 'VITREX SIGEP',
+          title: 'Glass Caribe',
           body:  mensaje,
           url
         });

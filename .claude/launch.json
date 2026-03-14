@@ -8,7 +8,7 @@
       "port": 3000
     },
     {
-      "name": "VITREX Vue App",
+      "name": "Glass Caribe Vue App",
       "runtimeExecutable": "C:/nvm4w/nodejs/node.exe",
       "runtimeArgs": ["vue-app/node_modules/vite/bin/vite.js", "--config", "vue-app/vite.config.js", "--host", "0.0.0.0"],
       "port": 5173

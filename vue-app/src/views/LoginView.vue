@@ -13,18 +13,8 @@
 
       <!-- Logo top -->
       <div class="relative z-10 flex items-center gap-3">
-        <svg class="w-10 h-10" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="40" height="40" rx="9" fill="white" fill-opacity="0.14"/>
-          <rect x="0.5" y="0.5" width="39" height="39" rx="8.5" stroke="white" stroke-opacity="0.25"/>
-          <rect x="6" y="6" width="28" height="28" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
-          <line x1="20" y1="6" x2="20" y2="34" stroke="white" stroke-width="1.75"/>
-          <line x1="6" y1="20" x2="34" y2="20" stroke="white" stroke-width="1.75"/>
-          <rect x="8" y="8" width="10.5" height="10.5" rx="1" fill="white" fill-opacity="0.2"/>
-        </svg>
-        <div>
-          <p class="text-white font-serif font-bold text-base leading-none">SGPV</p>
-          <p class="text-white/50 text-[10px] tracking-widest uppercase">Glass Caribe</p>
-        </div>
+        <img src="/icons/icon.svg" class="w-10 h-10 rounded-xl" alt="Glass Caribe"/>
+        <p class="text-white font-bold text-base tracking-wide">Glass Caribe</p>
       </div>
 
       <!-- Central text -->
@@ -57,17 +47,8 @@
 
         <!-- Mobile logo -->
         <div class="flex items-center justify-center gap-3 mb-10 lg:hidden">
-          <svg class="w-10 h-10" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="36" height="36" rx="8" fill="#1B3A5C"/>
-            <rect x="5.5" y="5.5" width="25" height="25" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
-            <line x1="18" y1="5.5" x2="18" y2="30.5" stroke="white" stroke-width="1.75"/>
-            <line x1="5.5" y1="18" x2="30.5" y2="18" stroke="white" stroke-width="1.75"/>
-            <rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="white" fill-opacity="0.18"/>
-          </svg>
-          <div>
-            <p class="font-serif font-bold text-gray-900">SGPV</p>
-            <p class="text-[10px] text-gray-400 tracking-widest uppercase">Glass Caribe</p>
-          </div>
+          <img src="/icons/icon.svg" class="w-10 h-10 rounded-xl" alt="Glass Caribe"/>
+          <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
         </div>
 
         <!-- Header -->
@@ -78,19 +59,7 @@
           </div>
           <!-- Glass Caribe logo -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <svg class="w-11 h-11" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="24" cy="24" r="21" stroke="#1B3A5C" stroke-width="2"/>
-              <ellipse cx="24" cy="24" rx="11" ry="21" stroke="#1B3A5C" stroke-width="2"/>
-              <line x1="3" y1="24" x2="45" y2="24" stroke="#1B3A5C" stroke-width="1.5"/>
-              <path d="M24 3C20 9 20 39 24 45" stroke="#1B3A5C" stroke-width="1.5"/>
-              <path d="M24 3C28 9 28 39 24 45" stroke="#1B3A5C" stroke-width="1.5"/>
-              <line x1="6" y1="14" x2="42" y2="14" stroke="#1B3A5C" stroke-width="1" stroke-dasharray="2 2"/>
-              <line x1="6" y1="34" x2="42" y2="34" stroke="#1B3A5C" stroke-width="1" stroke-dasharray="2 2"/>
-            </svg>
-            <div class="leading-none">
-              <p class="text-sm font-black text-gray-900 tracking-tight">GLASS</p>
-              <p class="text-[10px] text-gray-400 tracking-widest uppercase">Caribe</p>
-            </div>
+            <img src="/icons/icon.svg" class="w-11 h-11 rounded-xl" alt="Glass Caribe"/>
           </div>
         </div>
 
@@ -177,7 +146,7 @@
           </p>
         </div>
 
-        <p class="text-center text-xs text-gray-300 mt-10">SGPV · Glass Caribe © 2025</p>
+        <p class="text-center text-xs text-gray-300 mt-10">Glass Caribe © 2025</p>
 
       </div>
     </div>
