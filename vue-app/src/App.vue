@@ -63,6 +63,7 @@ import { useNotificationsStore } from './stores/notifications.js'
 import { useWebSocketStore }     from './stores/websocket.js'
 import { useChatStore }          from './stores/chat.js'
 import { useGpsStore }           from './stores/gps.js'
+import { initPushNotifications } from './utils/pushNotifications.js'
 
 const auth    = useAuthStore()
 const notifs  = useNotificationsStore()
@@ -96,6 +97,8 @@ watch(() => auth.token, (token) => {
     wsStore.on('chat_sent',       chat.confirmarEnviado)
     wsStore.on('location_update', gps.recibirUbicacion)
     chat.fetchContactos()
+    // Inicializar push notifications con un pequeño delay (esperar SW ready)
+    setTimeout(() => initPushNotifications().catch(console.warn), 2000)
   }
 }, { immediate: true })
 

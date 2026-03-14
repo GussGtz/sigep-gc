@@ -10,6 +10,21 @@ async function crearNotificacion({ tipo, mensaje, pedidoId, pedidoNumero, creado
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [tipo, mensaje, pedidoId || null, pedidoNumero || null, creadoPor || null, creadoPorNombre || null, paraRoles]
     );
+
+    // ── Push notification a admins (cuando la app está cerrada / en background) ──
+    if (global.sendPushToUser) {
+      const url = pedidoId ? '/admin/pedidos' : '/';
+      const { rows: admins } = await pool.query(
+        'SELECT id FROM usuarios WHERE role_id = 1 AND activo = true'
+      );
+      for (const admin of admins) {
+        global.sendPushToUser(admin.id, {
+          title: 'VITREX SIGEP',
+          body:  mensaje,
+          url
+        });
+      }
+    }
   } catch (err) {
     console.error('[NOTIF] Error al crear notificación:', err.message);
   }

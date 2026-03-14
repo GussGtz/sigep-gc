@@ -31,11 +31,33 @@
             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
         </svg>
       </button>
-      <!-- User avatar → chat -->
-      <router-link to="/chat"
-        class="relative w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-        {{ initials }}
-      </router-link>
+      <!-- User avatar dropdown -->
+      <div class="relative" ref="userMenuRef">
+        <button @click="userMenuOpen = !userMenuOpen"
+          class="relative w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          {{ initials }}
+        </button>
+        <Transition name="slide">
+          <div v-if="userMenuOpen"
+            class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-2xl shadow-float overflow-hidden z-50">
+            <router-link to="/chat" @click="userMenuOpen = false"
+              class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Chat del equipo
+            </router-link>
+            <button @click="showCambiarPass = true; userMenuOpen = false"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              Cambiar contraseña
+            </button>
+          </div>
+        </Transition>
+      </div>
     </header>
 
     <main class="pt-14 pb-6">
@@ -185,11 +207,59 @@
 
       </div>
     </main>
+  <!-- ══ MODAL CAMBIAR CONTRASEÑA ══ -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="showCambiarPass"
+        class="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+        @click.self="cerrarCambiarPass">
+        <div class="bg-white rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4" @click.stop>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-gray-900">Cambiar contraseña</h3>
+            <button @click="cerrarCambiarPass"
+              class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Contraseña actual</label>
+              <input v-model="passActual" type="password" autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                @keyup.enter="guardarPassword"/>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
+              <input v-model="passNueva" type="password" autocomplete="new-password"
+                placeholder="Mínimo 6 caracteres"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                @keyup.enter="guardarPassword"/>
+            </div>
+            <p v-if="passError" class="text-xs text-red-500 font-medium">{{ passError }}</p>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button @click="cerrarCambiarPass"
+              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button @click="guardarPassword" :disabled="guardandoPass"
+              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1B3A5C] hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+              {{ guardandoPass ? 'Guardando…' : 'Cambiar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import StatusBadge          from '../../components/shared/StatusBadge.vue'
 import { useAuthStore }      from '../../stores/auth.js'
@@ -207,6 +277,50 @@ const enRuta          = ref(false)
 const toggling        = ref(false)
 const entregas        = ref([])
 const loadingEntregas = ref(true)
+
+// ── Avatar dropdown ──
+const userMenuRef   = ref(null)
+const userMenuOpen  = ref(false)
+
+// ── Cambiar contraseña ──
+const showCambiarPass = ref(false)
+const passActual      = ref('')
+const passNueva       = ref('')
+const passError       = ref('')
+const guardandoPass   = ref(false)
+
+function cerrarCambiarPass() {
+  showCambiarPass.value = false
+  passActual.value = ''
+  passNueva.value  = ''
+  passError.value  = ''
+}
+
+async function guardarPassword() {
+  passError.value = ''
+  if (!passActual.value || !passNueva.value)
+    return (passError.value = 'Completa ambos campos')
+  if (passNueva.value.length < 6)
+    return (passError.value = 'La nueva contraseña debe tener mínimo 6 caracteres')
+  guardandoPass.value = true
+  try {
+    await axios.patch('/api/auth/cambiar-password', {
+      password_actual: passActual.value,
+      nueva_password:  passNueva.value,
+    })
+    cerrarCambiarPass()
+    toast.add({ type: 'success', title: '¡Listo!', message: 'Contraseña actualizada correctamente.' })
+  } catch (err) {
+    passError.value = err.response?.data?.message || 'Error al cambiar contraseña'
+  } finally {
+    guardandoPass.value = false
+  }
+}
+
+function onClickOutside(e) {
+  if (userMenuRef.value && !userMenuRef.value.contains(e.target))
+    userMenuOpen.value = false
+}
 
 const initials  = computed(() =>
   (auth.user?.nombre || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -302,7 +416,10 @@ async function fetchEntregas() {
 }
 
 // ── Montar: restaurar estado desde DB ────────────────────────────────────
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
+
 onMounted(async () => {
+  document.addEventListener('mousedown', onClickOutside)
   // enRuta viene del perfil del usuario (auth.user.en_turno se llena desde /me en el router guard)
   enRuta.value = auth.user?.en_turno === true
 

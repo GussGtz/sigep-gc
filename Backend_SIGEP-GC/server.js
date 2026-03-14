@@ -10,6 +10,46 @@ const app  = express();
 const pool = require('./config/db.js');
 
 // ═══════════════════════════════════════
+// Web Push (PWA Push Notifications)
+// ═══════════════════════════════════════
+const webpush = require('web-push');
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    `mailto:${process.env.VAPID_EMAIL || 'admin@vitrex.com'}`,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
+/**
+ * Envía una push notification a todas las suscripciones activas de un usuario.
+ * Limpia automáticamente suscripciones expiradas (HTTP 410).
+ * @param {number} userId
+ * @param {{ title: string, body: string, url?: string }} payload
+ */
+async function sendPushToUser(userId, payload) {
+  if (!process.env.VAPID_PUBLIC_KEY) return; // push no configurado
+  try {
+    const { rows } = await pool.query(
+      'SELECT endpoint, subscription FROM push_subscriptions WHERE user_id = $1',
+      [userId]
+    );
+    for (const row of rows) {
+      webpush.sendNotification(row.subscription, JSON.stringify(payload)).catch(async (err) => {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          // Suscripción expirada — eliminar
+          await pool.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [row.endpoint]);
+        }
+      });
+    }
+  } catch (err) {
+    console.error('[push] sendPushToUser:', err.message);
+  }
+}
+// Exponer globalmente para que los controllers puedan usarlo
+global.sendPushToUser = sendPushToUser;
+
+// ═══════════════════════════════════════
 // Middlewares globales
 // ═══════════════════════════════════════
 app.use(cors());
@@ -146,6 +186,17 @@ async function initDB() {
       )
     `);
 
+    // ── Push Notifications — suscripciones de usuarios (PWA) ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id           SERIAL PRIMARY KEY,
+        user_id      INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+        endpoint     TEXT NOT NULL UNIQUE,
+        subscription JSONB NOT NULL,
+        created_at   TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
     console.log('✅ Tablas verificadas / creadas correctamente');
   } catch (err) {
     console.error('⚠️  Error al inicializar tablas:', err.message);
@@ -184,6 +235,7 @@ app.use('/api/usuarios',       require('./routes/usuarios'));
 app.use('/api/inventario',     require('./routes/inventario'));
 app.use('/api/chat',           require('./routes/chat'));
 app.use('/api/gps',            require('./routes/gps'));
+app.use('/api/push',           require('./routes/push'));
 
 // ═══════════════════════════════════════
 // Frontend estático (solo en producción)

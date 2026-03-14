@@ -107,4 +107,29 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
   res.json({ message: 'Si el correo existe, recibirás instrucciones.' });
 });
 
+// PATCH /api/auth/cambiar-password — self-service para cualquier usuario autenticado
+router.patch('/cambiar-password', verifyToken, async (req, res) => {
+  const { password_actual, nueva_password } = req.body;
+  if (!password_actual || !nueva_password) {
+    return res.status(400).json({ message: 'Se requieren password_actual y nueva_password' });
+  }
+  if (nueva_password.length < 6) {
+    return res.status(400).json({ message: 'La nueva contraseña debe tener mínimo 6 caracteres' });
+  }
+  try {
+    const pool   = require('../config/db');
+    const bcrypt = require('bcrypt');
+    const { rows } = await pool.query('SELECT password_hash FROM usuarios WHERE id = $1', [req.user.id]);
+    if (!rows.length) return res.status(404).json({ message: 'Usuario no encontrado' });
+    const valid = await bcrypt.compare(password_actual, rows[0].password_hash);
+    if (!valid) return res.status(401).json({ message: 'Contraseña actual incorrecta' });
+    const hashed = await bcrypt.hash(nueva_password, 10);
+    await pool.query('UPDATE usuarios SET password_hash = $1 WHERE id = $2', [hashed, req.user.id]);
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (err) {
+    console.error('[cambiar-password]', err.message);
+    res.status(500).json({ message: 'Error al cambiar contraseña', error: err.message });
+  }
+});
+
 module.exports = router;

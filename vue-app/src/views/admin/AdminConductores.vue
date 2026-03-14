@@ -372,6 +372,17 @@
                   <p class="text-sm font-semibold text-gray-900">{{ entregaSeleccionada.direccion_entrega || '—' }}</p>
                 </div>
               </div>
+              <!-- Foto de evidencia (cargada lazy al abrir) -->
+              <div v-if="entregaSeleccionada.foto_base64" class="space-y-2">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Foto de Evidencia</p>
+                <img
+                  :src="entregaSeleccionada.foto_base64"
+                  class="w-full max-h-52 object-cover rounded-xl border border-gray-100 cursor-zoom-in"
+                  @click="fotoAmpliada = entregaSeleccionada.foto_base64"
+                  title="Click para ampliar"
+                />
+              </div>
+
               <!-- Cambiar estado -->
               <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actualizar estado</label>
@@ -419,6 +430,26 @@
               </button>
             </div>
           </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ══ Lightbox foto ampliada ══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="fotoAmpliada"
+          class="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+          @click="fotoAmpliada = null">
+          <img :src="fotoAmpliada"
+            class="max-w-full max-h-full rounded-2xl object-contain shadow-2xl"
+            @click.stop />
+          <button @click="fotoAmpliada = null"
+            class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20
+                   flex items-center justify-center text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
       </Transition>
     </Teleport>
@@ -648,13 +679,17 @@ function abrirModalNuevo() {
   modalError.value = ''
   showModal.value = true
 }
-function abrirDetalle(e) {
+async function abrirDetalle(e) {
   entregaSeleccionada.value = { ...e }
   showDetalle.value = true
+  // Cargar foto en background (no está en el listado por optimización de payload)
+  try {
+    const { data } = await axios.get(`/api/entregas/${e.id}`)
+    entregaSeleccionada.value = { ...entregaSeleccionada.value, ...data }
+  } catch { /* sin foto, no bloquear */ }
 }
 function cambiarEstado(e) {
-  entregaSeleccionada.value = { ...e }
-  showDetalle.value = true
+  abrirDetalle(e)
 }
 
 async function crearEntrega() {
@@ -687,6 +722,7 @@ async function actualizarEstado(entrega, nuevoEstado) {
   }
 }
 
+const fotoAmpliada       = ref(null)
 const showConfirmDelete  = ref(false)
 const entregaAEliminar   = ref(null)
 

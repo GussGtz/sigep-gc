@@ -105,6 +105,14 @@
                 <p class="text-[11px] text-gray-400 truncate">{{ roleLabel }}</p>
               </div>
             </div>
+            <button @click="showCambiarPass = true; drawerOpen = false"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors mb-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              Cambiar contraseña
+            </button>
             <button @click="handleLogout"
               class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,6 +123,57 @@
             </button>
           </div>
         </aside>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- ══ MODAL CAMBIAR CONTRASEÑA ══ -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="showCambiarPass"
+        class="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+        @click.self="cerrarCambiarPass">
+        <div class="bg-white rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4" @click.stop>
+          <!-- Header -->
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-gray-900">Cambiar contraseña</h3>
+            <button @click="cerrarCambiarPass"
+              class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <!-- Form -->
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Contraseña actual</label>
+              <input v-model="passActual" type="password" autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                @keyup.enter="guardarPassword"/>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
+              <input v-model="passNueva" type="password" autocomplete="new-password"
+                placeholder="Mínimo 6 caracteres"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                @keyup.enter="guardarPassword"/>
+            </div>
+            <p v-if="passError" class="text-xs text-red-500 font-medium">{{ passError }}</p>
+          </div>
+          <!-- Actions -->
+          <div class="flex gap-2 pt-1">
+            <button @click="cerrarCambiarPass"
+              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button @click="guardarPassword" :disabled="guardandoPass"
+              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1B3A5C] hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+              {{ guardandoPass ? 'Guardando…' : 'Cambiar' }}
+            </button>
+          </div>
+        </div>
       </div>
     </Transition>
   </Teleport>
@@ -224,6 +283,14 @@
               <p class="text-sm font-semibold text-gray-900 truncate">{{ auth.user?.nombre }}</p>
               <p class="text-xs text-gray-500 truncate">{{ auth.user?.email }}</p>
             </div>
+            <button @click="showCambiarPass = true; desktopMenu = false"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              Cambiar contraseña
+            </button>
             <button @click="handleLogout"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,6 +325,41 @@ const drawerOpen    = ref(false)
 const mobileBell    = ref(false)
 const desktopBell   = ref(false)
 const desktopMenu   = ref(false)
+
+// ── Cambiar contraseña ──
+const showCambiarPass = ref(false)
+const passActual      = ref('')
+const passNueva       = ref('')
+const passError       = ref('')
+const guardandoPass   = ref(false)
+
+function cerrarCambiarPass() {
+  showCambiarPass.value = false
+  passActual.value = ''
+  passNueva.value  = ''
+  passError.value  = ''
+}
+
+async function guardarPassword() {
+  passError.value = ''
+  if (!passActual.value || !passNueva.value)
+    return (passError.value = 'Completa ambos campos')
+  if (passNueva.value.length < 6)
+    return (passError.value = 'La nueva contraseña debe tener mínimo 6 caracteres')
+  guardandoPass.value = true
+  try {
+    const { default: axios } = await import('axios')
+    await axios.patch('/api/auth/cambiar-password', {
+      password_actual: passActual.value,
+      nueva_password:  passNueva.value,
+    })
+    cerrarCambiarPass()
+  } catch (err) {
+    passError.value = err.response?.data?.message || 'Error al cambiar contraseña'
+  } finally {
+    guardandoPass.value = false
+  }
+}
 
 const mobileBellRef  = ref(null)
 const desktopBellRef = ref(null)

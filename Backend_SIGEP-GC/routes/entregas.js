@@ -4,10 +4,14 @@ const pool    = require('../config/db.js')
 const { verifyToken, isAdmin } = require('../middlewares/authMiddleware.js')
 
 // GET /api/entregas — listar todas (admin)
+// Nota: foto_base64 se excluye del listado por rendimiento; se obtiene vía GET /:id
 router.get('/', verifyToken, isAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT e.*, p.numero_pedido, p.fecha_entrega,
+      SELECT e.id, e.pedido_id, e.conductor_id, e.estado,
+             e.fecha_asignacion, e.fecha_inicio, e.fecha_entrega_real,
+             e.notas, e.evidencia_url, e.firma_url,
+             p.numero_pedido, p.fecha_entrega,
              p.cliente_nombre, p.direccion_entrega,
              u.nombre AS conductor_nombre
       FROM entregas e

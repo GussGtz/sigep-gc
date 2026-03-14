@@ -148,6 +148,16 @@
                         : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'"/>
                   </svg>
                 </button>
+                <button
+                  v-if="u.id !== authStore?.user?.id"
+                  @click="confirmarEliminar(u)"
+                  class="p-2 rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  title="Eliminar usuario"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
               </div>
             </div>
             <!-- Badges -->
@@ -273,6 +283,16 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="u.activo !== false
                       ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
                       : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'"/>
+                  </svg>
+                </button>
+                <button
+                  v-if="u.id !== authStore?.user?.id"
+                  @click="confirmarEliminar(u)"
+                  class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                  title="Eliminar usuario"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                   </svg>
                 </button>
               </div>
@@ -498,6 +518,28 @@
                   </button>
                 </div>
               </div>
+              <!-- Restablecer contraseña (solo en modo edición) -->
+              <div v-if="editando" class="border-t border-gray-100 pt-4">
+                <button type="button" @click="showResetPass = !showResetPass"
+                  class="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors">
+                  🔑 {{ showResetPass ? 'Cancelar cambio de contraseña' : 'Restablecer contraseña' }}
+                </button>
+                <Transition name="slide">
+                  <div v-if="showResetPass" class="mt-3 flex gap-2">
+                    <input
+                      v-model="nuevaPassAdmin"
+                      type="password"
+                      placeholder="Nueva contraseña (mín. 6 caracteres)"
+                      class="flex-1 px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+                    />
+                    <button type="button" @click="resetPasswordAdmin"
+                      :disabled="guardandoPass"
+                      class="px-4 py-2.5 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors whitespace-nowrap">
+                      {{ guardandoPass ? '...' : 'Cambiar' }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
               <!-- Error -->
               <div v-if="modalError" class="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl">{{ modalError }}</div>
               <!-- Botones -->
@@ -517,6 +559,37 @@
       </Transition>
     </Teleport>
 
+    <!-- ══ Modal confirmar eliminar usuario ══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showConfirmEliminar"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+          @mousedown.self="showConfirmEliminar = false">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center" @click.stop>
+            <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </div>
+            <h3 class="font-serif text-lg font-bold text-gray-900 mb-1">Eliminar usuario</h3>
+            <p class="text-sm text-gray-500 mb-1 font-medium">{{ usuarioAEliminar?.nombre }}</p>
+            <p class="text-xs text-gray-400 mb-6">Esta acción no puede deshacerse. Los pedidos y entregas asociados se conservarán sin referencia al usuario.</p>
+            <div class="flex gap-3">
+              <button @click="showConfirmEliminar = false"
+                class="flex-1 py-2.5 text-sm font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button @click="ejecutarEliminar" :disabled="eliminando"
+                class="flex-1 inline-flex items-center justify-center py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50">
+                {{ eliminando ? 'Eliminando...' : 'Eliminar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
   </div>
 </template>
 
@@ -524,9 +597,11 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import AdminNavBar from '../../components/admin/AdminNavBar.vue'
 import { fuzzyMatch, fuzzyScore } from '../../utils/fuzzy.js'
+import { useAuthStore } from '../../stores/auth.js'
 import axios from 'axios'
 
-const toast = inject('toast', { add: () => {} })
+const toast     = inject('toast', { add: () => {} })
+const authStore = useAuthStore()
 
 /* ── Estado ── */
 const usuarios     = ref([])
@@ -553,6 +628,16 @@ const departamentos = [
 ]
 
 const formUser = ref({ id: null, nombre: '', email: '', password: '', role_id: 2, departamento: 'ventas' })
+
+// Eliminar usuario
+const showConfirmEliminar = ref(false)
+const usuarioAEliminar    = ref(null)
+const eliminando          = ref(false)
+
+// Restablecer contraseña (admin sobre otro usuario)
+const showResetPass  = ref(false)
+const nuevaPassAdmin = ref('')
+const guardandoPass  = ref(false)
 
 /* ── KPIs ── */
 const stats = computed(() => [
@@ -667,6 +752,8 @@ function abrirEditar(u) {
   }
   modalError.value = ''
   userFormErrors.value = {}
+  showResetPass.value = false
+  nuevaPassAdmin.value = ''
   showModal.value = true
 }
 
@@ -730,6 +817,45 @@ async function toggleActivo(u) {
     toast.add?.({ type: 'success', message: nuevoEstado ? 'Usuario activado' : 'Usuario desactivado' })
   } catch {
     toast.add?.({ type: 'error', message: 'Error al cambiar estado' })
+  }
+}
+
+function confirmarEliminar(u) {
+  usuarioAEliminar.value  = u
+  showConfirmEliminar.value = true
+}
+
+async function ejecutarEliminar() {
+  if (!usuarioAEliminar.value) return
+  eliminando.value = true
+  try {
+    await axios.delete(`/api/usuarios/${usuarioAEliminar.value.id}`)
+    usuarios.value = usuarios.value.filter(u => u.id !== usuarioAEliminar.value.id)
+    showConfirmEliminar.value = false
+    toast.add?.({ type: 'success', message: `Usuario "${usuarioAEliminar.value.nombre}" eliminado` })
+    usuarioAEliminar.value = null
+  } catch (e) {
+    toast.add?.({ type: 'error', message: e.response?.data?.message || 'Error al eliminar usuario' })
+  } finally {
+    eliminando.value = false
+  }
+}
+
+async function resetPasswordAdmin() {
+  if (!nuevaPassAdmin.value || nuevaPassAdmin.value.length < 6) {
+    toast.add?.({ type: 'error', message: 'La contraseña debe tener mínimo 6 caracteres' })
+    return
+  }
+  guardandoPass.value = true
+  try {
+    await axios.patch(`/api/usuarios/${formUser.value.id}/password`, { password: nuevaPassAdmin.value })
+    nuevaPassAdmin.value = ''
+    showResetPass.value = false
+    toast.add?.({ type: 'success', message: 'Contraseña restablecida correctamente' })
+  } catch (e) {
+    toast.add?.({ type: 'error', message: e.response?.data?.message || 'Error al cambiar contraseña' })
+  } finally {
+    guardandoPass.value = false
   }
 }
 

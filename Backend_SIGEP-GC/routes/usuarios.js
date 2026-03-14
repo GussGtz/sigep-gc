@@ -36,6 +36,39 @@ router.patch('/turno/toggle', verifyToken, async (req, res) => {
   }
 });
 
+/* DELETE /api/usuarios/:id — eliminar usuario (admin, no puede eliminarse a sí mismo) */
+router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (parseInt(id) === req.user.id) {
+    return res.status(400).json({ message: 'No puedes eliminar tu propia cuenta' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    // Limpiar referencias antes de borrar el usuario
+    await client.query('DELETE FROM conductor_ubicaciones WHERE conductor_id = $1', [id]);
+    await client.query('DELETE FROM mensajes_directos WHERE de_usuario_id=$1 OR para_usuario_id=$1', [id]);
+    await client.query('DELETE FROM push_subscriptions WHERE user_id = $1', [id]);
+    await client.query('UPDATE entregas SET conductor_id = NULL WHERE conductor_id = $1', [id]);
+    await client.query('UPDATE movimientos_inventario SET creado_por = NULL WHERE creado_por = $1', [id]);
+    await client.query('UPDATE notificaciones SET creado_por = NULL WHERE creado_por = $1', [id]);
+    await client.query('UPDATE comentarios SET usuario_id = NULL WHERE usuario_id = $1', [id]);
+    await client.query('UPDATE pedidos SET creado_por = NULL WHERE creado_por = $1', [id]);
+    const result = await client.query('DELETE FROM usuarios WHERE id = $1', [id]);
+    if (!result.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    await client.query('COMMIT');
+    res.json({ message: 'Usuario eliminado correctamente' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ message: 'Error al eliminar usuario', error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 /* PUT /api/usuarios/:id — actualizar datos del usuario (admin) */
 router.put('/:id', verifyToken, isAdmin, async (req, res) => {
   const { id } = req.params;
