@@ -120,11 +120,56 @@
             <svg v-if="!enviando" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             {{ enviando ? 'Registrando...' : 'Confirmar Entrega' }}
           </button>
+
+          <!-- ── No se pudo entregar ── -->
+          <button @click="showNoEntregada = true" :disabled="enviando"
+            class="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold
+                   text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            No se pudo entregar
+          </button>
         </template>
 
         <div v-else class="text-center py-12 text-gray-400 text-sm">Entrega no encontrada</div>
       </div>
     </main>
+
+    <!-- ── Modal: No se pudo entregar ── -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showNoEntregada"
+          class="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          @click.self="showNoEntregada = false">
+          <div class="bg-white rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4" @click.stop>
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-gray-900">¿Por qué no se pudo entregar?</h3>
+              <button @click="showNoEntregada = false"
+                class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <textarea v-model="razonNoEntrega" class="input-field resize-none" rows="4"
+              placeholder="Ej: Cliente no estaba, dirección incorrecta, acceso restringido…"></textarea>
+            <p v-if="errorNoEntrega" class="text-xs text-red-500 font-medium">{{ errorNoEntrega }}</p>
+            <div class="flex gap-2 pt-1">
+              <button @click="showNoEntregada = false"
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button @click="reportarNoEntregada" :disabled="reportando"
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
+                {{ reportando ? 'Reportando...' : 'Reportar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -155,6 +200,11 @@ const fotoInput   = ref(null)
 const canvasEl    = ref(null)
 const fotoPreview = ref(null)
 const fotoBase64  = ref(null)
+
+const showNoEntregada = ref(false)
+const razonNoEntrega  = ref('')
+const errorNoEntrega  = ref('')
+const reportando      = ref(false)
 
 function formatDate(d) {
   if (!d) return '—'
@@ -189,6 +239,24 @@ function quitarFoto() {
   fotoPreview.value = null
   fotoBase64.value  = null
   if (fotoInput.value) fotoInput.value.value = ''
+}
+
+async function reportarNoEntregada() {
+  errorNoEntrega.value = ''
+  if (!razonNoEntrega.value.trim())
+    return (errorNoEntrega.value = 'Por favor describe el motivo')
+  reportando.value = true
+  try {
+    await axios.put(`/api/entregas/${route.params.id}/no-entregada`, {
+      razon: razonNoEntrega.value.trim()
+    })
+    toast.add({ type: 'warning', title: 'Incidencia reportada', message: 'El administrador ha sido notificado.' })
+    router.push('/conductor')
+  } catch (e) {
+    errorNoEntrega.value = e.response?.data?.message || 'Error al reportar'
+  } finally {
+    reportando.value = false
+  }
 }
 
 async function confirmarEntrega() {

@@ -20,6 +20,21 @@
   ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
 
   h1, h2 { font-family: 'Playfair Display', Georgia, serif; }
+
+  /* ── PWA Native App Feel ── */
+  html, body {
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  input, textarea, [contenteditable] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  button, a, [role="button"], label {
+    touch-action: manipulation;
+  }
 }
 
 @layer components {

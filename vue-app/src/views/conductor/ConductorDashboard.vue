@@ -11,9 +11,6 @@
           <line x1="4.5" y1="14" x2="23.5" y2="14" stroke="white" stroke-width="1.5"/>
           <rect x="6" y="6" width="7" height="7" rx="0.75" fill="white" fill-opacity="0.18"/>
         </svg>
-        <div>
-          <span class="font-serif font-bold text-gray-900 text-sm">Mis Entregas</span>
-        </div>
       </div>
       <!-- GPS status pill -->
       <div v-if="gpsStore.isTracking"
@@ -21,16 +18,6 @@
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
         GPS
       </div>
-      <!-- Refresh button -->
-      <button @click="fetchEntregas" :disabled="loadingEntregas"
-        class="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors"
-        title="Actualizar entregas">
-        <svg class="w-4 h-4" :class="loadingEntregas ? 'animate-spin' : ''"
-          fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-        </svg>
-      </button>
       <!-- User avatar dropdown -->
       <div class="relative" ref="userMenuRef">
         <button @click="userMenuOpen = !userMenuOpen"
@@ -54,6 +41,15 @@
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
               </svg>
               Cambiar contraseña
+            </button>
+            <div class="border-t border-gray-100 my-1"></div>
+            <button @click="cerrarSesion"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+              Cerrar sesión
             </button>
           </div>
         </Transition>
@@ -190,21 +186,6 @@
           </div>
         </div>
 
-        <!-- ── Chat shortcut ── -->
-        <router-link to="/chat"
-          class="flex items-center gap-3 bg-white rounded-2xl border border-black/[0.06] shadow-soft p-4 hover:border-[#1B3A5C]/20 transition-colors">
-          <div class="w-10 h-10 bg-[#1B3A5C]/10 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-[#1B3A5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-          </div>
-          <div class="flex-1">
-            <p class="text-sm font-semibold text-gray-900">Chat del equipo</p>
-            <p class="text-xs text-gray-400">Comunícate con administración</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </router-link>
-
       </div>
     </main>
   <!-- ══ MODAL CAMBIAR CONTRASEÑA ══ -->
@@ -315,6 +296,12 @@ async function guardarPassword() {
   } finally {
     guardandoPass.value = false
   }
+}
+
+async function cerrarSesion() {
+  userMenuOpen.value = false
+  await auth.logout()
+  router.push('/')
 }
 
 function onClickOutside(e) {

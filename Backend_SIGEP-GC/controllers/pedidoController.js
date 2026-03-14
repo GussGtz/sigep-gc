@@ -11,13 +11,13 @@ async function crearNotificacion({ tipo, mensaje, pedidoId, pedidoNumero, creado
       [tipo, mensaje, pedidoId || null, pedidoNumero || null, creadoPor || null, creadoPorNombre || null, paraRoles]
     );
 
-    // ── Push notification a TODOS los usuarios activos (app cerrada / background) ──
+    // ── Push notification solo a usuarios en paraRoles (app cerrada / background) ──
     if (global.sendPushToUser) {
       const { rows: usuarios } = await pool.query(
-        'SELECT id, role_id FROM usuarios WHERE activo = true'
+        'SELECT id, role_id FROM usuarios WHERE activo = true AND role_id = ANY($1)',
+        [paraRoles]
       );
       for (const u of usuarios) {
-        // Los conductores van a /conductor; admins/colaboradores a /admin/pedidos
         const url = u.role_id === 3 ? '/conductor' : (pedidoId ? '/admin/pedidos' : '/');
         global.sendPushToUser(u.id, {
           title: 'VITREX SIGEP',
@@ -156,7 +156,7 @@ const crearPedido = async (req, res) => {
       pedidoNumero: numero_pedido,
       creadoPor: userId,
       creadoPorNombre: userName,
-      paraRoles: [1, 2, 3]
+      paraRoles: [1, 2]
     });
 
     if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
@@ -395,7 +395,7 @@ const actualizarEstatus = async (req, res) => {
       pedidoNumero: numeroPedido,
       creadoPor: userId,
       creadoPorNombre: userName,
-      paraRoles: [1, 2, 3]
+      paraRoles: [1, 2]
     });
 
     if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });

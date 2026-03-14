@@ -96,6 +96,18 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
     // Notificar a admins y al conductor específico para actualizar sus vistas
     if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_entregas' })
     if (global.sendToUser) global.sendToUser(conductor_id, { type: 'data_entregas' })
+    // Push notification al conductor asignado
+    if (global.sendPushToUser) {
+      try {
+        const { rows: pInfo } = await pool.query('SELECT numero_pedido FROM pedidos WHERE id = $1', [pedido_id])
+        const nPedido = pInfo[0]?.numero_pedido || pedido_id
+        global.sendPushToUser(conductor_id, {
+          title: 'VITREX SIGEP — Nueva Entrega',
+          body:  `Se te asignó la entrega del pedido #${nPedido}`,
+          url:   '/conductor'
+        })
+      } catch {}
+    }
     res.status(201).json(rows[0])
   } catch (err) {
     console.error('[ERROR crear entrega]', err.message)
@@ -157,6 +169,55 @@ router.put('/:id/entregar', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('[ERROR entregar]', err.message)
     res.status(500).json({ message: 'Error al registrar entrega' })
+  }
+})
+
+// PUT /api/entregas/:id/no-entregada — conductor reporta que no pudo entregar
+router.put('/:id/no-entregada', verifyToken, async (req, res) => {
+  const { razon } = req.body
+  if (!razon?.trim()) {
+    return res.status(400).json({ message: 'El motivo es requerido' })
+  }
+  try {
+    const { rows } = await pool.query(
+      `UPDATE entregas SET estado='incidencia', notas=$3
+       WHERE id=$1 AND conductor_id=$2 RETURNING pedido_id`,
+      [req.params.id, req.user.id, razon.trim()]
+    )
+    if (!rows.length) return res.status(404).json({ message: 'Entrega no encontrada o sin permiso' })
+    const pedidoId = rows[0].pedido_id
+    // Obtener número de pedido
+    const { rows: pRows } = await pool.query('SELECT numero_pedido FROM pedidos WHERE id = $1', [pedidoId])
+    const numeroPedido = pRows[0]?.numero_pedido || pedidoId
+    // WS a admins
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_entregas' })
+    // Notificación persistente + push a admins
+    try {
+      const conductorNombre = req.user.nombre || 'Conductor'
+      await pool.query(
+        `INSERT INTO notificaciones (tipo, mensaje, pedido_id, pedido_numero, creado_por, creado_por_nombre, para_roles)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        ['incidencia',
+         `⚠️ Incidencia: no se pudo entregar #${numeroPedido} — "${razon.trim()}" (${conductorNombre})`,
+         pedidoId, String(numeroPedido), req.user.id, conductorNombre, [1]]
+      )
+      if (global.sendPushToUser) {
+        const { rows: admins } = await pool.query('SELECT id FROM usuarios WHERE role_id=1 AND activo=true')
+        for (const admin of admins) {
+          global.sendPushToUser(admin.id, {
+            title: 'VITREX — Incidencia de Entrega',
+            body:  `No se pudo entregar pedido #${numeroPedido}: "${razon.trim()}"`,
+            url:   '/admin/pedidos'
+          })
+        }
+      }
+    } catch (notifErr) {
+      console.warn('[NOTIF incidencia]', notifErr.message)
+    }
+    res.json({ message: 'Incidencia registrada correctamente' })
+  } catch (err) {
+    console.error('[ERROR no-entregada]', err.message)
+    res.status(500).json({ message: 'Error al registrar incidencia' })
   }
 })
 

@@ -101,6 +101,44 @@ router.post('/movimiento', verifyToken, isAdmin, async (req, res) => {
     await client.query('COMMIT');
     client.release();
     if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
+
+    // ── Alerta de stock bajo (solo en movimientos que reducen stock) ──
+    if (tipo === 'uso' || tipo === 'ajuste') {
+      try {
+        const stockRow = await pool.query(
+          'SELECT stock_m2, stock_minimo_m2, tipo AS nombre, color FROM inventario_vidrio WHERE id = $1',
+          [inventario_id]
+        );
+        const mat = stockRow.rows[0];
+        if (mat && parseFloat(mat.stock_m2) <= parseFloat(mat.stock_minimo_m2)) {
+          const nombreMat = `${mat.nombre}${mat.color ? ' ' + mat.color : ''}`;
+          const stockActual = parseFloat(mat.stock_m2).toFixed(2);
+          const stockMin    = parseFloat(mat.stock_minimo_m2).toFixed(2);
+          await pool.query(
+            `INSERT INTO notificaciones (tipo, mensaje, para_roles, creado_por_nombre)
+             VALUES ($1, $2, $3, $4)`,
+            ['stock_bajo',
+             `⚠️ Stock bajo: ${nombreMat} — ${stockActual} m² disponible (mínimo: ${stockMin} m²)`,
+             [1], 'Sistema']
+          );
+          if (global.sendPushToUser) {
+            const { rows: admins } = await pool.query(
+              'SELECT id FROM usuarios WHERE role_id = 1 AND activo = true'
+            );
+            for (const admin of admins) {
+              global.sendPushToUser(admin.id, {
+                title: 'VITREX SIGEP — Stock Bajo',
+                body:  `${nombreMat}: ${stockActual} m² disponible`,
+                url:   '/admin/inventario'
+              });
+            }
+          }
+        }
+      } catch (alertErr) {
+        console.warn('[STOCK ALERT]', alertErr.message);
+      }
+    }
+
     res.json({ message: 'Movimiento registrado correctamente' });
   } catch (err) {
     await client.query('ROLLBACK');
