@@ -52,21 +52,10 @@
 
       <!-- ── Banner de bienvenida ── -->
       <div class="bg-white border-b border-gray-100 px-5 py-5 lg:px-8">
-        <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
-          <div>
-            <p class="text-xs text-gray-400 font-medium uppercase tracking-wider">Ventas · Glass Caribe</p>
-            <h1 class="font-serif text-xl font-bold text-gray-900 mt-0.5">{{ auth.user?.nombre?.split(' ')[0] }}, aquí están tus pedidos</h1>
-            <p class="text-xs text-gray-400 mt-0.5">{{ fechaHoy }}</p>
-          </div>
-          <!-- Botón Nuevo Pedido — visible en desktop/tablet -->
-          <button
-            @click="showCrear = true"
-            class="hidden sm:flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm flex-shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Nuevo Pedido
-          </button>
+        <div class="max-w-5xl mx-auto">
+          <p class="text-xs text-gray-400 font-medium uppercase tracking-wider">Ventas · Glass Caribe</p>
+          <h1 class="font-serif text-xl font-bold text-gray-900 mt-0.5">{{ auth.user?.nombre?.split(' ')[0] }}, aquí están tus pedidos</h1>
+          <p class="text-xs text-gray-400 mt-0.5">{{ fechaHoy }}</p>
         </div>
       </div>
 
@@ -143,10 +132,7 @@
               </svg>
             </div>
             <p class="text-sm font-semibold text-gray-500">Sin pedidos aquí</p>
-            <p class="text-xs text-gray-400">Crea un nuevo pedido para comenzar</p>
-            <button @click="showCrear = true" class="mt-1 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-colors">
-              + Nuevo Pedido
-            </button>
+            <p class="text-xs text-gray-400">El administrador creará los pedidos</p>
           </div>
 
           <div
@@ -301,128 +287,6 @@
       </div>
     </main>
 
-    <!-- FAB Nuevo Pedido — solo mobile -->
-    <button
-      @click="showCrear = true"
-      class="sm:hidden fixed bottom-6 right-5 z-30 w-14 h-14 bg-gray-900 hover:bg-gray-800 text-white rounded-full shadow-xl flex items-center justify-center transition-all active:scale-95"
-      aria-label="Nuevo Pedido"
-    >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-      </svg>
-    </button>
-
-    <!-- ── Modal crear pedido ── -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showCrear"
-          class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          @mousedown.self="showCrear = false">
-          <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[92vh]" @click.stop>
-            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-              <h2 class="font-bold text-gray-900">Nuevo Pedido</h2>
-              <button @click="showCrear = false" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-            <form @submit.prevent="crearPedido" class="p-5 space-y-4 overflow-y-auto">
-
-              <!-- Número + Fecha -->
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nº Pedido <span class="text-red-500">*</span></label>
-                  <input v-model="nuevoPedido.numero_pedido"
-                    class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400"
-                    placeholder="GC-2025-001" required />
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5">Fecha Entrega <span class="text-red-500">*</span></label>
-                  <input v-model="nuevoPedido.fecha_entrega" type="date"
-                    class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                    required />
-                </div>
-              </div>
-
-              <!-- Prioridad -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Prioridad</label>
-                <div class="flex gap-3">
-                  <label class="flex-1 flex items-center gap-2.5 border border-gray-200 rounded-xl px-4 py-2.5 cursor-pointer"
-                    :class="nuevoPedido.prioridad === 'normal' ? 'border-gray-900 bg-gray-50' : 'hover:bg-gray-50'">
-                    <input type="radio" v-model="nuevoPedido.prioridad" value="normal" class="accent-gray-900"/>
-                    <span class="text-sm font-medium text-gray-700">Normal</span>
-                  </label>
-                  <label class="flex-1 flex items-center gap-2.5 border border-orange-200 rounded-xl px-4 py-2.5 cursor-pointer"
-                    :class="nuevoPedido.prioridad === 'urgente' ? 'border-orange-500 bg-orange-50' : 'hover:bg-orange-50/50'">
-                    <input type="radio" v-model="nuevoPedido.prioridad" value="urgente" class="accent-orange-500"/>
-                    <span class="text-sm font-medium text-orange-700">Urgente</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Cliente -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Cliente <span class="text-gray-400 font-normal">(opcional)</span></label>
-                <input v-model="nuevoPedido.cliente_nombre"
-                  class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400"
-                  placeholder="Nombre del cliente"/>
-              </div>
-
-              <!-- Dirección -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Dirección de entrega <span class="text-gray-400 font-normal">(opcional)</span></label>
-                <input v-model="nuevoPedido.direccion_entrega"
-                  class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400"
-                  placeholder="Calle, colonia, ciudad..."/>
-              </div>
-
-              <!-- Medidas -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Medidas <span class="text-gray-400 font-normal">(metros)</span></label>
-                <div class="grid grid-cols-3 gap-3">
-                  <input v-model="nuevoPedido.alto" type="number" min="0" step="0.01"
-                    class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm placeholder-gray-400"
-                    placeholder="Alto (m)"/>
-                  <input v-model="nuevoPedido.ancho" type="number" min="0" step="0.01"
-                    class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm placeholder-gray-400"
-                    placeholder="Ancho (m)"/>
-                  <input v-model="nuevoPedido.cantidad" type="number" min="1"
-                    class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
-                    placeholder="Piezas"/>
-                </div>
-                <div v-if="m2Preview" class="mt-2 flex items-center gap-1.5 text-sm text-emerald-700 font-semibold">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                {{ m2Preview }} m² totales
-              </div>
-              </div>
-
-              <!-- Especificaciones -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Especificaciones <span class="text-gray-400 font-normal">(opcional)</span></label>
-                <textarea v-model="nuevoPedido.especificaciones" rows="2"
-                  class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm resize-none placeholder-gray-400"
-                  placeholder="Tipo de vidrio, color, acabado..."/>
-              </div>
-
-              <div v-if="crearError" class="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{{ crearError }}</div>
-              <div class="flex gap-2.5 pt-1">
-                <button type="button" @click="showCrear = false"
-                  class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 text-sm font-semibold transition-colors">
-                  Cancelar
-                </button>
-                <button type="submit" :disabled="creando"
-                  class="flex-1 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50">
-                  {{ creando ? 'Creando...' : 'Crear Pedido' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
     <!-- ── Modal detalle / chat ── -->
     <PedidoModal
       v-model="showModal"
@@ -552,30 +416,13 @@ function onClickOutside(e) {
     userMenuOpen.value = false
 }
 
-const showCrear          = ref(false)
 const showModal          = ref(false)
 const pedidoSeleccionado = ref(null)
-const creando            = ref(false)
-const crearError         = ref('')
 const filtroActivo       = ref('todos')
-const nuevoPedido        = ref({
-  numero_pedido: '', fecha_entrega: '',
-  cliente_nombre: '', direccion_entrega: '',
-  alto: '', ancho: '', cantidad: 1,
-  prioridad: 'normal', especificaciones: ''
-})
 const updating           = ref({})
 const expandidos         = reactive({})
 const notas              = reactive({})
 const guardandoNota      = reactive({})
-
-const m2Preview = computed(() => {
-  const a = parseFloat(nuevoPedido.value.alto)
-  const b = parseFloat(nuevoPedido.value.ancho)
-  const c = parseInt(nuevoPedido.value.cantidad) || 1
-  if (a > 0 && b > 0) return (a * b * c).toFixed(4)
-  return null
-})
 
 const filtrosRapidos = [
   { label: 'Todos',       value: 'todos'       },
@@ -624,27 +471,6 @@ async function guardarNota(p) {
     toast.add({ type: 'error', message: 'Error al guardar nota' })
   } finally {
     guardandoNota[p.id] = false
-  }
-}
-
-async function crearPedido() {
-  crearError.value = ''
-  creando.value    = true
-  try {
-    await pedidosStore.crearPedido(nuevoPedido.value)
-    showCrear.value   = false
-    toast.add({ type: 'success', message: 'Pedido creado' })
-    nuevoPedido.value = {
-      numero_pedido: '', fecha_entrega: '',
-      cliente_nombre: '', direccion_entrega: '',
-      alto: '', ancho: '', cantidad: 1,
-      prioridad: 'normal', especificaciones: ''
-    }
-    setTimeout(() => notifs.fetchFromDB(), 800)
-  } catch (e) {
-    crearError.value = e.response?.data?.message || 'Error al crear'
-  } finally {
-    creando.value = false
   }
 }
 

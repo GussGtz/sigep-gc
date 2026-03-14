@@ -88,11 +88,32 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
   }
 
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO entregas (pedido_id, conductor_id, estado)
-       VALUES ($1, $2, 'asignada') RETURNING *`,
-      [pedido_id, conductor_id]
+    // Si ya existe una incidencia para este pedido, reasignar en lugar de duplicar
+    const existing = await pool.query(
+      `SELECT id FROM entregas WHERE pedido_id=$1 AND estado='incidencia' ORDER BY id DESC LIMIT 1`,
+      [pedido_id]
     )
+
+    let savedRow
+    if (existing.rows.length) {
+      // Reasignación: actualizar el registro existente
+      const { rows } = await pool.query(
+        `UPDATE entregas
+         SET conductor_id=$1, estado='asignada', fecha_asignacion=NOW(), notas=NULL
+         WHERE id=$2 RETURNING *`,
+        [conductor_id, existing.rows[0].id]
+      )
+      savedRow = rows[0]
+    } else {
+      // Nueva asignación: insertar registro nuevo
+      const { rows } = await pool.query(
+        `INSERT INTO entregas (pedido_id, conductor_id, estado)
+         VALUES ($1, $2, 'asignada') RETURNING *`,
+        [pedido_id, conductor_id]
+      )
+      savedRow = rows[0]
+    }
+
     // Notificar a admins y al conductor específico para actualizar sus vistas
     if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_entregas' })
     if (global.sendToUser) global.sendToUser(conductor_id, { type: 'data_entregas' })
@@ -108,7 +129,7 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
         })
       } catch {}
     }
-    res.status(201).json(rows[0])
+    res.status(201).json(savedRow)
   } catch (err) {
     console.error('[ERROR crear entrega]', err.message)
     res.status(500).json({ message: 'Error al asignar entrega' })

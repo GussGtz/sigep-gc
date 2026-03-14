@@ -138,11 +138,16 @@
                 <span class="text-sm text-gray-600">{{ formatFecha(e.fecha_entrega || e.created_at) }}</span>
               </div>
               <!-- Estado -->
-              <div class="col-span-1">
+              <div class="col-span-1 flex items-center gap-2 flex-wrap">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold" :class="estadoClase(e.estado)">
                   <span class="w-1.5 h-1.5 rounded-full" :class="estadoDot(e.estado)"></span>
                   {{ estadoLabel(e.estado) }}
                 </span>
+                <button v-if="e.estado === 'incidencia'"
+                  @click.stop="abrirDetalle(e)"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 text-[11px] font-bold hover:bg-emerald-200 transition-colors">
+                  ↺ Reasignar
+                </button>
               </div>
               <!-- Acciones -->
               <div class="col-span-1 flex justify-end gap-1">
@@ -762,7 +767,13 @@ const pedidosFiltrados = computed(() => {
       .map(e => e.pedido_id)
   )
   const q = pedidoBusqueda.value.trim().toLowerCase()
-  let list = pedidosDisponibles.value.filter(p => !activosIds.has(p.id))
+  let list = pedidosDisponibles.value.filter(p => {
+    if (activosIds.has(p.id)) return false
+    // Solo permitir asignar si producción está completada
+    const prod = p.areas?.find(a => a.area === 'produccion')
+    if (!prod || prod.estatus !== 'completado') return false
+    return true
+  })
   if (q) {
     list = list.filter(p =>
       (p.numero_pedido   || '').toLowerCase().includes(q) ||
@@ -952,7 +963,8 @@ function cambiarEstado(e) {
 }
 
 async function iniciarReasignacion() {
-  const pedidoId = entregaSeleccionada.value?.pedido_id
+  const pedidoId    = entregaSeleccionada.value?.pedido_id
+  const conductorId = entregaSeleccionada.value?.conductor_id
   showDetalle.value = false
   nuevaEntrega.value = { pedido_id: '', numero_pedido: '', conductor_id: '', fecha_entrega: '' }
   pedidoSeleccionado.value = null
@@ -965,6 +977,8 @@ async function iniciarReasignacion() {
     const pedido = pedidosDisponibles.value.find(p => p.id === pedidoId)
     if (pedido) seleccionarPedido(pedido)
   }
+  // Pre-seleccionar el mismo conductor (el usuario puede cambiarlo si quiere asignar a otro)
+  if (conductorId) nuevaEntrega.value.conductor_id = conductorId
   showModal.value = true
 }
 
