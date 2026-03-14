@@ -273,7 +273,7 @@
         <div
           v-if="showModal"
           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
-          @mousedown.self="showModal = false"
+          @mousedown.self="cerrarModal"
         >
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
             <!-- Header modal -->
@@ -284,45 +284,215 @@
               </button>
             </div>
             <!-- Body modal -->
-            <form @submit.prevent="crearEntrega" class="p-6 space-y-4">
+            <form @submit.prevent="crearEntrega" class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+
+              <!-- ── Pedido: Smart Search Combobox ── -->
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Pedido</label>
-                <input
-                  v-model="nuevaEntrega.numero_pedido"
-                  placeholder="Número de pedido"
-                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
-                />
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Pedido
+                </label>
+                <div class="relative" ref="pedidoDropdownRef">
+                  <!-- Input -->
+                  <div class="relative">
+                    <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+                    </svg>
+                    <input
+                      v-model="pedidoBusqueda"
+                      @focus="showDropdownPedido = true"
+                      @blur="setTimeout(() => showDropdownPedido = false, 150)"
+                      @input="pedidoSeleccionado = null; nuevaEntrega.pedido_id = ''"
+                      :placeholder="pedidoSeleccionado ? '' : 'Buscar por #número, cliente o dirección…'"
+                      :readonly="!!pedidoSeleccionado"
+                      class="w-full pl-9 pr-9 py-3 text-sm border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                      :class="pedidoSeleccionado
+                        ? 'border-[#1B3A5C] bg-[#1B3A5C]/5 font-semibold text-[#1B3A5C] cursor-default'
+                        : 'border-gray-200 placeholder-gray-400'"
+                    />
+                    <!-- Spinner -->
+                    <div v-if="loadingPedidos && !pedidoSeleccionado"
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg class="w-4 h-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                    </div>
+                    <!-- Clear -->
+                    <button v-else-if="pedidoSeleccionado || pedidoBusqueda"
+                      type="button" @click="limpiarPedidoSeleccionado"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors">
+                      <svg class="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Dropdown results -->
+                  <Transition name="slide">
+                    <div v-if="showDropdownPedido && !pedidoSeleccionado"
+                      class="absolute z-30 top-full mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden">
+                      <!-- Header -->
+                      <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-gray-400">
+                          {{ pedidoBusqueda.trim() ? `${pedidosFiltrados.length} resultado(s)` : 'Pedidos recientes' }}
+                        </span>
+                        <span v-if="!pedidoBusqueda.trim()" class="text-xs text-gray-300">{{ pedidosDisponibles.length }} total</span>
+                      </div>
+                      <!-- Empty state -->
+                      <div v-if="pedidosFiltrados.length === 0" class="py-8 text-center">
+                        <svg class="w-8 h-8 text-gray-200 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-sm text-gray-400">Sin resultados</p>
+                        <p class="text-xs text-gray-300 mt-0.5">Prueba otro término</p>
+                      </div>
+                      <!-- List -->
+                      <div class="max-h-52 overflow-y-auto divide-y divide-gray-50">
+                        <div v-for="p in pedidosFiltrados" :key="p.id"
+                          @mousedown.prevent="seleccionarPedido(p)"
+                          class="flex items-start gap-3 px-4 py-3 hover:bg-[#1B3A5C]/5 cursor-pointer transition-colors group">
+                          <!-- Priority badge -->
+                          <span class="flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase"
+                            :class="{
+                              'bg-red-100 text-red-700':    p.prioridad === 'urgente',
+                              'bg-amber-100 text-amber-700': p.prioridad === 'alta',
+                              'bg-gray-100 text-gray-500':   !['urgente','alta'].includes(p.prioridad)
+                            }">
+                            {{ p.prioridad === 'urgente' ? '🔴 Urgente' : p.prioridad === 'alta' ? '🟡 Alta' : '⚪ Normal' }}
+                          </span>
+                          <!-- Info -->
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-0.5">
+                              <span class="text-sm font-bold text-gray-900">#{{ p.numero_pedido }}</span>
+                              <span class="text-xs text-gray-400">{{ formatFecha(p.fecha_entrega) }}</span>
+                              <span v-if="p.retrasado" class="text-[10px] font-bold text-red-500">⚠ Retrasado</span>
+                            </div>
+                            <p v-if="p.cliente_nombre" class="text-sm text-gray-700 truncate">{{ p.cliente_nombre }}</p>
+                            <p v-if="p.direccion_entrega" class="text-xs text-gray-400 truncate flex items-center gap-1 mt-0.5">
+                              <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                              </svg>
+                              {{ p.direccion_entrega }}
+                            </p>
+                          </div>
+                          <!-- Arrow -->
+                          <svg class="w-4 h-4 text-gray-200 group-hover:text-[#1B3A5C] flex-shrink-0 mt-1 transition-colors"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </Transition>
+                </div>
+
+                <!-- Selected pedido card -->
+                <Transition name="slide">
+                  <div v-if="pedidoSeleccionado"
+                    class="mt-2 p-3.5 bg-[#1B3A5C]/5 rounded-xl border border-[#1B3A5C]/20 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-[#1B3A5C] text-sm">#{{ pedidoSeleccionado.numero_pedido }}</span>
+                      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase"
+                        :class="{
+                          'bg-red-100 text-red-700': pedidoSeleccionado.prioridad === 'urgente',
+                          'bg-amber-100 text-amber-700': pedidoSeleccionado.prioridad === 'alta',
+                          'bg-gray-100 text-gray-500': !['urgente','alta'].includes(pedidoSeleccionado.prioridad)
+                        }">
+                        {{ pedidoSeleccionado.prioridad || 'normal' }}
+                      </span>
+                    </div>
+                    <p v-if="pedidoSeleccionado.cliente_nombre" class="text-sm text-gray-800 font-medium">
+                      {{ pedidoSeleccionado.cliente_nombre }}
+                    </p>
+                    <p v-if="pedidoSeleccionado.direccion_entrega" class="text-xs text-gray-500 flex items-center gap-1">
+                      <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                      {{ pedidoSeleccionado.direccion_entrega }}
+                    </p>
+                    <div v-if="pedidoSeleccionado.metros_cuadrados" class="text-xs text-gray-400">
+                      {{ pedidoSeleccionado.metros_cuadrados }} m²
+                      <template v-if="pedidoSeleccionado.alto && pedidoSeleccionado.ancho">
+                        · {{ pedidoSeleccionado.alto }}×{{ pedidoSeleccionado.ancho }} cm
+                      </template>
+                      <template v-if="pedidoSeleccionado.cantidad">
+                        · {{ pedidoSeleccionado.cantidad }} pieza(s)
+                      </template>
+                    </div>
+                  </div>
+                </Transition>
               </div>
+
+              <!-- ── Conductor: Visual card selector ── -->
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Conductor</label>
-                <select
-                  v-model="nuevaEntrega.conductor_id"
-                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10 text-gray-700"
-                >
-                  <option value="">Seleccionar conductor...</option>
-                  <option v-for="c in conductores" :key="c.id" :value="c.id">
-                    {{ c.nombre }}{{ c.en_turno ? ' ● En turno' : '' }}
-                  </option>
-                </select>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Conductor</label>
+                <div class="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+                  <div v-if="conductores.length === 0" class="py-4 text-center text-sm text-gray-400">
+                    Sin conductores registrados
+                  </div>
+                  <div v-for="c in conductores" :key="c.id"
+                    @click="nuevaEntrega.conductor_id = c.id"
+                    class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none"
+                    :class="nuevaEntrega.conductor_id === c.id
+                      ? 'border-[#1B3A5C] bg-[#1B3A5C]/5 ring-1 ring-[#1B3A5C]/20'
+                      : 'border-gray-100 hover:border-gray-300 hover:bg-gray-50'">
+                    <!-- Avatar -->
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ring-2"
+                      :class="c.en_turno ? 'bg-emerald-600 ring-emerald-200' : 'bg-gray-700 ring-transparent'">
+                      {{ iniciales(c.nombre) }}
+                    </div>
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <p class="text-sm font-semibold text-gray-900">{{ c.nombre }}</p>
+                        <span v-if="c.en_turno"
+                          class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                          <span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                          En turno
+                        </span>
+                      </div>
+                      <p class="text-xs text-gray-400 mt-0.5">
+                        {{ entregasDeConductor(c.id) }} entrega(s) asignada(s)
+                      </p>
+                    </div>
+                    <!-- Check -->
+                    <Transition name="fade">
+                      <div v-if="nuevaEntrega.conductor_id === c.id"
+                        class="w-5 h-5 rounded-full bg-[#1B3A5C] flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      </div>
+                    </Transition>
+                  </div>
+                </div>
               </div>
+
+              <!-- ── Fecha de entrega ── -->
               <div>
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha de entrega</label>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Fecha de entrega
+                  <span v-if="pedidoSeleccionado?.fecha_entrega"
+                    class="ml-1 normal-case font-normal text-[10px] text-[#1B3A5C]">(del pedido)</span>
+                </label>
                 <input
                   v-model="nuevaEntrega.fecha_entrega"
                   type="date"
-                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10 text-gray-700"
+                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 text-gray-700"
                 />
               </div>
-              <div v-if="modalError" class="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl">{{ modalError }}</div>
-              <div class="flex gap-3 pt-2">
-                <button
-                  type="button" @click="showModal = false"
-                  class="flex-1 py-3 text-sm font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-                >Cancelar</button>
-                <button
-                  type="submit" :disabled="guardando"
-                  class="flex-1 py-3 text-sm font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors"
-                >{{ guardando ? 'Guardando...' : 'Crear entrega' }}</button>
+
+              <div v-if="modalError" class="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl border border-red-100">{{ modalError }}</div>
+              <div class="flex gap-3 pt-1">
+                <button type="button" @click="cerrarModal"
+                  class="flex-1 py-3 text-sm font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" :disabled="guardando"
+                  class="flex-1 py-3 text-sm font-semibold text-white bg-[#1B3A5C] rounded-xl hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+                  {{ guardando ? 'Asignando…' : 'Asignar entrega' }}
+                </button>
               </div>
             </form>
           </div>
@@ -555,9 +725,32 @@ const guardando          = ref(false)
 const actualizando       = ref(false)
 const modalError         = ref('')
 const nuevaEntrega = ref({
+  pedido_id:     '',
   numero_pedido: '',
-  conductor_id: '',
+  conductor_id:  '',
   fecha_entrega: ''
+})
+
+// ── Smart search pedido ────────────────────────────────────────────────────
+const pedidoDropdownRef    = ref(null)
+const pedidosDisponibles   = ref([])
+const pedidoBusqueda       = ref('')
+const pedidoSeleccionado   = ref(null)
+const showDropdownPedido   = ref(false)
+const loadingPedidos       = ref(false)
+
+const pedidosFiltrados = computed(() => {
+  const q = pedidoBusqueda.value.trim().toLowerCase()
+  let list = pedidosDisponibles.value
+  if (q) {
+    list = list.filter(p =>
+      (p.numero_pedido   || '').toLowerCase().includes(q) ||
+      (p.cliente_nombre  || '').toLowerCase().includes(q) ||
+      (p.direccion_entrega || '').toLowerCase().includes(q) ||
+      (p.prioridad       || '').toLowerCase().includes(q)
+    )
+  }
+  return list.slice(0, 8) // Máximo 8 resultados
 })
 
 const estadosOpciones = [
@@ -673,11 +866,56 @@ async function fetchConductores() {
   }
 }
 
+/* ── Pedido smart search ── */
+async function fetchPedidos() {
+  loadingPedidos.value = true
+  try {
+    const { data } = await axios.get('/api/pedidos')
+    // Ordenar por fecha_creacion desc (ya vienen así del backend), tomar los primeros 80
+    pedidosDisponibles.value = Array.isArray(data) ? data.slice(0, 80) : []
+  } catch {
+    pedidosDisponibles.value = []
+  } finally {
+    loadingPedidos.value = false
+  }
+}
+
+function seleccionarPedido(p) {
+  pedidoSeleccionado.value  = p
+  pedidoBusqueda.value      = `#${p.numero_pedido}${p.cliente_nombre ? ' — ' + p.cliente_nombre : ''}`
+  showDropdownPedido.value  = false
+  nuevaEntrega.value.pedido_id     = p.id
+  nuevaEntrega.value.numero_pedido = p.numero_pedido
+  // Autofill fecha si el pedido la tiene y aún no se llenó
+  if (p.fecha_entrega) nuevaEntrega.value.fecha_entrega = p.fecha_entrega
+}
+
+function limpiarPedidoSeleccionado() {
+  pedidoSeleccionado.value         = null
+  pedidoBusqueda.value             = ''
+  showDropdownPedido.value         = true
+  nuevaEntrega.value.pedido_id     = ''
+  nuevaEntrega.value.numero_pedido = ''
+  nuevaEntrega.value.fecha_entrega = ''
+}
+
+function cerrarModal() {
+  showModal.value          = false
+  pedidoSeleccionado.value = null
+  pedidoBusqueda.value     = ''
+  showDropdownPedido.value = false
+  modalError.value         = ''
+}
+
 /* ── Acciones ── */
 function abrirModalNuevo() {
-  nuevaEntrega.value = { numero_pedido: '', conductor_id: '', fecha_entrega: '' }
-  modalError.value = ''
-  showModal.value = true
+  nuevaEntrega.value = { pedido_id: '', numero_pedido: '', conductor_id: '', fecha_entrega: '' }
+  pedidoSeleccionado.value = null
+  pedidoBusqueda.value     = ''
+  showDropdownPedido.value = false
+  modalError.value         = ''
+  showModal.value          = true
+  fetchPedidos()
 }
 async function abrirDetalle(e) {
   entregaSeleccionada.value = { ...e }
@@ -694,14 +932,26 @@ function cambiarEstado(e) {
 
 async function crearEntrega() {
   modalError.value = ''
+  if (!nuevaEntrega.value.pedido_id) {
+    modalError.value = 'Selecciona un pedido de la lista'
+    return
+  }
+  if (!nuevaEntrega.value.conductor_id) {
+    modalError.value = 'Selecciona un conductor'
+    return
+  }
   guardando.value = true
   try {
-    await axios.post('/api/entregas', nuevaEntrega.value)
-    toast.add?.({ type: 'success', message: 'Entrega creada correctamente' })
-    showModal.value = false
+    await axios.post('/api/entregas', {
+      pedido_id:     nuevaEntrega.value.pedido_id,
+      conductor_id:  nuevaEntrega.value.conductor_id,
+      fecha_entrega: nuevaEntrega.value.fecha_entrega || null
+    })
+    toast.add?.({ type: 'success', title: 'Entrega asignada', message: `Pedido #${nuevaEntrega.value.numero_pedido} asignado correctamente` })
+    cerrarModal()
     await fetchEntregas()
   } catch (e) {
-    modalError.value = e.response?.data?.message || 'Error al crear entrega'
+    modalError.value = e.response?.data?.message || 'Error al asignar entrega'
   } finally {
     guardando.value = false
   }
