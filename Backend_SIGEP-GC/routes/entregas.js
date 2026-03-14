@@ -93,6 +93,9 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
        VALUES ($1, $2, 'asignada') RETURNING *`,
       [pedido_id, conductor_id]
     )
+    // Notificar a admins y al conductor específico para actualizar sus vistas
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_entregas' })
+    if (global.sendToUser) global.sendToUser(conductor_id, { type: 'data_entregas' })
     res.status(201).json(rows[0])
   } catch (err) {
     console.error('[ERROR crear entrega]', err.message)
@@ -113,6 +116,7 @@ router.patch('/:id/estado', verifyToken, isAdmin, async (req, res) => {
       [estado, req.params.id]
     )
     if (!rows.length) return res.status(404).json({ message: 'Entrega no encontrada' })
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_entregas' })
     res.json(rows[0])
   } catch (err) {
     console.error('[ERROR patch estado]', err.message)
@@ -129,6 +133,7 @@ router.put('/:id/iniciar', verifyToken, async (req, res) => {
       [req.params.id, req.user.id]
     )
     if (!rows.length) return res.status(404).json({ message: 'Entrega no encontrada o sin permiso' })
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_entregas' })
     res.json(rows[0])
   } catch (err) {
     res.status(500).json({ message: 'Error al iniciar entrega' })
@@ -147,6 +152,7 @@ router.put('/:id/entregar', verifyToken, async (req, res) => {
       [req.params.id, req.user.id, evidencia_url || null, firma_url || null, notas || null, foto_base64 || null]
     )
     if (!rows.length) return res.status(404).json({ message: 'Entrega no encontrada o sin permiso' })
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_entregas' })
     res.json(rows[0])
   } catch (err) {
     console.error('[ERROR entregar]', err.message)
@@ -159,6 +165,7 @@ router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM entregas WHERE id=$1', [req.params.id])
     if (result.rowCount === 0) return res.status(404).json({ message: 'Entrega no encontrada' })
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_entregas' })
     res.json({ message: 'Entrega eliminada correctamente' })
   } catch (err) {
     console.error('[ERROR delete entrega]', err.message)

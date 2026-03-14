@@ -63,13 +63,31 @@ import { useNotificationsStore } from './stores/notifications.js'
 import { useWebSocketStore }     from './stores/websocket.js'
 import { useChatStore }          from './stores/chat.js'
 import { useGpsStore }           from './stores/gps.js'
+import { usePedidosStore }       from './stores/pedidos.js'
+import { useInventarioStore }    from './stores/inventario.js'
 import { initPushNotifications } from './utils/pushNotifications.js'
 
-const auth    = useAuthStore()
-const notifs  = useNotificationsStore()
-const wsStore = useWebSocketStore()
-const chat    = useChatStore()
-const gps     = useGpsStore()
+const auth          = useAuthStore()
+const notifs        = useNotificationsStore()
+const wsStore       = useWebSocketStore()
+const chat          = useChatStore()
+const gps           = useGpsStore()
+const pedidosStore  = usePedidosStore()
+const inventarioStore = useInventarioStore()
+
+// ── Debounce: evita múltiples re-fetch si llegan señales en ráfaga ──
+function debounce(fn, delay) {
+  let timer = null
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay) }
+}
+const debouncedFetchPedidos    = debounce(() => {
+  // Conductores (role 3) no usan el store de pedidos
+  if (auth.user?.role_id !== 3) pedidosStore.fetchPedidos()
+}, 400)
+const debouncedFetchInventario = debounce(() => {
+  // Solo admins gestionan el inventario
+  if (auth.user?.role_id === 1) inventarioStore.fetchMateriales()
+}, 400)
 
 // Iniciar polling de notificaciones cuando el usuario esté autenticado
 onMounted(() => {
@@ -96,6 +114,10 @@ watch(() => auth.token, (token) => {
     wsStore.on('chat_message',    chat.recibirMensaje)
     wsStore.on('chat_sent',       chat.confirmarEnviado)
     wsStore.on('location_update', gps.recibirUbicacion)
+    // ── Actualización en tiempo real: cualquier mutación del servidor
+    //    emite un mensaje de invalidación → el frontend re-fetcha ──
+    wsStore.on('data_pedidos',    debouncedFetchPedidos)
+    wsStore.on('data_inventario', debouncedFetchInventario)
     chat.fetchContactos()
     // Inicializar push notifications con un pequeño delay (esperar SW ready)
     setTimeout(() => initPushNotifications().catch(console.warn), 2000)

@@ -416,12 +416,20 @@ async function fetchEntregas() {
 }
 
 // ── Montar: restaurar estado desde DB ────────────────────────────────────
-onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
+onUnmounted(() => {
+  document.removeEventListener('mousedown', onClickOutside)
+  // Desregistrar handler de tiempo real al salir de la vista
+  wsStore.off('data_entregas')
+})
 
 onMounted(async () => {
   document.addEventListener('mousedown', onClickOutside)
   // enRuta viene del perfil del usuario (auth.user.en_turno se llena desde /me en el router guard)
   enRuta.value = auth.user?.en_turno === true
+
+  // ── Tiempo real: cuando el admin asigne/modifique una entrega,
+  //    el servidor emite data_entregas y el dashboard se actualiza automáticamente ──
+  wsStore.on('data_entregas', fetchEntregas)
 
   await fetchEntregas()
 

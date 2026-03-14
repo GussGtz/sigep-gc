@@ -100,6 +100,7 @@ router.post('/movimiento', verifyToken, isAdmin, async (req, res) => {
 
     await client.query('COMMIT');
     client.release();
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
     res.json({ message: 'Movimiento registrado correctamente' });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -151,6 +152,7 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
        RETURNING id`,
       [tipo, color || null, espesor_mm || null, parseFloat(stock_m2), parseFloat(stock_minimo_m2), parseFloat(precio_m2)]
     );
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
     res.status(201).json({ message: 'Material creado correctamente', id: result.rows[0].id });
   } catch (err) {
     console.error('[ERROR inventario POST]', err.message);
@@ -180,6 +182,7 @@ router.put('/:id', verifyToken, isAdmin, async (req, res) => {
       [tipo || null, color || null, espesor_mm || null, stock_minimo_m2 != null ? parseFloat(stock_minimo_m2) : null, precio_m2 != null ? parseFloat(precio_m2) : null, id]
     );
     if (result.rowCount === 0) return res.status(404).json({ message: 'Material no encontrado' });
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
     res.json({ message: 'Material actualizado correctamente' });
   } catch (err) {
     console.error('[ERROR inventario PUT]', err.message);
@@ -200,6 +203,7 @@ router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
     }
     const result = await pool.query('DELETE FROM inventario_vidrio WHERE id = $1', [id]);
     if (result.rowCount === 0) return res.status(404).json({ message: 'Material no encontrado' });
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
     res.json({ message: 'Material eliminado correctamente' });
   } catch (err) {
     console.error('[ERROR inventario DELETE]', err.message);

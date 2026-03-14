@@ -159,6 +159,11 @@ const crearPedido = async (req, res) => {
       paraRoles: [1, 2, 3]
     });
 
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
+    // Si se descontó stock, notificar también al inventario
+    if (inventarioId && metros_cuadrados > 0 && global.broadcastToAdmins) {
+      global.broadcastToAdmins({ type: 'data_inventario' });
+    }
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -393,6 +398,7 @@ const actualizarEstatus = async (req, res) => {
       paraRoles: [1, 2, 3]
     });
 
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
     res.json({ message: `Estatus actualizado para ${area} correctamente.` });
   } catch (err) {
     console.error('[ERROR actualizarEstatus]', err.message);
@@ -416,6 +422,7 @@ const eliminarPedido = async (req, res) => {
       return res.status(404).json({ message: 'Pedido no encontrado' });
     }
 
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
     res.json({ message: 'Pedido eliminado correctamente' });
   } catch (err) {
     console.error('[ERROR eliminarPedido]', err.message);
@@ -444,6 +451,7 @@ const registrarMerma = async (req, res) => {
       return res.status(404).json({ message: 'Pedido no encontrado' });
     }
 
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
     res.json({ message: 'Merma registrada correctamente' });
   } catch (err) {
     console.error('[ERROR registrarMerma]', err.message);
@@ -480,6 +488,7 @@ const eliminarPedidosCompletados = async (req, res) => {
     await client.query('COMMIT');
 
     client.release();
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
     res.json({ message: `${ids.length} pedidos completados eliminados correctamente.` });
   } catch (err) {
     await client.query('ROLLBACK');

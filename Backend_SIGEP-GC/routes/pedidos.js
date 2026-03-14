@@ -95,6 +95,11 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
     }
   }
 
+  // Broadcast WS para actualizar vistas en tiempo real
+  if (resultado.creados > 0 && global.broadcastToAll) {
+    global.broadcastToAll({ type: 'data_pedidos' });
+  }
+
   // Notificación resumen si se crearon pedidos
   if (resultado.creados > 0 && global.sendPushToUser) {
     try {

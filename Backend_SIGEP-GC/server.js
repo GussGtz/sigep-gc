@@ -79,6 +79,30 @@ function broadcastToAdmins(data) {
   }
 }
 
+function broadcastToAll(data) {
+  const payload = JSON.stringify(data);
+  for (const [, sockets] of clients) {
+    for (const ws of sockets) {
+      if (ws.readyState === 1) ws.send(payload);
+    }
+  }
+}
+
+function broadcastToRole(roleId, data) {
+  const payload = JSON.stringify(data);
+  for (const [, sockets] of clients) {
+    for (const ws of sockets) {
+      if (ws._roleId === roleId && ws.readyState === 1) ws.send(payload);
+    }
+  }
+}
+
+// ── Exponer globalmente para que routes/controllers puedan emitir eventos WS ──
+global.broadcastToAdmins = broadcastToAdmins;
+global.broadcastToAll    = broadcastToAll;
+global.broadcastToRole   = broadcastToRole;
+global.sendToUser        = sendToUser;
+
 // ═══════════════════════════════════════
 // Auto-crear tablas nuevas al arrancar
 // ═══════════════════════════════════════

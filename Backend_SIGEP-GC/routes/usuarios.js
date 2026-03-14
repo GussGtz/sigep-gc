@@ -30,6 +30,8 @@ router.patch('/turno/toggle', verifyToken, async (req, res) => {
       [req.user.id]
     );
     if (!rows.length) return res.status(404).json({ message: 'Usuario no encontrado' });
+    // Notificar a los admins para que actualicen la vista de conductores
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_usuarios' });
     res.json({ en_turno: rows[0].en_turno });
   } catch (err) {
     res.status(500).json({ message: 'Error al cambiar estado de turno', error: err.message });
