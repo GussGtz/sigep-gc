@@ -1,9 +1,55 @@
 <template>
   <div class="min-h-screen bg-[#F8F8F6]">
 
-    <AdminNavBar />
+    <!-- ── Header fijo ── -->
+    <header class="fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06] flex items-center px-4 gap-3 shadow-soft">
+      <div class="flex items-center gap-2 flex-1">
+        <svg class="w-7 h-7" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="7" fill="#1B3A5C"/>
+          <path stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+            d="M8 20v-2a4 4 0 014-4h0a4 4 0 014 4v2M14 14V9M11 11l3-3 3 3"/>
+        </svg>
+        <span class="font-serif font-bold text-gray-900 text-sm">Producción</span>
+      </div>
+      <!-- User avatar dropdown -->
+      <div class="relative" ref="userMenuRef">
+        <button @click="userMenuOpen = !userMenuOpen"
+          class="w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          {{ initials }}
+        </button>
+        <Transition name="slide">
+          <div v-if="userMenuOpen"
+            class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-2xl shadow-float overflow-hidden z-50">
+            <router-link to="/chat" @click="userMenuOpen = false"
+              class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Chat del equipo
+            </router-link>
+            <button @click="showCambiarPass = true; userMenuOpen = false"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              Cambiar contraseña
+            </button>
+            <div class="border-t border-gray-100 my-1"></div>
+            <button @click="cerrarSesion"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+              Cerrar sesión
+            </button>
+          </div>
+        </Transition>
+      </div>
+    </header>
 
-    <main class="pt-14 lg:pt-0 lg:ml-60 page-enter">
+    <main class="pt-14 page-enter">
 
       <!-- ── Banner de bienvenida ── -->
       <div class="bg-white border-b border-gray-100 px-5 py-5 lg:px-8">
@@ -273,12 +319,61 @@
       :pedido="pedidoSeleccionado"
       @updated="pedidosStore.fetchPedidos()"
     />
+
+    <!-- ── Modal cambiar contraseña ── -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showCambiarPass"
+          class="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          @click.self="cerrarCambiarPass">
+          <div class="bg-white rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4" @click.stop>
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-gray-900">Cambiar contraseña</h3>
+              <button @click="cerrarCambiarPass"
+                class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Contraseña actual</label>
+                <input v-model="passActual" type="password" autocomplete="current-password"
+                  placeholder="••••••••"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                  @keyup.enter="guardarPassword"/>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
+                <input v-model="passNueva" type="password" autocomplete="new-password"
+                  placeholder="Mínimo 6 caracteres"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                  @keyup.enter="guardarPassword"/>
+              </div>
+              <p v-if="passError" class="text-xs text-red-500 font-medium">{{ passError }}</p>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button @click="cerrarCambiarPass"
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button @click="guardarPassword" :disabled="guardandoPass"
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1B3A5C] hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+                {{ guardandoPass ? 'Guardando…' : 'Cambiar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted, inject } from 'vue'
-import AdminNavBar  from '../../components/admin/AdminNavBar.vue'
+import { ref, computed, reactive, onMounted, onUnmounted, inject } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
 import StatusBadge  from '../../components/shared/StatusBadge.vue'
 import PedidoModal  from '../../components/shared/PedidoModal.vue'
 import { useAuthStore }          from '../../stores/auth.js'
@@ -289,8 +384,63 @@ const auth         = useAuthStore()
 const pedidosStore = usePedidosStore()
 const notifs       = useNotificationsStore()
 const toast        = inject('toast', { add: () => {} })
+const router       = useRouter()
 
 const fechaHoy = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
+
+// ── Avatar dropdown ──
+const userMenuRef  = ref(null)
+const userMenuOpen = ref(false)
+
+// ── Cambiar contraseña ──
+const showCambiarPass = ref(false)
+const passActual      = ref('')
+const passNueva       = ref('')
+const passError       = ref('')
+const guardandoPass   = ref(false)
+
+const initials = computed(() =>
+  (auth.user?.nombre || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+)
+
+function cerrarCambiarPass() {
+  showCambiarPass.value = false
+  passActual.value = ''
+  passNueva.value  = ''
+  passError.value  = ''
+}
+
+async function guardarPassword() {
+  passError.value = ''
+  if (!passActual.value || !passNueva.value)
+    return (passError.value = 'Completa ambos campos')
+  if (passNueva.value.length < 6)
+    return (passError.value = 'La nueva contraseña debe tener mínimo 6 caracteres')
+  guardandoPass.value = true
+  try {
+    await axios.patch('/api/auth/cambiar-password', {
+      password_actual: passActual.value,
+      nueva_password:  passNueva.value,
+    })
+    cerrarCambiarPass()
+    toast.add({ type: 'success', title: '¡Listo!', message: 'Contraseña actualizada correctamente.' })
+  } catch (err) {
+    passError.value = err.response?.data?.message || 'Error al cambiar contraseña'
+  } finally {
+    guardandoPass.value = false
+  }
+}
+
+async function cerrarSesion() {
+  userMenuOpen.value = false
+  await auth.logout()
+  router.push('/')
+}
+
+function onClickOutside(e) {
+  if (userMenuRef.value && !userMenuRef.value.contains(e.target))
+    userMenuOpen.value = false
+}
 
 const filtroActivo       = ref('todos')
 const showModal          = ref(false)
@@ -397,7 +547,10 @@ async function guardarMerma(p) {
 onMounted(() => {
   pedidosStore.fetchPedidos()
   notifs.startPolling()
+  document.addEventListener('mousedown', onClickOutside)
 })
+
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 </script>
 
 <style scoped>

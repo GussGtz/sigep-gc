@@ -3,12 +3,12 @@
   <!-- ══════════════════════════════════════════
        CONDUCTOR: Layout móvil a pantalla completa
   ══════════════════════════════════════════ -->
-  <div v-if="esConductor" class="flex flex-col h-screen bg-[#F8F8F6]">
+  <div v-if="usaMobileLayout" class="flex flex-col h-screen bg-[#F8F8F6]">
 
     <!-- Mobile header -->
     <header class="fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06] flex items-center px-4 gap-3 shadow-soft">
       <button
-        @click="contactoActivo ? (contactoActivo = null) : router.push('/conductor')"
+        @click="volverAtras()"
         class="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -143,7 +143,7 @@
   </div>
 
   <!-- ══════════════════════════════════════════
-       ADMIN / COLABORADOR: Layout desktop
+       ADMIN: Layout desktop
   ══════════════════════════════════════════ -->
   <div v-else class="flex flex-col h-screen bg-[#F8F8F6]">
 
@@ -337,7 +337,21 @@ const auth    = useAuthStore()
 const chat    = useChatStore()
 const wsStore = useWebSocketStore()
 
-const esConductor = computed(() => auth.user?.role_id === 3)
+const usaMobileLayout = computed(() => auth.user?.role_id === 2 || auth.user?.role_id === 3)
+
+function volverAtras() {
+  if (contactoActivo.value) {
+    contactoActivo.value = null
+  } else if (auth.user?.role_id === 3) {
+    router.push('/conductor')
+  } else if (auth.user?.departamento === 'ventas') {
+    router.push('/ventas')
+  } else if (auth.user?.departamento === 'produccion') {
+    router.push('/produccion')
+  } else {
+    router.push('/')
+  }
+}
 
 const busqueda          = ref('')
 const texto             = ref('')
