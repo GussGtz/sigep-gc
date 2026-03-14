@@ -53,6 +53,43 @@ export const useGpsStore = defineStore('gps', () => {
   let _pedidoId        = null        // pedido en curso (puede ser null)
   let _retryTimeout    = null        // timeout de reintento tras error
 
+  // ── Wake Lock: mantiene la pantalla encendida mientras el GPS está activo ──
+  // Sin Wake Lock, Android suspende JS al apagarse la pantalla y el GPS se detiene.
+  let _wakeLock        = null
+
+  async function _requestWakeLock() {
+    if (!('wakeLock' in navigator)) return
+    try {
+      _wakeLock = await navigator.wakeLock.request('screen')
+      _wakeLock.addEventListener('release', () => {
+        _wakeLock = null
+        // Si el GPS sigue activo, re-solicitar cuando la pantalla vuelva a estar visible
+      })
+    } catch (err) {
+      // Puede fallar si la pantalla ya está apagada o el navegador no lo permite
+      console.warn('[GPS] Wake Lock no disponible:', err.message)
+    }
+  }
+
+  function _releaseWakeLock() {
+    if (_wakeLock) {
+      _wakeLock.release().catch(() => {})
+      _wakeLock = null
+    }
+  }
+
+  // ── Visibility change: reiniciar watchPosition cuando la app vuelve al frente ──
+  // Chrome Android pausa JS en background; al volver al frente el watchPosition
+  // puede quedar zombi → limpiarlo y crear uno nuevo garantiza señal fresca.
+  function _handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && trackingActive.value && _wsStore) {
+      // Reactivar GPS (puede haber quedado parado tras suspensión)
+      startTracking(_wsStore, _pedidoId)
+      // Re-solicitar Wake Lock (puede haberse liberado al bloquear la pantalla)
+      _requestWakeLock()
+    }
+  }
+
   const isTracking = computed(() => trackingActive.value)
 
   /**
@@ -78,6 +115,13 @@ export const useGpsStore = defineStore('gps', () => {
       navigator.geolocation.clearWatch(watchId.value)
       watchId.value = null
     }
+
+    // ── Activar Wake Lock: pantalla encendida → JS sigue corriendo ──
+    _requestWakeLock()
+
+    // ── Listener de visibilidad: reiniciar GPS cuando la app vuelve al frente ──
+    document.removeEventListener('visibilitychange', _handleVisibilityChange)
+    document.addEventListener('visibilitychange', _handleVisibilityChange)
 
     watchId.value = navigator.geolocation.watchPosition(
       ({ coords }) => {
@@ -132,6 +176,10 @@ export const useGpsStore = defineStore('gps', () => {
       navigator.geolocation.clearWatch(watchId.value)
       watchId.value = null
     }
+    // ── Liberar Wake Lock y listener de visibilidad ──
+    _releaseWakeLock()
+    document.removeEventListener('visibilitychange', _handleVisibilityChange)
+
     trackingActive.value = false
     _wsStore  = null
     _pedidoId = null

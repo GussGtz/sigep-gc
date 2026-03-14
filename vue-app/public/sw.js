@@ -1,18 +1,22 @@
 /* ═══════════════════════════════════════════════════════════
-   VITREX SIGEP — Service Worker
-   Responsabilidad: gestionar Push Notifications (PWA)
+   VITREX SIGEP — Service Worker v2
+   Responsabilidad:
+     1. Push Notifications — mostrar notificaciones nativas
+     2. GPS Reminder — notificación persistente con botón "Abrir GPS"
    ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'vitrex-sw-v1'
+const CACHE_NAME = 'vitrex-sw-v2'
 
 // Activar inmediatamente sin esperar a que las páginas se recarguen
-self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('install',  () => self.skipWaiting())
 self.addEventListener('activate', e => e.waitUntil(clients.claim()))
 
-// ── Push Event — mostrar notificación nativa ──────────────────
+// ── Push Event — mostrar notificación nativa ──────────────────────────────
 self.addEventListener('push', e => {
   let data = {}
   try { data = e.data?.json() ?? {} } catch {}
+
+  const isGpsReminder = data.tag === 'gps-reminder'
 
   const title   = data.title || 'VITREX SIGEP'
   const options = {
@@ -22,13 +26,21 @@ self.addEventListener('push', e => {
     tag:      data.tag   || 'vitrex-notif',
     renotify: true,
     vibrate:  [200, 100, 200],
-    data:     { url: data.url || '/' }
+    data:     { url: data.url || '/' },
+
+    // GPS Reminder: no desaparece automáticamente + botón de acción
+    ...(isGpsReminder ? {
+      requireInteraction: true,
+      actions: [
+        { action: 'open-gps', title: '📍 Abrir app' }
+      ]
+    } : {})
   }
 
   e.waitUntil(self.registration.showNotification(title, options))
 })
 
-// ── Notification Click — abrir / enfocar la app ──────────────
+// ── Notification Click — abrir / enfocar la app ───────────────────────────
 self.addEventListener('notificationclick', e => {
   e.notification.close()
 
@@ -38,7 +50,7 @@ self.addEventListener('notificationclick', e => {
     clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then(list => {
-        // Si ya hay una ventana abierta de la app, enfocarla y navegar
+        // Si ya hay una ventana abierta, enfocarla y navegar a la ruta
         for (const client of list) {
           if ('focus' in client) {
             client.focus()
@@ -50,4 +62,10 @@ self.addEventListener('notificationclick', e => {
         if (clients.openWindow) return clients.openWindow(targetUrl)
       })
   )
+})
+
+// ── Message — recibir mensajes de la página ───────────────────────────────
+// Útil para que la página le diga al SW el token JWT (para futuras acciones)
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })

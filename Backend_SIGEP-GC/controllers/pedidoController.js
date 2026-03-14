@@ -11,14 +11,15 @@ async function crearNotificacion({ tipo, mensaje, pedidoId, pedidoNumero, creado
       [tipo, mensaje, pedidoId || null, pedidoNumero || null, creadoPor || null, creadoPorNombre || null, paraRoles]
     );
 
-    // ── Push notification a admins (cuando la app está cerrada / en background) ──
+    // ── Push notification a TODOS los usuarios activos (app cerrada / background) ──
     if (global.sendPushToUser) {
-      const url = pedidoId ? '/admin/pedidos' : '/';
-      const { rows: admins } = await pool.query(
-        'SELECT id FROM usuarios WHERE role_id = 1 AND activo = true'
+      const { rows: usuarios } = await pool.query(
+        'SELECT id, role_id FROM usuarios WHERE activo = true'
       );
-      for (const admin of admins) {
-        global.sendPushToUser(admin.id, {
+      for (const u of usuarios) {
+        // Los conductores van a /conductor; admins/colaboradores a /admin/pedidos
+        const url = u.role_id === 3 ? '/conductor' : (pedidoId ? '/admin/pedidos' : '/');
+        global.sendPushToUser(u.id, {
           title: 'VITREX SIGEP',
           body:  mensaje,
           url
