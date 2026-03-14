@@ -553,6 +553,21 @@
                 />
               </div>
 
+              <!-- Motivo de incidencia + Reasignar -->
+              <div v-if="entregaSeleccionada.estado === 'incidencia'" class="p-4 bg-red-50 rounded-xl border border-red-100 space-y-2">
+                <p class="text-xs font-semibold text-red-600 uppercase tracking-wider">Motivo de incidencia</p>
+                <p class="text-sm text-red-700">{{ entregaSeleccionada.notas || 'Sin motivo especificado' }}</p>
+                <button
+                  @click="iniciarReasignacion"
+                  class="mt-1 w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  Reasignar a otro conductor
+                </button>
+              </div>
+
               <!-- Cambiar estado -->
               <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actualizar estado</label>
@@ -740,8 +755,14 @@ const showDropdownPedido   = ref(false)
 const loadingPedidos       = ref(false)
 
 const pedidosFiltrados = computed(() => {
+  // Excluir pedidos que ya tienen entrega activa (asignada o en_camino)
+  const activosIds = new Set(
+    entregas.value
+      .filter(e => ['asignada', 'en_camino'].includes(e.estado))
+      .map(e => e.pedido_id)
+  )
   const q = pedidoBusqueda.value.trim().toLowerCase()
-  let list = pedidosDisponibles.value
+  let list = pedidosDisponibles.value.filter(p => !activosIds.has(p.id))
   if (q) {
     list = list.filter(p =>
       (p.numero_pedido   || '').toLowerCase().includes(q) ||
@@ -750,7 +771,7 @@ const pedidosFiltrados = computed(() => {
       (p.prioridad       || '').toLowerCase().includes(q)
     )
   }
-  return list.slice(0, 8) // Máximo 8 resultados
+  return list.slice(0, 8)
 })
 
 const estadosOpciones = [
@@ -928,6 +949,23 @@ async function abrirDetalle(e) {
 }
 function cambiarEstado(e) {
   abrirDetalle(e)
+}
+
+async function iniciarReasignacion() {
+  const pedidoId = entregaSeleccionada.value?.pedido_id
+  showDetalle.value = false
+  nuevaEntrega.value = { pedido_id: '', numero_pedido: '', conductor_id: '', fecha_entrega: '' }
+  pedidoSeleccionado.value = null
+  pedidoBusqueda.value = ''
+  showDropdownPedido.value = false
+  modalError.value = ''
+  await fetchPedidos()
+  // Pre-seleccionar el pedido de la incidencia (no está bloqueado porque es incidencia, no asignada/en_camino)
+  if (pedidoId) {
+    const pedido = pedidosDisponibles.value.find(p => p.id === pedidoId)
+    if (pedido) seleccionarPedido(pedido)
+  }
+  showModal.value = true
 }
 
 async function crearEntrega() {
