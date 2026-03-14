@@ -93,7 +93,7 @@
                   </td>
                   <td class="px-5 py-3 text-right text-gray-500">{{ m.stock_minimo_m2?.toFixed(2) || '0.00' }}</td>
                   <td class="px-5 py-3 text-right text-gray-600">
-                    {{ m.precio_m2 ? '$' + m.precio_m2.toFixed(2) : '—' }}
+                    {{ m.precio_m2 > 0 ? '$' + Number(m.precio_m2).toFixed(2) : '—' }}
                   </td>
                   <td class="px-5 py-3 text-right">
                     <div class="flex items-center justify-end gap-2">

@@ -27,7 +27,14 @@ export const useInventarioStore = defineStore('inventario', () => {
     error.value   = null
     try {
       const { data } = await axios.get(`${API}/inventario`)
-      materiales.value = data
+      // pg devuelve DECIMAL/NUMERIC como strings → convertir a number
+      materiales.value = data.map(m => ({
+        ...m,
+        stock_m2:        m.stock_m2        != null ? parseFloat(m.stock_m2)        : 0,
+        stock_minimo_m2: m.stock_minimo_m2 != null ? parseFloat(m.stock_minimo_m2) : 0,
+        precio_m2:       m.precio_m2       != null ? parseFloat(m.precio_m2)       : null,
+        espesor_mm:      m.espesor_mm      != null ? parseFloat(m.espesor_mm)      : null,
+      }))
     } catch (e) {
       error.value = e.response?.data?.message || 'Error al cargar inventario'
     } finally {
@@ -57,7 +64,12 @@ export const useInventarioStore = defineStore('inventario', () => {
     try {
       const params = inventario_id ? { inventario_id } : {}
       const { data } = await axios.get(`${API}/inventario/movimientos`, { params })
-      movimientos.value = data
+      // pg devuelve DECIMAL como string → convertir m2 y espesor_mm a number
+      movimientos.value = data.map(mv => ({
+        ...mv,
+        m2:        mv.m2        != null ? parseFloat(mv.m2)        : 0,
+        espesor_mm: mv.espesor_mm != null ? parseFloat(mv.espesor_mm) : null,
+      }))
     } catch (e) {
       console.error('Error al cargar movimientos', e)
     }
