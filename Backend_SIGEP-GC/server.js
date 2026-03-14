@@ -130,6 +130,8 @@ async function initDB() {
       `ALTER TABLE entregas ADD COLUMN IF NOT EXISTS foto_base64 TEXT DEFAULT NULL`,
       // Turno activo del conductor (persiste entre sesiones)
       `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS en_turno BOOLEAN DEFAULT false`,
+      // Referencia al material de inventario usado en el pedido
+      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS inventario_id INTEGER REFERENCES inventario_vidrio(id) ON DELETE SET NULL`,
     ];
     for (const sql of alteraciones) {
       await pool.query(sql);

@@ -45,6 +45,12 @@
               </svg>
               Limpiar completados
             </button>
+            <button @click="showImport = true" class="btn-secondary text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Importar Excel
+            </button>
             <button @click="showCrear = true" class="btn-primary text-sm">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -406,6 +412,41 @@
                 </div>
               </div>
 
+              <!-- Material de Inventario -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Material de vidrio
+                  <span class="text-gray-400 font-normal text-xs">(opcional — descuenta stock automáticamente)</span>
+                </label>
+                <select v-model="nuevoPedido.inventario_id"
+                  class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+                  <option :value="null">— Sin material vinculado —</option>
+                  <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
+                    {{ m.tipo }}{{ m.color ? ` (${m.color})` : '' }}{{ m.espesor_mm ? ` · ${m.espesor_mm}mm` : '' }} — stock: {{ parseFloat(m.stock_m2).toFixed(2) }} m²
+                  </option>
+                </select>
+                <!-- Info de stock del material seleccionado -->
+                <div v-if="materialSeleccionado" class="mt-2 flex items-start gap-2 text-xs px-3 py-2.5 rounded-xl"
+                  :class="stockSuficiente ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'">
+                  <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path v-if="stockSuficiente" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    <path v-else fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                  <span v-if="stockSuficiente">
+                    Stock disponible: <strong>{{ parseFloat(materialSeleccionado.stock_m2).toFixed(4) }} m²</strong>
+                    <template v-if="m2Preview"> — quedará
+                      <strong>{{ (parseFloat(materialSeleccionado.stock_m2) - parseFloat(m2Preview)).toFixed(4) }} m²</strong>
+                      tras crear este pedido
+                    </template>
+                  </span>
+                  <span v-else>
+                    ⚠ Stock insuficiente: disponible
+                    <strong>{{ parseFloat(materialSeleccionado.stock_m2).toFixed(4) }} m²</strong>,
+                    este pedido requiere <strong>{{ m2Preview }} m²</strong>
+                  </span>
+                </div>
+              </div>
+
               <!-- Especificaciones -->
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -491,6 +532,180 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ══ MODAL IMPORTAR DESDE EXCEL ══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showImport"
+          class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          @mousedown.self="cerrarImport">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+              <div>
+                <h2 class="text-lg font-bold text-gray-900">Importar Pedidos desde Excel</h2>
+                <div class="flex items-center gap-2 mt-1">
+                  <span v-for="n in 3" :key="n"
+                    class="h-1.5 rounded-full transition-all"
+                    :class="[importStep >= n ? 'bg-gray-900' : 'bg-gray-200', n === 1 ? 'w-8' : 'w-6']"/>
+                  <span class="text-xs text-gray-400 ml-1">Paso {{ importStep }} de 3</span>
+                </div>
+              </div>
+              <button @click="cerrarImport"
+                class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Paso 1: Subir archivo -->
+            <div v-if="importStep === 1" class="p-8 flex flex-col items-center gap-5">
+              <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <div class="text-center">
+                <p class="text-gray-800 font-semibold text-base">Selecciona tu archivo Excel</p>
+                <p class="text-sm text-gray-400 mt-1">Formatos soportados: .xlsx, .xls, .csv</p>
+              </div>
+
+              <!-- Drop zone -->
+              <label class="cursor-pointer w-full max-w-sm">
+                <input ref="fileInputImport" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="handleFileUpload"/>
+                <div class="flex flex-col items-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl p-8 hover:border-[#1B3A5C] hover:bg-blue-50/20 transition-all">
+                  <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                  </svg>
+                  <span class="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl">Elegir archivo</span>
+                  <span class="text-xs text-gray-400">{{ importFileName || 'Ningún archivo seleccionado' }}</span>
+                </div>
+              </label>
+
+              <!-- Hint de columnas -->
+              <div class="text-xs text-gray-400 bg-gray-50 rounded-xl px-5 py-4 w-full max-w-sm space-y-1">
+                <p class="font-semibold text-gray-600 mb-2">📋 Columnas reconocidas automáticamente:</p>
+                <p><span class="text-gray-500">Numero, Pedido, Folio</span> → <strong>Nº Pedido</strong></p>
+                <p><span class="text-gray-500">Fecha, Entrega, Fecha Entrega</span> → <strong>Fecha de Entrega</strong></p>
+                <p><span class="text-gray-500">Cliente, Customer</span> → <strong>Cliente</strong></p>
+                <p><span class="text-gray-500">Alto, Ancho, Cantidad</span> → <strong>Medidas</strong></p>
+              </div>
+            </div>
+
+            <!-- Paso 2: Mapear columnas -->
+            <div v-if="importStep === 2" class="p-6 overflow-y-auto">
+              <p class="text-sm text-gray-500 mb-4">
+                Vincula las columnas de tu Excel con los campos del sistema.
+                Los campos con <span class="text-red-500 font-bold">*</span> son obligatorios.
+              </p>
+              <div class="space-y-3">
+                <div v-for="field in importFields" :key="field.key" class="flex items-center gap-3">
+                  <label class="w-44 text-sm font-medium text-gray-700 flex-shrink-0">
+                    {{ field.label }}
+                    <span v-if="field.required" class="text-red-500">*</span>
+                  </label>
+                  <select v-model="importMapping[field.key]"
+                    class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
+                    :class="field.required && !importMapping[field.key] ? 'border-amber-300 bg-amber-50' : ''">
+                    <option value="">— No importar —</option>
+                    <option v-for="h in importHeaders" :key="h" :value="h">{{ h }}</option>
+                  </select>
+                  <svg v-if="importMapping[field.key]" class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="flex gap-3 mt-6">
+                <button @click="importStep = 1" class="btn-secondary flex-1 justify-center">← Volver</button>
+                <button @click="aplicarMapeo"
+                  :disabled="!importMapping.numero_pedido || !importMapping.fecha_entrega"
+                  class="flex-1 py-2.5 rounded-xl bg-gray-900 text-white font-semibold text-sm disabled:opacity-40 transition-opacity">
+                  Ver Vista Previa →
+                </button>
+              </div>
+            </div>
+
+            <!-- Paso 3: Vista previa + importar -->
+            <div v-if="importStep === 3" class="p-6 overflow-y-auto flex flex-col gap-4">
+              <p class="text-sm text-gray-600">
+                Se importarán <strong class="text-gray-900">{{ importPreview.length }}</strong> pedido(s).
+                Verifica los datos antes de continuar.
+              </p>
+
+              <!-- Tabla preview -->
+              <div class="overflow-x-auto rounded-xl border border-gray-100 max-h-64">
+                <table class="w-full text-xs min-w-[460px]">
+                  <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">#Pedido</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">F. Entrega</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">Cliente</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">m²</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">Prioridad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(row, idx) in importPreview" :key="idx"
+                      class="border-t border-gray-50 hover:bg-gray-50/80">
+                      <td class="px-3 py-2 font-medium text-gray-900">{{ row.numero_pedido || '—' }}</td>
+                      <td class="px-3 py-2 text-gray-600">{{ row.fecha_entrega || '—' }}</td>
+                      <td class="px-3 py-2 text-gray-500 max-w-[120px] truncate">{{ row.cliente_nombre || '—' }}</td>
+                      <td class="px-3 py-2 text-gray-600">
+                        {{ (row.alto && row.ancho)
+                            ? (parseFloat(row.alto) * parseFloat(row.ancho) * (parseInt(row.cantidad) || 1)).toFixed(2)
+                            : '—' }}
+                      </td>
+                      <td class="px-3 py-2">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                          :class="row.prioridad === 'urgente' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'">
+                          {{ row.prioridad || 'normal' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Resultado de importación -->
+              <div v-if="importResult" class="rounded-xl px-4 py-3 text-sm"
+                :class="importResult.errores.length ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'">
+                <p class="font-semibold text-gray-800">
+                  ✅ {{ importResult.creados }} pedido(s) importados correctamente
+                </p>
+                <div v-if="importResult.errores.length" class="mt-2 space-y-0.5">
+                  <p class="text-xs font-semibold text-amber-700">Errores ({{ importResult.errores.length }}):</p>
+                  <p v-for="e in importResult.errores" :key="e.numero_pedido" class="text-xs text-amber-600">
+                    • {{ e.numero_pedido }}: {{ e.error }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex gap-3">
+                <button @click="importStep = 2" :disabled="importando || !!importResult"
+                  class="btn-secondary flex-1 justify-center disabled:opacity-40">← Mapeo</button>
+                <button v-if="!importResult" @click="ejecutarImport" :disabled="importando"
+                  class="flex-1 py-2.5 rounded-xl bg-[#1B3A5C] hover:bg-[#15304D] text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+                  <svg v-if="importando" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  {{ importando ? 'Importando...' : `Importar ${importPreview.length} pedido(s)` }}
+                </button>
+                <button v-else @click="finalizarImport"
+                  class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors">
+                  Listo ✓
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
   </div>
 </template>
 
@@ -512,13 +727,17 @@
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
+import axios from 'axios'
+import * as XLSX from 'xlsx'
 import AdminNavBar  from '../../components/admin/AdminNavBar.vue'
 import StatusBadge  from '../../components/shared/StatusBadge.vue'
 import PedidoModal  from '../../components/shared/PedidoModal.vue'
-import { usePedidosStore } from '../../stores/pedidos.js'
+import { usePedidosStore }     from '../../stores/pedidos.js'
+import { useInventarioStore }  from '../../stores/inventario.js'
 
-const pedidosStore = usePedidosStore()
-const toast        = inject('toast')
+const pedidosStore    = usePedidosStore()
+const inventarioStore = useInventarioStore()
+const toast           = inject('toast')
 
 const busqueda           = ref('')
 const filtroEstatus      = ref('')
@@ -534,7 +753,8 @@ const nuevoPedido        = ref({
   numero_pedido: '', fecha_entrega: '',
   cliente_nombre: '', direccion_entrega: '',
   alto: '', ancho: '', cantidad: 1,
-  prioridad: 'normal', especificaciones: ''
+  prioridad: 'normal', especificaciones: '',
+  inventario_id: null
 })
 const page               = ref(1)
 const perPage            = 15
@@ -559,6 +779,153 @@ const m2Preview = computed(() => {
   if (a > 0 && b > 0) return (a * b * c).toFixed(4)
   return null
 })
+
+// Material de inventario seleccionado y validación de stock
+const materialSeleccionado = computed(() =>
+  inventarioStore.materiales.find(m => m.id === nuevoPedido.value.inventario_id) || null
+)
+const stockSuficiente = computed(() => {
+  if (!materialSeleccionado.value) return true
+  if (!m2Preview.value) return true
+  return parseFloat(materialSeleccionado.value.stock_m2) >= parseFloat(m2Preview.value)
+})
+
+// ── Excel Import state ────────────────────────────────────────────────────
+const showImport      = ref(false)
+const importStep      = ref(1)        // 1=upload, 2=mapping, 3=preview
+const importFileName  = ref('')
+const importHeaders   = ref([])
+const importRows      = ref([])
+const importMapping   = ref({})       // systemField → excelColumn
+const importPreview   = ref([])
+const importando      = ref(false)
+const importResult    = ref(null)
+const fileInputImport = ref(null)
+
+const importFields = [
+  { key: 'numero_pedido',    label: 'Nº Pedido',        required: true  },
+  { key: 'fecha_entrega',    label: 'Fecha de Entrega', required: true  },
+  { key: 'cliente_nombre',   label: 'Cliente',          required: false },
+  { key: 'direccion_entrega',label: 'Dirección',        required: false },
+  { key: 'alto',             label: 'Alto (m)',         required: false },
+  { key: 'ancho',            label: 'Ancho (m)',        required: false },
+  { key: 'cantidad',         label: 'Cantidad (pzas)',  required: false },
+  { key: 'prioridad',        label: 'Prioridad',        required: false },
+  { key: 'especificaciones', label: 'Especificaciones', required: false },
+]
+
+function autoMapHeaders(headers) {
+  const mapping = {}
+  const rules = {
+    numero_pedido:    ['numero pedido', '#pedido', 'n.pedido', 'numpedido', 'order', 'folio', 'pedido', 'numero', '#'],
+    fecha_entrega:    ['fecha entrega', 'fecha_entrega', 'entrega', 'delivery', 'fecha', 'date'],
+    cliente_nombre:   ['cliente', 'client', 'customer', 'nombre cliente', 'razon social', 'razón social'],
+    direccion_entrega:['direccion', 'dirección', 'address', 'domicilio'],
+    alto:             ['alto', 'height', 'h', 'altura'],
+    ancho:            ['ancho', 'width', 'w', 'anchura'],
+    cantidad:         ['cantidad', 'qty', 'piezas', 'pieces', 'cant'],
+    prioridad:        ['prioridad', 'priority'],
+    especificaciones: ['especificaciones', 'specs', 'notas', 'descripcion', 'descripción', 'notes'],
+  }
+  for (const [field, keywords] of Object.entries(rules)) {
+    for (const header of headers) {
+      const h = header.toLowerCase().trim()
+      if (keywords.some(k => h.includes(k) || k.includes(h))) {
+        if (!mapping[field]) { mapping[field] = header; break }
+      }
+    }
+  }
+  return mapping
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  importFileName.value = file.name
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const workbook = XLSX.read(e.target.result, { type: 'binary', cellDates: true })
+      const sheetName = workbook.SheetNames[0]
+      const sheet = workbook.Sheets[sheetName]
+      const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+      if (data.length < 2) { toast.add({ type: 'error', message: 'El archivo parece estar vacío' }); return }
+      const headers = data[0].map(h => String(h).trim()).filter(h => h)
+      const rows    = data.slice(1).filter(row => row.some(cell => cell !== ''))
+      importHeaders.value = headers
+      importRows.value    = rows
+      importMapping.value = autoMapHeaders(headers)
+      importStep.value = 2
+    } catch (err) {
+      toast.add({ type: 'error', message: 'Error al leer el archivo: ' + err.message })
+    }
+  }
+  reader.readAsBinaryString(file)
+}
+
+function aplicarMapeo() {
+  const headers = importHeaders.value
+  const rows    = importRows.value
+  const mapping = importMapping.value
+  const preview = rows.map(row => {
+    const obj = {}
+    for (const [field, col] of Object.entries(mapping)) {
+      if (!col) continue
+      const idx = headers.indexOf(col)
+      if (idx === -1) continue
+      let val = row[idx]
+      // Excel date objects → ISO string
+      if (field === 'fecha_entrega' && val instanceof Date) {
+        val = val.toISOString().split('T')[0]
+      } else if (field === 'fecha_entrega' && typeof val === 'number') {
+        const d = new Date(Math.round((val - 25569) * 86400 * 1000))
+        val = d.toISOString().split('T')[0]
+      } else {
+        val = val !== undefined && val !== null ? String(val).trim() : ''
+      }
+      obj[field] = val
+    }
+    if (obj.prioridad) {
+      const p = obj.prioridad.toLowerCase()
+      obj.prioridad = (p.includes('urgente') || p.includes('urgent')) ? 'urgente' : 'normal'
+    }
+    return obj
+  }).filter(p => p.numero_pedido)
+
+  importPreview.value = preview
+  importStep.value = 3
+}
+
+async function ejecutarImport() {
+  importando.value = true
+  try {
+    const { data } = await axios.post('/api/pedidos/importar', { pedidos: importPreview.value })
+    importResult.value = data
+    if (data.creados > 0) {
+      await pedidosStore.fetchPedidos()
+      toast.add({ type: 'success', message: `${data.creados} pedido(s) importados correctamente` })
+    }
+  } catch (e) {
+    toast.add({ type: 'error', message: e.response?.data?.message || 'Error al importar' })
+  } finally {
+    importando.value = false
+  }
+}
+
+function finalizarImport() { cerrarImport() }
+
+function cerrarImport() {
+  showImport.value    = false
+  importStep.value    = 1
+  importFileName.value = ''
+  importHeaders.value  = []
+  importRows.value     = []
+  importMapping.value  = {}
+  importPreview.value  = []
+  importResult.value   = null
+  importando.value     = false
+  if (fileInputImport.value) fileInputImport.value.value = ''
+}
 
 const totalPages    = computed(() => Math.max(1, Math.ceil(pedidosStore.pedidosFiltrados.length / perPage)))
 const pedidosPagina = computed(() => {
@@ -588,7 +955,8 @@ function resetNuevoPedido() {
     numero_pedido: '', fecha_entrega: '',
     cliente_nombre: '', direccion_entrega: '',
     alto: '', ancho: '', cantidad: 1,
-    prioridad: 'normal', especificaciones: ''
+    prioridad: 'normal', especificaciones: '',
+    inventario_id: null
   }
   formErrors.value = {}
   crearError.value  = ''
@@ -698,5 +1066,8 @@ function exportarPDF() {
   window.print()
 }
 
-onMounted(() => pedidosStore.fetchPedidos())
+onMounted(() => {
+  pedidosStore.fetchPedidos()
+  inventarioStore.fetchMateriales()
+})
 </script>

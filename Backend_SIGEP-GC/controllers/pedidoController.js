@@ -44,7 +44,8 @@ const crearPedido = async (req, res) => {
     prioridad     = 'normal',
     especificaciones,
     cliente_nombre,
-    direccion_entrega
+    direccion_entrega,
+    inventario_id: _inventarioId
   } = req.body;
 
   const userId   = req.user.id;
@@ -63,39 +64,88 @@ const crearPedido = async (req, res) => {
     ? (prioridad || 'normal').toLowerCase()
     : 'normal';
 
+  const inventarioId = _inventarioId ? parseInt(_inventarioId) : null;
+
+  const client = await pool.connect();
   try {
-    const existe = await pool.query(
+    await client.query('BEGIN');
+
+    // Check duplicate
+    const existe = await client.query(
       'SELECT 1 FROM pedidos WHERE numero_pedido = $1',
       [numero_pedido]
     );
     if (existe.rows.length > 0) {
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(400).json({ message: 'Ese número de pedido ya existe' });
     }
 
-    const pedido = await pool.query(
+    // Verificar stock suficiente antes de crear el pedido
+    if (inventarioId && metros_cuadrados > 0) {
+      const matRow = await client.query(
+        'SELECT stock_m2, tipo, color FROM inventario_vidrio WHERE id = $1',
+        [inventarioId]
+      );
+      if (!matRow.rows.length) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(404).json({ message: 'Material de inventario no encontrado' });
+      }
+      const stockActual = parseFloat(matRow.rows[0].stock_m2);
+      if (stockActual < metros_cuadrados) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({
+          message: `Stock insuficiente: disponible ${stockActual.toFixed(4)} m², requerido ${metros_cuadrados.toFixed(4)} m²`
+        });
+      }
+    }
+
+    // Insertar pedido (con inventario_id si aplica)
+    const pedido = await client.query(
       `INSERT INTO pedidos
          (numero_pedido, fecha_entrega, creado_por,
           alto, ancho, cantidad, metros_cuadrados, prioridad,
-          especificaciones, cliente_nombre, direccion_entrega)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          especificaciones, cliente_nombre, direccion_entrega, inventario_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING id`,
       [
         numero_pedido, fecha_entrega, userId,
         alto || null, ancho || null, parseInt(cantidad || 1), metros_cuadrados,
         prioridadValida,
-        especificaciones || null, cliente_nombre || null, direccion_entrega || null
+        especificaciones || null, cliente_nombre || null, direccion_entrega || null,
+        inventarioId
       ]
     );
 
     const pedidoId = pedido.rows[0].id;
     const areas = ['contabilidad', 'ventas', 'produccion'];
 
-    await Promise.all(
-      areas.map(area =>
-        pool.query('INSERT INTO pedido_estatus (pedido_id, area) VALUES ($1, $2)', [pedidoId, area])
-      )
-    );
+    for (const area of areas) {
+      await client.query(
+        'INSERT INTO pedido_estatus (pedido_id, area) VALUES ($1, $2)',
+        [pedidoId, area]
+      );
+    }
 
+    // Descontar stock del inventario si hay material vinculado
+    if (inventarioId && metros_cuadrados > 0) {
+      await client.query(
+        `UPDATE inventario_vidrio SET stock_m2 = stock_m2 - $1, updated_at = NOW() WHERE id = $2`,
+        [metros_cuadrados, inventarioId]
+      );
+      await client.query(
+        `INSERT INTO movimientos_inventario (inventario_id, tipo, m2, descripcion, creado_por, creado_por_nombre)
+         VALUES ($1, 'uso', $2, $3, $4, $5)`,
+        [inventarioId, metros_cuadrados, `Pedido #${numero_pedido}`, userId, userName]
+      );
+    }
+
+    await client.query('COMMIT');
+    client.release();
+
+    // Notificación (fuera de la transacción)
     let mensajeNotif = `Nuevo pedido #${numero_pedido} creado por ${userName}`;
     if (prioridadValida === 'urgente') mensajeNotif += ' 🔴 URGENTE';
 
@@ -111,6 +161,8 @@ const crearPedido = async (req, res) => {
 
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId });
   } catch (err) {
+    await client.query('ROLLBACK');
+    client.release();
     console.error('[ERROR crearPedido]', err.message);
     res.status(500).json({ message: 'Error al crear el pedido', error: err.message });
   }
@@ -136,6 +188,11 @@ const obtenerPedidos = async (req, res) => {
         p.direccion_entrega,
         p.merma_m2,
         p.merma_descripcion,
+        p.inventario_id,
+        iv.tipo        AS inventario_tipo,
+        iv.color       AS inventario_color,
+        iv.espesor_mm  AS inventario_espesor,
+        CAST(iv.stock_m2 AS FLOAT) AS inventario_stock,
         TO_CHAR(p.fecha_entrega,  'YYYY-MM-DD')         AS fecha_entrega,
         TO_CHAR(p.fecha_creacion, 'YYYY-MM-DD HH24:MI') AS fecha_creacion,
         u.nombre                                         AS creado_por_nombre,
@@ -146,6 +203,7 @@ const obtenerPedidos = async (req, res) => {
       FROM pedidos p
       LEFT JOIN pedido_estatus e ON p.id = e.pedido_id
       LEFT JOIN usuarios u ON p.creado_por = u.id
+      LEFT JOIN inventario_vidrio iv ON iv.id = p.inventario_id
       ORDER BY p.fecha_creacion DESC
     `);
 
@@ -170,9 +228,14 @@ const obtenerPedidos = async (req, res) => {
           especificaciones:  row.especificaciones  || null,
           cliente_nombre:    row.cliente_nombre    || null,
           direccion_entrega: row.direccion_entrega || null,
-          merma_m2:          row.merma_m2 ? parseFloat(row.merma_m2) : null,
-          merma_descripcion: row.merma_descripcion || null,
-          areas:             [],
+          merma_m2:           row.merma_m2 ? parseFloat(row.merma_m2) : null,
+          merma_descripcion:  row.merma_descripcion || null,
+          inventario_id:      row.inventario_id || null,
+          inventario_tipo:    row.inventario_tipo || null,
+          inventario_color:   row.inventario_color || null,
+          inventario_espesor: row.inventario_espesor ? parseFloat(row.inventario_espesor) : null,
+          inventario_stock:   row.inventario_stock != null ? parseFloat(row.inventario_stock) : null,
+          areas:              [],
           _completados:     0,
           _total:           0
         });

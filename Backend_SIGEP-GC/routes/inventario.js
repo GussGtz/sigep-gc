@@ -52,8 +52,8 @@ router.post('/movimiento', verifyToken, isAdmin, async (req, res) => {
   if (!inventario_id || !tipo || m2 === undefined) {
     return res.status(400).json({ message: 'inventario_id, tipo y m2 son obligatorios' });
   }
-  if (!['entrada', 'ajuste'].includes(tipo)) {
-    return res.status(400).json({ message: 'tipo debe ser entrada o ajuste' });
+  if (!['entrada', 'ajuste', 'uso'].includes(tipo)) {
+    return res.status(400).json({ message: 'tipo debe ser entrada, ajuste o uso' });
   }
   const m2Val = parseFloat(m2);
   if (isNaN(m2Val)) {
@@ -72,16 +72,22 @@ router.post('/movimiento', verifyToken, isAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Material no encontrado' });
     }
 
-    // Para 'ajuste' el stock queda en exactamente m2Val; para 'entrada' se suma
+    // 'entrada' → suma, 'ajuste' → valor absoluto, 'uso' → resta (nunca baja de 0)
     if (tipo === 'entrada') {
       await client.query(
         `UPDATE inventario_vidrio SET stock_m2 = stock_m2 + $1, updated_at = NOW() WHERE id = $2`,
         [m2Val, inventario_id]
       );
-    } else {
+    } else if (tipo === 'ajuste') {
       // ajuste — establece el valor absoluto
       await client.query(
         `UPDATE inventario_vidrio SET stock_m2 = $1, updated_at = NOW() WHERE id = $2`,
+        [m2Val, inventario_id]
+      );
+    } else {
+      // uso — descuenta del stock (mínimo 0)
+      await client.query(
+        `UPDATE inventario_vidrio SET stock_m2 = GREATEST(0, stock_m2 - $1), updated_at = NOW() WHERE id = $2`,
         [m2Val, inventario_id]
       );
     }
