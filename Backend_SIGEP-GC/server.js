@@ -223,6 +223,17 @@ async function initDB() {
       )
     `);
 
+    // ── Recuperación de contraseña ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id         SERIAL PRIMARY KEY,
+        email      VARCHAR(255) NOT NULL,
+        token      VARCHAR(255) NOT NULL UNIQUE,
+        expires_at TIMESTAMP   NOT NULL,
+        created_at TIMESTAMP   DEFAULT NOW()
+      )
+    `);
+
     console.log('✅ Tablas verificadas / creadas correctamente');
   } catch (err) {
     console.error('⚠️  Error al inicializar tablas:', err.message);

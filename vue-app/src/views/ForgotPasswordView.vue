@@ -15,17 +15,8 @@
       <!-- Logo -->
       <div class="relative z-10">
         <div class="flex items-center gap-2.5">
-          <svg class="w-9 h-9" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="36" height="36" rx="8" fill="white" fill-opacity="0.14"/>
-            <rect x="5.5" y="5.5" width="25" height="25" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
-            <line x1="18" y1="5.5" x2="18" y2="30.5" stroke="white" stroke-width="1.75"/>
-            <line x1="5.5" y1="18" x2="30.5" y2="18" stroke="white" stroke-width="1.75"/>
-            <rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="white" fill-opacity="0.18"/>
-          </svg>
-          <div class="leading-none">
-            <p class="text-white font-black text-sm tracking-tight">GLASS</p>
-            <p class="text-white/60 text-[10px] tracking-widest uppercase">Caribe</p>
-          </div>
+          <img src="/icons/logo.jpg" class="w-9 h-9 rounded-lg object-contain" alt="Glass Caribe"/>
+          <span class="text-white/90 text-sm font-semibold tracking-wide">Glass Caribe</span>
         </div>
       </div>
 
@@ -56,17 +47,8 @@
 
         <!-- Logo mobile -->
         <div class="flex lg:hidden items-center justify-center gap-2.5 mb-8">
-          <svg class="w-9 h-9" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="36" height="36" rx="8" fill="#1B3A5C"/>
-            <rect x="5.5" y="5.5" width="25" height="25" rx="2.5" stroke="white" stroke-width="1.75" fill="none"/>
-            <line x1="18" y1="5.5" x2="18" y2="30.5" stroke="white" stroke-width="1.75"/>
-            <line x1="5.5" y1="18" x2="30.5" y2="18" stroke="white" stroke-width="1.75"/>
-            <rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="white" fill-opacity="0.18"/>
-          </svg>
-          <div class="leading-none">
-            <p class="text-gray-900 font-black text-sm tracking-tight">GLASS</p>
-            <p class="text-gray-400 text-[10px] tracking-widest uppercase">Caribe</p>
-          </div>
+          <img src="/icons/logo.jpg" class="w-9 h-9 rounded-lg object-contain" alt="Glass Caribe"/>
+          <span class="text-gray-900 text-sm font-semibold tracking-wide">Glass Caribe</span>
         </div>
 
         <!-- Card contenedor -->

@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const https   = require('https');
+const crypto  = require('crypto');
 
 const { register, login, me } = require('../controllers/authController');
 const { verifyToken }         = require('../middlewares/authMiddleware');
@@ -94,17 +95,137 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
     return res.status(400).json({ message: 'Correo electrónico inválido' });
   }
 
+  const emailNorm = email.toLowerCase().trim();
+
   try {
     const pool = require('../config/db');
-    await pool.query('SELECT id FROM usuarios WHERE email = $1', [email.toLowerCase().trim()]);
-    // En producción: enviar correo con token de restablecimiento
-    console.log(`[forgot-password] Solicitud recibida para: ${email}`);
+
+    // Verificar si el usuario existe (pero no revelar si no existe en la respuesta)
+    const { rows } = await pool.query(
+      'SELECT id, nombre FROM usuarios WHERE email = $1 AND activo = true',
+      [emailNorm]
+    );
+
+    if (rows.length) {
+      // Generar token seguro y guardar con expiración de 1 hora
+      const token     = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // +1 hora
+
+      // Eliminar tokens previos del mismo email antes de crear uno nuevo
+      await pool.query('DELETE FROM password_resets WHERE email = $1', [emailNorm]);
+      await pool.query(
+        'INSERT INTO password_resets (email, token, expires_at) VALUES ($1, $2, $3)',
+        [emailNorm, token, expiresAt]
+      );
+
+      // Enviar email con Resend (solo si la clave está configurada)
+      if (process.env.RESEND_API_KEY) {
+        try {
+          const { Resend } = require('resend');
+          const resend = new Resend(process.env.RESEND_API_KEY);
+
+          const appUrl  = process.env.APP_URL || 'https://sigep-gc.onrender.com';
+          const link    = `${appUrl}/reset-password?token=${token}`;
+          const nombre  = rows[0].nombre || 'Usuario';
+
+          await resend.emails.send({
+            from:    'Glass Caribe <noreply@glasscaribe.com>',
+            to:      emailNorm,
+            subject: 'Restablecer contraseña — Glass Caribe',
+            html: `
+              <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#f8f8f6;">
+                <div style="background:#fff;border-radius:16px;padding:32px;border:1px solid #e5e7eb;">
+                  <div style="margin-bottom:24px;">
+                    <span style="font-size:20px;font-weight:900;color:#1B3A5C;letter-spacing:-0.5px;">Glass Caribe</span>
+                  </div>
+                  <h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px;">Hola, ${nombre} 👋</h2>
+                  <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;">
+                    Recibimos una solicitud para restablecer la contraseña de tu cuenta.<br>
+                    Haz clic en el botón de abajo. Este enlace expira en <strong>1 hora</strong>.
+                  </p>
+                  <a href="${link}"
+                     style="display:inline-block;background:#1B3A5C;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:0.3px;">
+                    🔑 Restablecer contraseña
+                  </a>
+                  <p style="color:#9ca3af;font-size:12px;margin:24px 0 0;line-height:1.6;">
+                    Si no solicitaste este cambio, ignora este correo. Tu contraseña no cambiará.<br>
+                    <span style="word-break:break-all;color:#d1d5db;">${link}</span>
+                  </p>
+                </div>
+                <p style="text-align:center;color:#d1d5db;font-size:11px;margin-top:16px;">Glass Caribe © ${new Date().getFullYear()}</p>
+              </div>
+            `,
+          });
+          console.log(`[forgot-password] Email enviado a: ${emailNorm}`);
+        } catch (emailErr) {
+          console.error('[forgot-password] Error al enviar email:', emailErr.message);
+          // No interrumpir el flujo si el email falla — el token ya está guardado
+        }
+      } else {
+        console.log(`[forgot-password] RESEND_API_KEY no configurada. Token: ${token}`);
+      }
+    } else {
+      console.log(`[forgot-password] Email no encontrado (silenciado): ${emailNorm}`);
+    }
   } catch (err) {
     console.error('[forgot-password] DB error:', err.message);
   }
 
   // Siempre responder éxito (previene enumeración de usuarios)
   res.json({ message: 'Si el correo existe, recibirás instrucciones.' });
+});
+
+// POST /api/auth/reset-password
+// Valida el token y actualiza la contraseña
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({ message: 'Token y contraseña son requeridos' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+  }
+
+  try {
+    const pool   = require('../config/db');
+    const bcrypt = require('bcrypt');
+
+    // Buscar token válido y no expirado
+    const { rows } = await pool.query(
+      `SELECT email FROM password_resets
+       WHERE token = $1 AND expires_at > NOW()`,
+      [token]
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({
+        message: 'El enlace es inválido o ha expirado. Solicita uno nuevo.'
+      });
+    }
+
+    const { email } = rows[0];
+
+    // Actualizar contraseña del usuario
+    const hashed = await bcrypt.hash(password, 10);
+    const updated = await pool.query(
+      'UPDATE usuarios SET password_hash = $1 WHERE email = $2 AND activo = true RETURNING id',
+      [hashed, email]
+    );
+
+    if (!updated.rows.length) {
+      return res.status(404).json({ message: 'Usuario no encontrado o inactivo' });
+    }
+
+    // Eliminar el token usado (y todos los del mismo email)
+    await pool.query('DELETE FROM password_resets WHERE email = $1', [email]);
+
+    console.log(`[reset-password] Contraseña actualizada para: ${email}`);
+    res.json({ message: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.' });
+  } catch (err) {
+    console.error('[reset-password]', err.message);
+    res.status(500).json({ message: 'Error al restablecer contraseña', error: err.message });
+  }
 });
 
 // PATCH /api/auth/cambiar-password — self-service para cualquier usuario autenticado

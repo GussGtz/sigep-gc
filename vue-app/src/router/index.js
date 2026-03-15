@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth.js'
 const LoginView           = () => import('../views/LoginView.vue')
 const RegisterView        = () => import('../views/RegisterView.vue')
 const ForgotPasswordView  = () => import('../views/ForgotPasswordView.vue')
+const ResetPasswordView   = () => import('../views/ResetPasswordView.vue')
 const AdminDashboard      = () => import('../views/admin/AdminDashboard.vue')
 const AdminPedidos        = () => import('../views/admin/AdminPedidos.vue')
 const AdminConductores    = () => import('../views/admin/AdminConductores.vue')
@@ -34,6 +35,12 @@ const routes = [
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: ForgotPasswordView,
+    meta: { public: true }
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: ResetPasswordView,
     meta: { public: true }
   },
 
