@@ -42,7 +42,7 @@
           </div>
         </div>
         <!-- Contacts list -->
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-y-auto pb-[58px]">
           <div v-if="contactosFiltrados.length === 0"
             class="py-10 text-center text-gray-400 text-sm">Sin resultados</div>
           <button
@@ -140,6 +140,9 @@
       </template>
 
     </div>
+
+    <!-- Bottom navigation — solo visible en lista de contactos -->
+    <BottomNav v-if="!contactoActivo" />
   </div>
 
 
@@ -152,6 +155,7 @@ import { useAuthStore }        from '../../stores/auth.js'
 import { useChatStore }        from '../../stores/chat.js'
 import { useWebSocketStore }   from '../../stores/websocket.js'
 import { fuzzyFilter }         from '../../utils/fuzzy.js'
+import BottomNav               from '../../components/shared/BottomNav.vue'
 
 const router  = useRouter()
 const auth    = useAuthStore()

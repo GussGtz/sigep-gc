@@ -10,9 +10,9 @@
         </svg>
       </button>
       <span class="font-serif font-bold text-gray-900 flex-1">Registrar Entrega</span>
-      <!-- Chat -->
+      <!-- Chat — solo desktop; en mobile lo maneja el bottom nav -->
       <router-link to="/chat"
-        class="relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
+        class="hidden md:flex relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -24,7 +24,7 @@
       </router-link>
     </header>
 
-    <main class="pt-14 pb-8">
+    <main class="pt-14 pb-24">
       <div class="max-w-lg mx-auto px-4 py-6 space-y-4">
 
         <!-- Loading -->
@@ -182,6 +182,8 @@
         </div>
       </Transition>
     </Teleport>
+  <!-- Bottom navigation (mobile only) -->
+  <BottomNav />
   </div>
 </template>
 
@@ -193,6 +195,7 @@ import { useNotificationsStore }  from '../../stores/notifications.js'
 import { useGpsStore }            from '../../stores/gps.js'
 import { useWebSocketStore }      from '../../stores/websocket.js'
 import { useChatStore }           from '../../stores/chat.js'
+import BottomNav                 from '../../components/shared/BottomNav.vue'
 import axios from 'axios'
 
 const route     = useRoute()
