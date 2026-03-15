@@ -84,22 +84,6 @@ export const useGpsStore = defineStore('gps', () => {
     }
   }
 
-  // ── Service Worker: notificación persistente tipo "foreground service" ──────
-  // En Android, una notificación activa en la barra evita que el SO mate el
-  // proceso del navegador. Es el equivalente web del startForegroundService().
-  function _swNotify(type) {
-    try {
-      if (!('serviceWorker' in navigator)) return
-      const send = () => navigator.serviceWorker.controller?.postMessage({ type })
-      // Si el SW ya está listo → enviar de inmediato; si no → esperar
-      if (navigator.serviceWorker.controller) {
-        send()
-      } else {
-        navigator.serviceWorker.ready.then(send).catch(() => {})
-      }
-    } catch { /* SW no disponible en este entorno */ }
-  }
-
   // ── localStorage: persistir estado para auto-reanudar al reabrir la app ────
   function _saveTrackingState(active, pedidoId) {
     try {
@@ -271,7 +255,6 @@ export const useGpsStore = defineStore('gps', () => {
         if (err.code === 1 /* PERMISSION_DENIED */) {
           trackingActive.value = false
           watchId.value = null
-          _swNotify('GPS_FOREGROUND_STOP')
           _saveTrackingState(false)
           _stopKeepAlive()
         } else {
@@ -291,9 +274,6 @@ export const useGpsStore = defineStore('gps', () => {
     trackingActive.value = true
 
     // ── Activar mecanismos de segundo plano ──────────────────────────────────
-
-    // Notificación persistente (foreground service) en la barra de notificaciones
-    _swNotify('GPS_FOREGROUND_START')
 
     // Guardar estado para auto-reanudar al reabrir la app
     _saveTrackingState(true, pedidoId)
@@ -333,9 +313,6 @@ export const useGpsStore = defineStore('gps', () => {
     _releaseWakeLock()
     _stopKeepAlive()
     document.removeEventListener('visibilitychange', _handleVisibilityChange)
-
-    // Cerrar notificación persistente
-    _swNotify('GPS_FOREGROUND_STOP')
 
     // Limpiar estado localStorage
     _saveTrackingState(false)

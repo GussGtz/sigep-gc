@@ -1,9 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    Glass Caribe — Service Worker v5
    Responsabilidades:
-     1. Push Notifications   — mostrar notificaciones nativas
-     2. GPS Foreground Notif — notificación persistente GPS activo
-        (equivalente al "foreground service" de Android)
+     1. Push Notifications — mostrar notificaciones nativas
    ═══════════════════════════════════════════════════════════ */
 
 const CACHE_NAME = 'glass-caribe-sw-v5'
@@ -83,38 +81,5 @@ self.addEventListener('message', e => {
   // Actualización del SW
   if (e.data?.type === 'SKIP_WAITING') {
     self.skipWaiting()
-    return
-  }
-
-  // ── GPS Foreground Start ─────────────────────────────────────────────────
-  // La página notifica que el GPS del conductor está activo.
-  // Mostramos una notificación persistente en la barra de notificaciones.
-  // En Android, esta notificación evita que el SO mate el proceso
-  // (equivalente al "startForegroundService" de apps nativas).
-  if (e.data?.type === 'GPS_FOREGROUND_START') {
-    e.waitUntil(
-      self.registration.showNotification('Glass Caribe', {
-        body:             '📍 GPS activo · Puedes minimizar la app sin perder el seguimiento',
-        icon:             '/icons/logo.jpg',
-        badge:            '/icons/logo.jpg',
-        tag:              'gps-foreground',
-        renotify:         false,   // no vibrar ni hacer ruido al actualizar
-        silent:           true,    // sin sonido (es solo indicador de estado)
-        requireInteraction: true,  // no se cierra sola → persiste en la barra
-        data:             { url: '/conductor' },
-      })
-    )
-    return
-  }
-
-  // ── GPS Foreground Stop ──────────────────────────────────────────────────
-  // El conductor finalizó su turno → cerrar la notificación persistente.
-  if (e.data?.type === 'GPS_FOREGROUND_STOP') {
-    e.waitUntil(
-      self.registration
-        .getNotifications({ tag: 'gps-foreground' })
-        .then(notifs => notifs.forEach(n => n.close()))
-    )
-    return
   }
 })
