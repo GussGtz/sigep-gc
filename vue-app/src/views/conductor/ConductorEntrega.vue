@@ -10,6 +10,18 @@
         </svg>
       </button>
       <span class="font-serif font-bold text-gray-900 flex-1">Registrar Entrega</span>
+      <!-- Chat -->
+      <router-link to="/chat"
+        class="relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        <span v-if="chatStore.unreadTotal > 0"
+          class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+          {{ chatStore.unreadTotal > 9 ? '9+' : chatStore.unreadTotal }}
+        </span>
+      </router-link>
     </header>
 
     <main class="pt-14 pb-8">
@@ -180,14 +192,16 @@ import { useAuthStore }           from '../../stores/auth.js'
 import { useNotificationsStore }  from '../../stores/notifications.js'
 import { useGpsStore }            from '../../stores/gps.js'
 import { useWebSocketStore }      from '../../stores/websocket.js'
+import { useChatStore }           from '../../stores/chat.js'
 import axios from 'axios'
 
-const route    = useRoute()
-const router   = useRouter()
-const auth     = useAuthStore()
-const notifs   = useNotificationsStore()
-const gpsStore = useGpsStore()
-const wsStore  = useWebSocketStore()
+const route     = useRoute()
+const router    = useRouter()
+const auth      = useAuthStore()
+const notifs    = useNotificationsStore()
+const gpsStore  = useGpsStore()
+const wsStore   = useWebSocketStore()
+const chatStore = useChatStore()
 const toast    = inject('toast')
 
 const loading     = ref(true)
