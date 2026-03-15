@@ -10,9 +10,8 @@
         <!-- ── Header row ── -->
         <div class="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 class="font-serif text-3xl font-bold text-gray-900 leading-tight">
-              Hola, {{ firstName }}
-            </h1>
+            <p class="text-xs text-gray-400 font-medium uppercase tracking-widest mb-1">{{ greetingLabel }}</p>
+            <h1 class="font-serif text-3xl font-bold text-gray-900 leading-tight">{{ firstName }}</h1>
             <p class="text-gray-400 text-sm mt-1 capitalize">{{ todayLabel }}</p>
           </div>
           <router-link to="/admin/pedidos" class="btn-primary text-sm shadow-sm">
@@ -28,7 +27,7 @@
           <div v-for="kpi in bigKpis" :key="kpi.label"
             class="bg-white rounded-2xl border border-black/[0.06] shadow-soft px-5 py-4 flex flex-col gap-1
                    hover:shadow-card transition-shadow duration-200">
-            <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{{ kpi.label }}</span>
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest">{{ kpi.label }}</span>
             <div class="flex items-end justify-between gap-2">
               <span class="font-serif text-3xl font-bold" :class="kpi.color">{{ kpi.value }}</span>
               <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mb-0.5" :class="kpi.iconBg">
@@ -52,7 +51,7 @@
             <div class="bg-[#1B3A5C] transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.enProceso, 0.1) }"></div>
             <div class="bg-emerald-400 transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.completados, 0.1) }"></div>
           </div>
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div v-for="bar in progressBars" :key="bar.label" class="flex items-center gap-3">
               <div class="w-2 h-2 rounded-full flex-shrink-0" :class="bar.dot"></div>
               <div class="flex-1">
@@ -126,16 +125,17 @@
             <!-- Activity bars — 7 days -->
             <div class="mt-5 pt-4 border-t border-gray-100">
               <p class="text-xs text-gray-400 mb-3">Pedidos — últimos 7 días</p>
-              <div class="flex items-end justify-between gap-1.5 h-12">
+              <div class="flex items-end justify-between gap-1.5 h-16">
                 <div v-for="(bar, i) in weekBars" :key="i" class="flex-1 flex flex-col items-center gap-1">
-                  <span class="text-[9px] font-bold" :class="bar.total > 0 ? 'text-gray-500' : 'text-transparent'">
+                  <span class="text-[11px] font-semibold leading-none"
+                    :class="bar.total > 0 ? 'text-gray-600' : 'text-transparent'">
                     {{ bar.total || 0 }}
                   </span>
-                  <div class="w-full rounded-sm transition-all duration-500"
+                  <div class="w-full rounded transition-all duration-500"
                     :class="bar.active ? 'bg-[#1B3A5C]' : 'bg-gray-200'"
-                    :style="{ height: Math.max((bar.total / maxBar) * 36, bar.total > 0 ? 5 : 2) + 'px' }">
+                    :style="{ height: Math.max((bar.total / maxBar) * 44, bar.total > 0 ? 6 : 2) + 'px' }">
                   </div>
-                  <span class="text-[10px]"
+                  <span class="text-[11px] font-medium"
                     :class="bar.active ? 'text-[#1B3A5C] font-bold' : 'text-gray-400'">{{ bar.day }}</span>
                 </div>
               </div>
@@ -163,15 +163,15 @@
                 </svg>
                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                   <span class="font-serif text-lg font-bold text-gray-900">{{ completadoPct }}%</span>
-                  <span class="text-[10px] text-gray-400">listo</span>
+                  <span class="text-xs text-gray-400">listo</span>
                 </div>
               </div>
             </div>
             <!-- Mini list -->
-            <div class="space-y-1 mt-2">
+            <div class="mt-3 divide-y divide-gray-50">
               <div v-for="p in pedidosStore.pedidos.slice(0, 4)" :key="p.id"
                 @click="abrirModal(p)"
-                class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0
+                class="flex items-center justify-between py-2.5
                        cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
                 <div class="flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full flex-shrink-0"
@@ -202,10 +202,10 @@
               <div v-for="i in 5" :key="i" class="skeleton h-10 rounded-xl"></div>
             </div>
             <div v-else>
-              <div class="grid grid-cols-3 px-5 py-2.5 bg-gray-50/80 border-b border-gray-100">
-                <span class="table-header !px-0 !py-0 text-[10px]">Pedido</span>
-                <span class="table-header !px-0 !py-0 text-[10px]">Entrega</span>
-                <span class="table-header !px-0 !py-0 text-[10px]">Estado</span>
+              <div class="grid grid-cols-3 px-5 py-3 bg-gray-50/80 border-b border-gray-100">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pedido</span>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Entrega</span>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Estado</span>
               </div>
               <div v-for="p in pedidosStore.pedidos.slice(0, 7)" :key="p.id"
                 @click="abrirModal(p)"
@@ -223,9 +223,9 @@
                     <div class="flex items-center gap-1.5">
                       <span class="text-sm font-semibold text-gray-900">#{{ p.numero_pedido }}</span>
                       <span v-if="p.prioridad === 'urgente'"
-                        class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600">URG</span>
+                        class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 leading-none">URG</span>
                     </div>
-                    <p v-if="p.retrasado" class="text-[10px] text-red-500 font-medium leading-none mt-0.5">Atrasado</p>
+                    <p v-if="p.retrasado" class="text-[11px] text-red-500 font-medium leading-none mt-0.5">Atrasado</p>
                   </div>
                 </div>
                 <span class="text-xs text-gray-500">{{ formatDate(p.fecha_entrega) }}</span>
@@ -251,22 +251,22 @@
                 class="py-8 text-center text-white/30 text-sm">No hay entregas próximas</div>
               <div v-for="p in upcomingDeliveries" :key="p.id"
                 @click="abrirModal(p)"
-                class="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl cursor-pointer transition-colors">
+                class="flex items-center gap-3 p-3.5 bg-white/10 hover:bg-white/15 rounded-xl cursor-pointer transition-colors">
                 <div class="flex-shrink-0 w-11 h-11 bg-yellow-400 rounded-xl flex flex-col items-center justify-center">
-                  <span class="text-[10px] font-bold text-gray-900 leading-none">{{ dayOf(p.fecha_entrega) }}</span>
+                  <span class="text-[11px] font-bold text-gray-900 leading-none">{{ dayOf(p.fecha_entrega) }}</span>
                   <span class="text-lg font-black text-gray-900 leading-none">{{ dayNum(p.fecha_entrega) }}</span>
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-semibold text-white truncate">#{{ p.numero_pedido }}</p>
-                  <div class="flex gap-1 mt-1 flex-wrap">
+                  <div class="flex gap-1 mt-1.5 flex-wrap">
                     <span v-for="a in p.areas" :key="a.area"
-                      class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize"
+                      class="text-[11px] font-semibold px-1.5 py-0.5 rounded-md capitalize"
                       :class="badgeClass(a.estatus)">
                       {{ a.area }}
                     </span>
                   </div>
                 </div>
-                <span class="text-xs text-white/40 flex-shrink-0">{{ daysUntil(p.fecha_entrega) }}</span>
+                <span class="text-xs text-white/50 flex-shrink-0">{{ daysUntil(p.fecha_entrega) }}</span>
               </div>
             </div>
           </div>
@@ -332,7 +332,13 @@ const pedidoAEliminar    = ref(null)
 const resumen            = ref(null)
 
 // ── User ──
-const firstName  = computed(() => auth.user?.nombre?.split(' ')[0] || 'Admin')
+const firstName     = computed(() => auth.user?.nombre?.split(' ')[0] || 'Admin')
+const greetingLabel = computed(() => {
+  const h = new Date().getHours()
+  if (h < 12) return 'Buenos días'
+  if (h < 18) return 'Buenas tardes'
+  return 'Buenas noches'
+})
 
 // ── Dates ──
 const todayLabel   = computed(() => new Date().toLocaleDateString('es', { weekday:'long', day:'numeric', month:'long', year:'numeric' }))
