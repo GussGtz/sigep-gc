@@ -701,16 +701,29 @@ function updateMarkers(ubicaciones) {
 
   // Crear o actualizar marcadores
   for (const [id, u] of Object.entries(ubicaciones)) {
+    const firstName = (u.nombre || '').split(' ')[0]
     const ic = window.L.divIcon({
       className: '',
-      html: `<div style="
-        background:#111827; color:white; border-radius:50%; width:32px; height:32px;
-        display:flex; align-items:center; justify-content:center;
-        font-size:11px; font-weight:bold; border:2px solid #10b981; box-shadow:0 2px 8px rgba(0,0,0,.4)">
-        ${iniciales(u.nombre)}
+      html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="background:#1B3A5C;border-radius:10px;width:38px;height:38px;
+          display:flex;align-items:center;justify-content:center;
+          border:2.5px solid #10b981;box-shadow:0 3px 10px rgba(0,0,0,.4)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="1"/>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/>
+            <circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        </div>
+        <div style="background:rgba(27,58,92,.9);color:#fff;font-size:9px;font-weight:700;
+          padding:1px 6px;border-radius:4px;white-space:nowrap;
+          max-width:72px;overflow:hidden;text-overflow:ellipsis;font-family:sans-serif">
+          ${firstName}
+        </div>
       </div>`,
-      iconSize:   [32, 32],
-      iconAnchor: [16, 16]
+      iconSize:   [38, 56],
+      iconAnchor: [19, 56]
     })
 
     const popup = `<b>${u.nombre}</b><br>
