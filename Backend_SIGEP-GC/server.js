@@ -243,41 +243,6 @@ async function initDB() {
 initDB();
 
 // ═══════════════════════════════════════
-// GPS Heartbeat Monitor
-// Cada 3 min, detecta conductores en turno sin señal GPS
-// y les envía un push para que abran la app.
-// ═══════════════════════════════════════
-setInterval(async () => {
-  if (!process.env.VAPID_PUBLIC_KEY || !global.sendPushToUser) return;
-  try {
-    // Conductores activos en turno cuya última posición tiene más de 3 minutos
-    // (o no tienen posición registrada)
-    const { rows } = await pool.query(`
-      SELECT u.id
-      FROM usuarios u
-      LEFT JOIN conductor_ubicaciones cu ON cu.conductor_id = u.id
-      WHERE u.role_id = 3
-        AND u.en_turno  = true
-        AND u.activo    = true
-        AND (cu.updated_at IS NULL OR cu.updated_at < NOW() - INTERVAL '3 minutes')
-    `);
-    for (const row of rows) {
-      global.sendPushToUser(row.id, {
-        title:  'Glass Caribe — GPS inactivo',
-        body:   'Abre la app para continuar el seguimiento de tu ruta.',
-        url:    '/conductor',
-        tag:    'gps-reminder'
-      });
-    }
-    if (rows.length) {
-      console.log(`[GPS heartbeat] Push enviado a ${rows.length} conductor(es) sin señal`);
-    }
-  } catch (err) {
-    console.error('[GPS heartbeat]', err.message);
-  }
-}, 3 * 60 * 1000); // cada 3 minutos
-
-// ═══════════════════════════════════════
 // Health check (Render lo usa en /api/health)
 // ═══════════════════════════════════════
 app.get('/api/health', (_req, res) => {

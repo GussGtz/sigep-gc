@@ -27,8 +27,6 @@ self.addEventListener('push', e => {
   let data = {}
   try { data = e.data?.json() ?? {} } catch {}
 
-  const isGpsReminder = data.tag === 'gps-reminder'
-
   const title   = data.title || 'Glass Caribe'
   const options = {
     body:     data.body  || '',
@@ -37,15 +35,7 @@ self.addEventListener('push', e => {
     tag:      data.tag   || 'glass-caribe-notif',
     renotify: true,
     vibrate:  [200, 100, 200],
-    data:     { url: data.url || '/' },
-
-    // GPS Reminder: no desaparece automáticamente + botón de acción
-    ...(isGpsReminder ? {
-      requireInteraction: true,
-      actions: [
-        { action: 'open-gps', title: '📍 Abrir app' }
-      ]
-    } : {})
+    data:     { url: data.url || '/' }
   }
 
   e.waitUntil(self.registration.showNotification(title, options))

@@ -394,7 +394,7 @@ async function toggleTurno() {
       // Buscar entrega activa para pasar el pedido_id al GPS
       const activa = entregas.value.find(e => e.estado === 'en_camino')
       gpsStore.startTracking(wsStore, activa?.pedido_id ?? null)
-      toast.add({ type: 'success', title: 'Turno iniciado', message: 'GPS activo. Puedes minimizar la app y el seguimiento continuará.' })
+      toast.add({ type: 'success', title: 'Turno iniciado', message: '¡Listo! Ya puedes comenzar tus entregas.' })
     } else {
       gpsStore.stopTracking()
       toast.add({ type: 'info', title: 'Turno finalizado', message: 'Has cerrado sesión de trabajo.' })
