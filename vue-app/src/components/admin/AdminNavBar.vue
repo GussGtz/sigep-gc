@@ -14,6 +14,19 @@
       <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
     </div>
 
+    <!-- Mobile Chat -->
+    <router-link to="/chat"
+      class="relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+      </svg>
+      <span v-if="chat.unreadTotal > 0"
+        class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+        {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
+      </span>
+    </router-link>
+
     <!-- Mobile Bell -->
     <div class="relative" ref="mobileBellRef">
       <button @click="mobileBell = !mobileBell"
@@ -94,6 +107,18 @@
                 <p class="text-[11px] text-gray-400 truncate">{{ roleLabel }}</p>
               </div>
             </div>
+            <router-link to="/chat" @click="drawerOpen = false"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors mb-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Chat del equipo
+              <span v-if="chat.unreadTotal > 0"
+                class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
+                {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
+              </span>
+            </router-link>
             <button @click="showCambiarPass = true; drawerOpen = false"
               class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors mb-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,6 +292,18 @@
               <p class="text-sm font-semibold text-gray-900 truncate">{{ auth.user?.nombre }}</p>
               <p class="text-xs text-gray-500 truncate">{{ auth.user?.email }}</p>
             </div>
+            <router-link to="/chat" @click="desktopMenu = false"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              Chat del equipo
+              <span v-if="chat.unreadTotal > 0"
+                class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
+                {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
+              </span>
+            </router-link>
             <button @click="showCambiarPass = true; desktopMenu = false"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,20 +409,10 @@ const navTabs = computed(() => {
     { to: '/admin/inventario',  label: 'Inventario',  icon: 'archive'    },
     { to: '/admin/conductores', label: 'Conductores', icon: 'truck'      },
     { to: '/admin/usuarios',    label: 'Usuarios',    icon: 'users'      },
-    { to: '/chat',              label: 'Chat',        icon: 'chat'       },
   ]
-  if (dept === 'ventas') return [
-    { to: '/ventas', label: 'Mis Pedidos', icon: 'clipboard' },
-    { to: '/chat',   label: 'Chat',        icon: 'chat'      },
-  ]
-  if (dept === 'produccion') return [
-    { to: '/produccion', label: 'Producción', icon: 'cog'  },
-    { to: '/chat',       label: 'Chat',       icon: 'chat' },
-  ]
-  if (role === 3) return [
-    { to: '/conductor', label: 'Mis Entregas', icon: 'truck' },
-    { to: '/chat',      label: 'Chat',         icon: 'chat'  },
-  ]
+  if (dept === 'ventas')    return [{ to: '/ventas',    label: 'Mis Pedidos', icon: 'clipboard' }]
+  if (dept === 'produccion') return [{ to: '/produccion', label: 'Producción',  icon: 'cog'       }]
+  if (role === 3)            return [{ to: '/conductor', label: 'Mis Entregas', icon: 'truck'     }]
   return []
 })
 
