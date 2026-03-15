@@ -159,8 +159,18 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <p class="font-bold text-gray-900">Historial de Movimientos</p>
-            <button @click="store.fetchMovimientos()"
-              class="text-xs text-gray-400 hover:text-gray-700 transition-colors">↻ Actualizar</button>
+            <div class="flex items-center gap-3">
+              <button @click="store.fetchMovimientos()"
+                class="text-xs text-gray-400 hover:text-gray-700 transition-colors">↻ Actualizar</button>
+              <button @click="showConfirmLimpiar = true"
+                class="text-xs text-red-400 hover:text-red-600 transition-colors flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Limpiar historial
+              </button>
+            </div>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -334,6 +344,33 @@
       </Transition>
     </Teleport>
 
+    <!-- ══ CONFIRM LIMPIAR HISTORIAL ══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showConfirmLimpiar" class="modal-overlay" @mousedown.self="showConfirmLimpiar = false">
+          <div class="bg-white rounded-2xl shadow-modal border border-black/[0.06] w-full max-w-sm p-6 text-center" @click.stop>
+            <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-7 h-7 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+            </div>
+            <h3 class="font-serif text-lg font-bold text-gray-900 mb-1">Limpiar historial</h3>
+            <p class="text-sm text-gray-500 mb-6">
+              Se eliminarán <strong class="text-gray-800">todos los movimientos</strong> registrados. Esta acción no puede deshacerse.
+            </p>
+            <div class="flex gap-3">
+              <button @click="showConfirmLimpiar = false" class="btn-secondary flex-1 justify-center">Cancelar</button>
+              <button @click="limpiarHistorial"
+                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm text-white bg-red-600 hover:bg-red-700 transition-all">
+                Limpiar todo
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- ══ CONFIRM ELIMINAR MATERIAL ══ -->
     <Teleport to="body">
       <Transition name="fade">
@@ -421,6 +458,19 @@ async function guardarMaterial() {
 
 const showConfirmDelete = ref(false)
 const materialAEliminar = ref(null)
+
+/* ── Limpiar historial de movimientos ── */
+const showConfirmLimpiar = ref(false)
+async function limpiarHistorial() {
+  try {
+    await store.limpiarMovimientos()
+    showConfirmLimpiar.value = false
+    toast.add({ type: 'success', title: 'Historial limpiado', message: 'Se eliminaron todos los movimientos del inventario.' })
+  } catch (e) {
+    showConfirmLimpiar.value = false
+    toast.add({ type: 'error', title: 'Error', message: e.response?.data?.message || 'No se pudo limpiar el historial.' })
+  }
+}
 
 function eliminar(m) {
   materialAEliminar.value = m

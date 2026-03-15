@@ -149,6 +149,21 @@ router.post('/movimiento', verifyToken, isAdmin, async (req, res) => {
 });
 
 /* ─────────────────────────────────────────────
+   DELETE /api/inventario/movimientos
+   Elimina todo el historial de movimientos
+───────────────────────────────────────────── */
+router.delete('/movimientos', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM movimientos_inventario')
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' })
+    res.json({ message: `Historial limpiado: ${result.rowCount} movimiento(s) eliminado(s)` })
+  } catch (err) {
+    console.error('[ERROR limpiar movimientos]', err.message)
+    res.status(500).json({ message: 'Error al limpiar historial', error: err.message })
+  }
+})
+
+/* ─────────────────────────────────────────────
    GET /api/inventario
    Lista todos los materiales en stock
 ───────────────────────────────────────────── */

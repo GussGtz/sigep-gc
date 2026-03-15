@@ -83,10 +83,15 @@ export const useInventarioStore = defineStore('inventario', () => {
     return data
   }
 
+  async function limpiarMovimientos() {
+    await axios.delete(`${API}/inventario/movimientos`)
+    movimientos.value = []
+  }
+
   return {
     materiales, movimientos, loading, error,
     bajoMinimo, totalM2, valorTotal,
     fetchMateriales, crearMaterial, actualizarMaterial, eliminarMaterial,
-    fetchMovimientos, registrarMovimiento
+    fetchMovimientos, registrarMovimiento, limpiarMovimientos
   }
 })

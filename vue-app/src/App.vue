@@ -90,7 +90,10 @@ const debouncedFetchPedidos    = debounce(() => {
 }, 400)
 const debouncedFetchInventario = debounce(() => {
   // Solo admins gestionan el inventario
-  if (auth.user?.role_id === 1) inventarioStore.fetchMateriales()
+  if (auth.user?.role_id === 1) {
+    inventarioStore.fetchMateriales()
+    inventarioStore.fetchMovimientos()
+  }
 }, 400)
 
 // Iniciar polling de notificaciones cuando el usuario esté autenticado

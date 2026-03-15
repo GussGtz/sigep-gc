@@ -97,4 +97,40 @@ router.patch('/leer/:userId', verifyToken, async (req, res) => {
   }
 })
 
+// ─── DELETE /api/chat/conversacion/:userId ───────────────────────────────────
+// Elimina todos los mensajes entre el usuario actual y userId
+router.delete('/conversacion/:userId', verifyToken, async (req, res) => {
+  const otroId = parseInt(req.params.userId)
+  if (isNaN(otroId)) return res.status(400).json({ message: 'userId inválido' })
+
+  try {
+    const { rowCount } = await pool.query(`
+      DELETE FROM mensajes_directos
+      WHERE (de_usuario_id = $1 AND para_usuario_id = $2)
+         OR (de_usuario_id = $2 AND para_usuario_id = $1)
+    `, [req.user.id, otroId])
+
+    res.json({ message: `Conversación eliminada: ${rowCount} mensaje(s)` })
+  } catch (err) {
+    console.error('[ERROR delete chat/conversacion]', err.message)
+    res.status(500).json({ message: 'Error al eliminar conversación' })
+  }
+})
+
+// ─── DELETE /api/chat/todas ──────────────────────────────────────────────────
+// Elimina todos los mensajes enviados o recibidos por el usuario actual
+router.delete('/todas', verifyToken, async (req, res) => {
+  try {
+    const { rowCount } = await pool.query(`
+      DELETE FROM mensajes_directos
+      WHERE de_usuario_id = $1 OR para_usuario_id = $1
+    `, [req.user.id])
+
+    res.json({ message: `Historial eliminado: ${rowCount} mensaje(s)` })
+  } catch (err) {
+    console.error('[ERROR delete chat/todas]', err.message)
+    res.status(500).json({ message: 'Error al eliminar chats' })
+  }
+})
+
 module.exports = router

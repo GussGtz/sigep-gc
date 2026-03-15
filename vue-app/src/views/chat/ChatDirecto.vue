@@ -17,10 +17,31 @@
       <span class="font-serif font-bold text-gray-900 flex-1 truncate">
         {{ contactoActivo ? contactoActivo.nombre : 'Mensajes' }}
       </span>
+      <!-- Badge no leídos (lista de contactos) -->
       <span v-if="!contactoActivo && chat.unreadTotal > 0"
         class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500 text-white flex-shrink-0">
         {{ chat.unreadTotal > 99 ? '99+' : chat.unreadTotal }}
       </span>
+      <!-- Vaciar este chat (conversación activa) -->
+      <button v-if="contactoActivo"
+        @click="showConfirmVaciarChat = true"
+        class="p-2 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+        title="Vaciar conversación">
+        <svg class="w-4.5 h-4.5" style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </button>
+      <!-- Vaciar todos los chats (lista de contactos) -->
+      <button v-if="!contactoActivo && chat.contactos.length > 0"
+        @click="showConfirmVaciarTodo = true"
+        class="p-2 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+        title="Vaciar todo el historial">
+        <svg class="w-4.5 h-4.5" style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </button>
     </header>
 
     <div class="flex-1 pt-14 flex flex-col overflow-hidden">
@@ -143,13 +164,80 @@
 
     <!-- Bottom navigation — solo visible en lista de contactos -->
     <BottomNav v-if="!contactoActivo" />
+
+    <!-- ══ CONFIRM: Vaciar este chat ══ -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="showConfirmVaciarChat"
+          class="fixed inset-0 bg-black/40 z-[80] flex items-end sm:items-center justify-center p-4"
+          @mousedown.self="showConfirmVaciarChat = false">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center" @click.stop>
+            <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+            </div>
+            <h3 class="font-bold text-gray-900 text-lg mb-1">Vaciar conversación</h3>
+            <p class="text-sm text-gray-500 mb-6">
+              Se eliminarán todos los mensajes con
+              <strong class="text-gray-800">{{ contactoActivo?.nombre }}</strong>.
+              Esta acción no puede deshacerse.
+            </p>
+            <div class="flex gap-3">
+              <button @click="showConfirmVaciarChat = false"
+                class="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button @click="vaciarEsteChat"
+                class="flex-1 bg-red-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-red-700 transition-colors">
+                Vaciar chat
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ══ CONFIRM: Vaciar todo el historial ══ -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="showConfirmVaciarTodo"
+          class="fixed inset-0 bg-black/40 z-[80] flex items-end sm:items-center justify-center p-4"
+          @mousedown.self="showConfirmVaciarTodo = false">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center" @click.stop>
+            <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </div>
+            <h3 class="font-bold text-gray-900 text-lg mb-1">Vaciar todo el historial</h3>
+            <p class="text-sm text-gray-500 mb-6">
+              Se eliminarán <strong class="text-gray-800">todos tus mensajes</strong> enviados y recibidos con todos los contactos. Esta acción no puede deshacerse.
+            </p>
+            <div class="flex gap-3">
+              <button @click="showConfirmVaciarTodo = false"
+                class="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button @click="vaciarTodoElChat"
+                class="flex-1 bg-red-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-red-700 transition-colors">
+                Vaciar todo
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
   </div>
 
 
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, inject } from 'vue'
 import { useRouter }           from 'vue-router'
 import { useAuthStore }        from '../../stores/auth.js'
 import { useChatStore }        from '../../stores/chat.js'
@@ -161,6 +249,7 @@ const router  = useRouter()
 const auth    = useAuthStore()
 const chat    = useChatStore()
 const wsStore = useWebSocketStore()
+const toast   = inject('toast', { add: () => {} })
 
 // Todos los roles usan el layout PWA mobile
 const usaMobileLayout = computed(() => true)
@@ -293,8 +382,40 @@ function mostrarSeparador(msg, index) {
   return new Date(msg.created_at).toDateString() !== new Date(prev.created_at).toDateString()
 }
 
+// ── Vaciar conversaciones ──────────────────────────────────────────────────
+const showConfirmVaciarChat = ref(false)
+const showConfirmVaciarTodo = ref(false)
+
+async function vaciarEsteChat() {
+  if (!contactoActivo.value) return
+  try {
+    await chat.limpiarConversacion(contactoActivo.value.id)
+    showConfirmVaciarChat.value = false
+    toast.add({ type: 'success', message: 'Conversación eliminada' })
+  } catch {
+    showConfirmVaciarChat.value = false
+    toast.add({ type: 'error', message: 'Error al limpiar la conversación' })
+  }
+}
+
+async function vaciarTodoElChat() {
+  try {
+    await chat.limpiarTodas()
+    showConfirmVaciarTodo.value = false
+    toast.add({ type: 'success', title: 'Mensajes eliminados', message: 'Se eliminó todo el historial de mensajes.' })
+  } catch {
+    showConfirmVaciarTodo.value = false
+    toast.add({ type: 'error', message: 'Error al eliminar el historial' })
+  }
+}
+
 // ── Montar: cargar contactos ────────────────────────────────────────────────
 onMounted(() => {
   chat.fetchContactos()
 })
 </script>
+
+<style scoped>
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity .2s }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0 }
+</style>

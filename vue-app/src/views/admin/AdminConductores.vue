@@ -661,11 +661,23 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import AdminNavBar  from '../../components/admin/AdminNavBar.vue'
-import { useGpsStore } from '../../stores/gps.js'
+import { useGpsStore }        from '../../stores/gps.js'
+import { useWebSocketStore }  from '../../stores/websocket.js'
 import axios from 'axios'
 
-const toast  = inject('toast', { add: () => {} })
+const toast    = inject('toast', { add: () => {} })
 const gpsStore = useGpsStore()
+const wsStore  = useWebSocketStore()
+
+// ── Debounce: evita re-fetches en ráfaga cuando llegan eventos WS ───────────
+let _entregasDebTimer = null
+function debouncedRefresh() {
+  clearTimeout(_entregasDebTimer)
+  _entregasDebTimer = setTimeout(() => {
+    fetchEntregas()
+    fetchConductores()
+  }, 400)
+}
 
 // ── Mapa Leaflet ────────────────────────────────────────────────────────────
 let map            = null
@@ -1099,6 +1111,9 @@ onMounted(async () => {
   // Cargar posiciones iniciales
   await gpsStore.fetchUbicaciones()
   updateMarkers(gpsStore.ubicaciones)
+  // Actualizaciones en tiempo real — entregas y conductores
+  wsStore.on('data_entregas', debouncedRefresh)
+  wsStore.on('data_usuarios', fetchConductores)
 })
 
 // Actualizar marcadores en tiempo real cuando lleguen updates por WS

@@ -93,6 +93,24 @@ export const useChatStore = defineStore('chat', () => {
     })
   }
 
+  // ── Vaciar conversación con un usuario (elimina en BD) ────────────────────
+  async function limpiarConversacion(userId) {
+    await axios.delete(`${API}/chat/conversacion/${userId}`)
+    conversaciones.value = { ...conversaciones.value, [userId]: [] }
+    // Resetear último mensaje del contacto
+    const c = contactos.value.find(u => u.id === userId)
+    if (c) { c.ultimo_mensaje = null; c.ultimo_at = null; c.unread_count = 0 }
+  }
+
+  // ── Vaciar todas las conversaciones del usuario actual ─────────────────────
+  async function limpiarTodas() {
+    await axios.delete(`${API}/chat/todas`)
+    conversaciones.value     = {}
+    conversacionActiva.value = null
+    // Resetear badges de todos los contactos
+    contactos.value.forEach(c => { c.ultimo_mensaje = null; c.ultimo_at = null; c.unread_count = 0 })
+  }
+
   // ── Limpiar al logout ──────────────────────────────────────────────────────
   function clear() {
     contactos.value          = []
@@ -110,6 +128,8 @@ export const useChatStore = defineStore('chat', () => {
     recibirMensaje,
     confirmarEnviado,
     enviarMensaje,
+    limpiarConversacion,
+    limpiarTodas,
     clear
   }
 })
