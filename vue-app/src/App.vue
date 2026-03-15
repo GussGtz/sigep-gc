@@ -113,7 +113,8 @@ watch(() => auth.token, (token) => {
   if (token) {
     wsStore.on('chat_message',    chat.recibirMensaje)
     wsStore.on('chat_sent',       chat.confirmarEnviado)
-    wsStore.on('location_update', gps.recibirUbicacion)
+    wsStore.on('location_update',   gps.recibirUbicacion)
+    wsStore.on('conductor_offline', gps.recibirUbicacion)
     // ── Actualización en tiempo real: cualquier mutación del servidor
     //    emite un mensaje de invalidación → el frontend re-fetcha ──
     wsStore.on('data_pedidos',    debouncedFetchPedidos)

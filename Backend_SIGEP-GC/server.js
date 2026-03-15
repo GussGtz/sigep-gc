@@ -388,6 +388,21 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
+    // ── stop_tracking: conductor finaliza turno → borrar del mapa en tiempo real ──
+    if (msg.type === 'stop_tracking') {
+      if (user.role_id !== 3) return;
+      try {
+        await pool.query(
+          'DELETE FROM conductor_ubicaciones WHERE conductor_id = $1',
+          [user.id]
+        );
+        broadcastToAdmins({ type: 'conductor_offline', conductorId: user.id });
+      } catch (err) {
+        console.error('[WS GPS stop]', err.message);
+      }
+      return;
+    }
+
     // ── chat_message: mensaje directo entre usuarios ──
     if (msg.type === 'chat_message') {
       const { para_usuario_id, mensaje } = msg;

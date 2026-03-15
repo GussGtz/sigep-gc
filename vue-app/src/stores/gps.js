@@ -33,8 +33,15 @@ export const useGpsStore = defineStore('gps', () => {
     }
   }
 
-  // Llamado desde App.vue cuando llega WS location_update (para el admin)
+  // Llamado desde App.vue cuando llega WS location_update / conductor_offline (para el admin)
   function recibirUbicacion(msg) {
+    // El conductor finalizó turno → eliminar del mapa inmediatamente
+    if (msg.type === 'conductor_offline') {
+      const next = { ...ubicaciones.value }
+      delete next[msg.conductorId]
+      ubicaciones.value = next
+      return
+    }
     ubicaciones.value = {
       ...ubicaciones.value,
       [msg.conductorId]: {
@@ -127,6 +134,22 @@ export const useGpsStore = defineStore('gps', () => {
     return null
   }
 
+  // ── Filtro de movimiento: evitar enviar actualizaciones redundantes ────────
+  let _lastLat    = null
+  let _lastLng    = null
+  let _lastSentAt = 0
+
+  /** Distancia en metros entre dos coordenadas (fórmula Haversine) */
+  function _haversine(lat1, lon1, lat2, lon2) {
+    const R  = 6_371_000
+    const φ1 = lat1 * Math.PI / 180
+    const φ2 = lat2 * Math.PI / 180
+    const dφ = (lat2 - lat1) * Math.PI / 180
+    const dλ = (lon2 - lon1) * Math.PI / 180
+    const a  = Math.sin(dφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) ** 2
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  }
+
   // ── Keepalive interval ───────────────────────────────────────────────────────
   // Cada 30 segundos mientras el GPS está activo:
   //  1. Re-solicita Wake Lock si fue liberado (pantalla encendida de nuevo)
@@ -147,6 +170,8 @@ export const useGpsStore = defineStore('gps', () => {
       if (document.visibilityState !== 'visible' && navigator.geolocation && _wsStore) {
         navigator.geolocation.getCurrentPosition(
           ({ coords }) => {
+            // En background ser más tolerante con accuracia (señal puede ser peor)
+            if (coords.accuracy > 250) return
             _wsStore.send({
               type:      'location_update',
               lat:       coords.latitude,
@@ -217,11 +242,27 @@ export const useGpsStore = defineStore('gps', () => {
 
     watchId.value = navigator.geolocation.watchPosition(
       ({ coords }) => {
+        const { latitude: lat, longitude: lng, accuracy } = coords
+
+        // 1. Descartar lecturas con incertidumbre muy alta (señal débil / indoor)
+        if (accuracy > 120) return
+
+        // 2. Evitar inundar el WS con jitter: enviar solo si se movió ≥8 m
+        //    o si pasaron más de 25 s desde la última actualización
+        if (_lastLat !== null) {
+          const dist    = _haversine(lat, lng, _lastLat, _lastLng)
+          const elapsed = Date.now() - _lastSentAt
+          if (dist < 8 && elapsed < 25_000) return
+        }
+        _lastLat    = lat
+        _lastLng    = lng
+        _lastSentAt = Date.now()
+
         _wsStore?.send({
           type:      'location_update',
-          lat:       coords.latitude,
-          lng:       coords.longitude,
-          accuracy:  Math.round(coords.accuracy || 0),
+          lat,
+          lng,
+          accuracy:  Math.round(accuracy),
           pedido_id: _pedidoId || null
         })
       },
@@ -242,8 +283,8 @@ export const useGpsStore = defineStore('gps', () => {
       },
       {
         enableHighAccuracy: true,
-        timeout:            30000,
-        maximumAge:         0
+        timeout:            15_000,  // reintentar más rápido en Android
+        maximumAge:         3_000    // tolerar posiciones de hasta 3 s para reducir errores TIMEOUT
       }
     )
 
@@ -284,6 +325,10 @@ export const useGpsStore = defineStore('gps', () => {
       watchId.value = null
     }
 
+    // Notificar al backend: borrar fila en conductor_ubicaciones y
+    // avisar a todos los admins para que el marcador desaparezca de inmediato
+    _wsStore?.send({ type: 'stop_tracking' })
+
     // ── Liberar todos los mecanismos de segundo plano ──
     _releaseWakeLock()
     _stopKeepAlive()
@@ -294,6 +339,9 @@ export const useGpsStore = defineStore('gps', () => {
 
     // Limpiar estado localStorage
     _saveTrackingState(false)
+
+    // Resetear filtro de movimiento
+    _lastLat = null; _lastLng = null; _lastSentAt = 0
 
     trackingActive.value = false
     _wsStore  = null
