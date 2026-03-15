@@ -14,7 +14,7 @@
 
       <!-- Logo mark -->
       <div class="relative z-10 flex items-center gap-3">
-        <img src="/icons/logo.jpg" class="w-8 h-8 rounded-lg object-contain" alt="Glass Caribe"/>
+        <img src="/icons/glass-caribe.svg" class="h-8 w-auto object-contain" alt="Glass Caribe"/>
         <span class="text-white/90 text-sm font-semibold tracking-wide">Glass Caribe</span>
       </div>
 
@@ -31,7 +31,7 @@
 
       <!-- Decoration -->
       <div class="relative z-10 flex items-center gap-2">
-        <div class="w-2 h-2 rounded-full bg-[#1B3A5C]"></div>
+        <div class="w-2 h-2 rounded-full bg-[#0D89CB]"></div>
         <div class="w-2 h-2 rounded-full bg-white/25"></div>
         <div class="w-2 h-2 rounded-full bg-white/25"></div>
       </div>
@@ -44,7 +44,7 @@
         <!-- ── Estado: Solicitud enviada ── -->
         <div v-if="registered" class="text-center">
           <div class="flex items-center justify-center mb-8">
-            <img src="/icons/logo.jpg" class="w-10 h-10 rounded-xl object-contain" alt="Glass Caribe"/>
+            <img src="/icons/glass-caribe.svg" class="h-10 w-auto object-contain" alt="Glass Caribe"/>
           </div>
           <div class="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-amber-100">
             <svg class="w-10 h-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +61,7 @@
           </p>
           <router-link
             to="/login"
-            class="inline-flex items-center gap-2 bg-[#1B3A5C] text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-[#15304D] transition-colors shadow-sm"
+            class="inline-flex items-center gap-2 bg-[#0D89CB] text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-[#00659C] transition-colors shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -82,7 +82,7 @@
           </div>
           <!-- Glass Caribe logo -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <img src="/icons/logo.jpg" class="w-11 h-11 rounded-xl object-contain" alt="Glass Caribe"/>
+            <img src="/icons/glass-caribe.svg" class="h-11 w-auto object-contain" alt="Glass Caribe"/>
           </div>
         </div>
 
@@ -221,7 +221,7 @@
         <div class="mt-6 text-center">
           <p class="text-sm text-gray-400">
             ¿Ya tienes cuenta?
-            <router-link to="/login" class="text-[#1B3A5C] hover:text-[#15304D] font-semibold transition-colors">
+            <router-link to="/login" class="text-[#0D89CB] hover:text-[#00659C] font-semibold transition-colors">
               Inicia sesión
             </router-link>
           </p>

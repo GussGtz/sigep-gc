@@ -48,7 +48,7 @@
           <!-- Tricolor bar -->
           <div class="flex gap-1 h-2 rounded-full overflow-hidden mb-5">
             <div class="bg-amber-400  transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.pendientes, 0.1) }"></div>
-            <div class="bg-[#1B3A5C] transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.enProceso, 0.1) }"></div>
+            <div class="bg-[#0D89CB] transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.enProceso, 0.1) }"></div>
             <div class="bg-emerald-400 transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.completados, 0.1) }"></div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -71,7 +71,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
           <!-- Card 1: Próxima entrega (dark accent) -->
-          <div class="bg-[#1B3A5C] rounded-2xl p-5 flex flex-col justify-between min-h-[220px]">
+          <div class="bg-[#0D89CB] rounded-2xl p-5 flex flex-col justify-between min-h-[220px]">
             <div>
               <div class="flex items-start justify-between mb-3">
                 <p class="text-white/60 text-[11px] uppercase tracking-widest font-semibold">Próxima Entrega</p>
@@ -132,11 +132,11 @@
                     {{ bar.total || 0 }}
                   </span>
                   <div class="w-full rounded transition-all duration-500"
-                    :class="bar.active ? 'bg-[#1B3A5C]' : 'bg-gray-200'"
+                    :class="bar.active ? 'bg-[#0D89CB]' : 'bg-gray-200'"
                     :style="{ height: Math.max((bar.total / maxBar) * 44, bar.total > 0 ? 6 : 2) + 'px' }">
                   </div>
                   <span class="text-[11px] font-medium"
-                    :class="bar.active ? 'text-[#1B3A5C] font-bold' : 'text-gray-400'">{{ bar.day }}</span>
+                    :class="bar.active ? 'text-[#0D89CB] font-bold' : 'text-gray-400'">{{ bar.day }}</span>
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@
                 <div class="flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full flex-shrink-0"
                     :class="p.areas?.every(a => a.estatus === 'completado') ? 'bg-emerald-400' :
-                            p.areas?.some(a => a.estatus === 'en proceso')  ? 'bg-[#1B3A5C]'   : 'bg-amber-400'">
+                            p.areas?.some(a => a.estatus === 'en proceso')  ? 'bg-[#0D89CB]'   : 'bg-amber-400'">
                   </div>
                   <span class="text-sm font-semibold text-gray-700">#{{ p.numero_pedido }}</span>
                 </div>
@@ -202,7 +202,7 @@
                 </span>
               </div>
               <router-link to="/admin/conductores"
-                class="text-xs font-semibold text-[#1B3A5C] hover:underline flex items-center gap-1">
+                class="text-xs font-semibold text-[#0D89CB] hover:underline flex items-center gap-1">
                 Ver detalle →
               </router-link>
             </div>
@@ -232,7 +232,7 @@
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <h3 class="font-semibold text-gray-900">Pedidos Recientes</h3>
               <router-link to="/admin/pedidos"
-                class="text-xs font-semibold text-[#1B3A5C] hover:underline">Ver todos →</router-link>
+                class="text-xs font-semibold text-[#0D89CB] hover:underline">Ver todos →</router-link>
             </div>
             <!-- Skeleton loader -->
             <div v-if="pedidosStore.loading" class="p-5 space-y-3">
@@ -292,7 +292,7 @@
           </div>
 
           <!-- Próximas entregas (2/5) — dark accent -->
-          <div class="lg:col-span-2 bg-[#1B3A5C] rounded-2xl overflow-hidden">
+          <div class="lg:col-span-2 bg-[#0D89CB] rounded-2xl overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <h3 class="font-semibold text-white">Próximas Entregas</h3>
               <span class="text-[11px] text-white/40 bg-white/10 px-3 py-1 rounded-full font-medium capitalize">
@@ -408,13 +408,13 @@ const pendientePct  = computed(() => kpis.value.total ? Math.round(kpis.value.pe
 
 const progressBars = computed(() => [
   { label:'Pendientes',  pct: pendientePct.value,  color:'bg-amber-400',   dot:'bg-amber-400'   },
-  { label:'En proceso',  pct: procesoPct.value,    color:'bg-[#1B3A5C]',   dot:'bg-[#1B3A5C]'   },
+  { label:'En proceso',  pct: procesoPct.value,    color:'bg-[#0D89CB]',   dot:'bg-[#0D89CB]'   },
   { label:'Completados', pct: completadoPct.value, color:'bg-emerald-400', dot:'bg-emerald-400' },
 ])
 
 const bigKpis = computed(() => [
   { label:'Total',        value: kpis.value.total,       color:'text-gray-900',   iconBg:'bg-gray-100',    iconColor:'text-gray-500',    iconPath:'M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z' },
-  { label:'En Proceso',   value: kpis.value.enProceso,   color:'text-[#1B3A5C]',  iconBg:'bg-blue-50',     iconColor:'text-[#1B3A5C]',   iconPath:'M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z' },
+  { label:'En Proceso',   value: kpis.value.enProceso,   color:'text-[#0D89CB]',  iconBg:'bg-blue-50',     iconColor:'text-[#0D89CB]',   iconPath:'M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z' },
   { label:'Completados',  value: kpis.value.completados, color:'text-emerald-600', iconBg:'bg-emerald-50',  iconColor:'text-emerald-600', iconPath:'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' },
   { label:'Atrasados',    value: kpis.value.atrasados,   color:'text-red-600',    iconBg:'bg-red-50',      iconColor:'text-red-500',     iconPath:'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' },
   { label:'Urgentes',     value: kpis.value.urgentes,    color:'text-orange-600', iconBg:'bg-orange-50',   iconColor:'text-orange-500',  iconPath:'M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z' },
@@ -423,7 +423,7 @@ const bigKpis = computed(() => [
 
 // ── Area stats ──
 const areaStats = computed(() => [
-  { name:'ventas',       barColor:'bg-[#1B3A5C]',     completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='ventas')?.estatus==='completado').length },
+  { name:'ventas',       barColor:'bg-[#0D89CB]',     completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='ventas')?.estatus==='completado').length },
   { name:'produccion',   barColor:'bg-orange-400',  completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='produccion')?.estatus==='completado').length },
   { name:'contabilidad', barColor:'bg-emerald-400', completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='contabilidad')?.estatus==='completado').length },
 ])
@@ -506,7 +506,7 @@ function truckIcon(nombre) {
   return window.L.divIcon({
     className: '',
     html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-      <div style="background:#1B3A5C;border-radius:10px;width:38px;height:38px;
+      <div style="background:#0D89CB;border-radius:10px;width:38px;height:38px;
         display:flex;align-items:center;justify-content:center;
         border:2.5px solid #10b981;box-shadow:0 3px 10px rgba(0,0,0,.4)">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white"
@@ -517,7 +517,7 @@ function truckIcon(nombre) {
           <circle cx="18.5" cy="18.5" r="2.5"/>
         </svg>
       </div>
-      <div style="background:rgba(27,58,92,.9);color:#fff;font-size:9px;font-weight:700;
+      <div style="background:rgba(13,137,203,.9);color:#fff;font-size:9px;font-weight:700;
         padding:1px 6px;border-radius:4px;white-space:nowrap;
         max-width:72px;overflow:hidden;text-overflow:ellipsis;font-family:sans-serif">
         ${firstName}

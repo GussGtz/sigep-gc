@@ -30,7 +30,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
               </svg>
               <!-- info -->
-              <svg v-else class="w-3.5 h-3.5 text-[#1B3A5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg v-else class="w-3.5 h-3.5 text-[#0D89CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </div>
@@ -157,7 +157,7 @@ function toastAccent(type) {
     success: 'bg-emerald-400',
     error:   'bg-red-400',
     warning: 'bg-amber-400',
-    info:    'bg-[#1B3A5C]',
+    info:    'bg-[#0D89CB]',
   }[type] || 'bg-gray-300'
 }
 function toastIconBg(type) {

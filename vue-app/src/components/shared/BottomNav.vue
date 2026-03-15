@@ -145,14 +145,14 @@ function navTo (path) {
         :key="item.key"
         @click="handleTap(item)"
         class="flex-1 relative flex flex-col items-center justify-center gap-0.5 touch-manipulation select-none transition-colors"
-        :class="isActive(item) ? 'text-[#1B3A5C]' : 'text-gray-400 active:text-gray-600'"
+        :class="isActive(item) ? 'text-[#0D89CB]' : 'text-gray-400 active:text-gray-600'"
       >
         <!-- Active pill indicator at top -->
         <span
           class="absolute top-0 inset-x-0 flex justify-center pointer-events-none"
         >
           <span
-            class="h-[3px] rounded-full bg-[#1B3A5C] transition-all duration-200"
+            class="h-[3px] rounded-full bg-[#0D89CB] transition-all duration-200"
             :class="isActive(item) ? 'w-8 opacity-100' : 'w-0 opacity-0'"
           ></span>
         </span>
@@ -160,7 +160,7 @@ function navTo (path) {
         <!-- Icon wrapper with subtle active bg -->
         <div
           class="relative p-1.5 rounded-xl transition-colors"
-          :class="isActive(item) ? 'bg-[#1B3A5C]/[0.07]' : ''"
+          :class="isActive(item) ? 'bg-[#0D89CB]/[0.07]' : ''"
         >
           <!-- HOME -->
           <svg v-if="item.icon === 'home'" class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,7 +237,7 @@ function navTo (path) {
 
         <!-- User info card -->
         <div class="flex items-center gap-3.5 mx-4 mb-4 p-3.5 bg-[#F8F8F6] rounded-2xl">
-          <div class="w-12 h-12 rounded-2xl bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm">
+          <div class="w-12 h-12 rounded-2xl bg-[#0D89CB] flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm">
             {{ initials }}
           </div>
           <div class="min-w-0 flex-1">
@@ -355,7 +355,7 @@ function navTo (path) {
                 type="password"
                 autocomplete="current-password"
                 placeholder="Tu contraseña actual"
-                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                 @keyup.enter="guardarPassword"
               />
             </div>
@@ -366,7 +366,7 @@ function navTo (path) {
                 type="password"
                 autocomplete="new-password"
                 placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
-                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                 @keyup.enter="guardarPassword"
               />
               <PasswordStrengthBar :password="passNueva" />
@@ -385,7 +385,7 @@ function navTo (path) {
             <button
               @click="guardarPassword"
               :disabled="guardandoPass || !passwordValida"
-              class="flex-1 px-4 py-2.5 rounded-xl bg-[#1B3A5C] text-white text-sm font-semibold hover:bg-[#152d47] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="flex-1 px-4 py-2.5 rounded-xl bg-[#0D89CB] text-white text-sm font-semibold hover:bg-[#00659C] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {{ guardandoPass ? 'Guardando…' : 'Guardar' }}
             </button>

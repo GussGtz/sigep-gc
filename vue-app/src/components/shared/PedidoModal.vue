@@ -28,7 +28,7 @@
               @click="activeTab = tab.id"
               class="px-4 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px"
               :class="activeTab === tab.id
-                ? 'border-[#1B3A5C] text-[#1B3A5C]'
+                ? 'border-[#0D89CB] text-[#0D89CB]'
                 : 'border-transparent text-gray-400 hover:text-gray-700'"
             >{{ tab.label }}</button>
           </div>
@@ -245,7 +245,7 @@ const timeline = computed(() => {
   events.push({
     title: 'Pedido creado',
     time:  formatDate(props.pedido.fecha_creacion),
-    color: 'bg-[#1B3A5C]'
+    color: 'bg-[#0D89CB]'
   })
   props.pedido.areas?.forEach(a => {
     if (a.estatus !== 'pendiente') {

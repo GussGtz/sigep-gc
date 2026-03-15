@@ -13,7 +13,7 @@
 
       <!-- Logo top -->
       <div class="relative z-10 flex items-center gap-3">
-        <img src="/icons/logo.jpg" class="w-10 h-10 rounded-xl object-contain" alt="Glass Caribe"/>
+        <img src="/icons/glass-caribe.svg" class="h-10 w-auto object-contain" alt="Glass Caribe"/>
         <p class="text-white font-bold text-base tracking-wide">Glass Caribe</p>
       </div>
 
@@ -47,7 +47,7 @@
 
         <!-- Mobile logo -->
         <div class="flex items-center justify-center gap-3 mb-10 lg:hidden">
-          <img src="/icons/logo.jpg" class="w-10 h-10 rounded-xl object-contain" alt="Glass Caribe"/>
+          <img src="/icons/glass-caribe.svg" class="h-10 w-auto object-contain" alt="Glass Caribe"/>
           <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
         </div>
 
@@ -59,7 +59,7 @@
           </div>
           <!-- Glass Caribe logo -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <img src="/icons/logo.jpg" class="w-11 h-11 rounded-xl object-contain" alt="Glass Caribe"/>
+            <img src="/icons/glass-caribe.svg" class="h-11 w-auto object-contain" alt="Glass Caribe"/>
           </div>
         </div>
 
@@ -125,7 +125,7 @@
           <!-- Submit -->
           <button type="submit" :disabled="loading"
             class="w-full btn-primary justify-center py-3 text-base shadow-md hover:shadow-lg
-                   bg-[#1B3A5C] hover:bg-[#15304D] disabled:opacity-50 disabled:cursor-not-allowed">
+                   bg-[#0D89CB] hover:bg-[#00659C] disabled:opacity-50 disabled:cursor-not-allowed">
             <svg v-if="loading" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -137,12 +137,12 @@
         <!-- Links -->
         <div class="mt-6 text-center space-y-2">
           <router-link to="/forgot-password"
-            class="text-sm text-[#1B3A5C] hover:text-[#15304D] font-medium transition-colors hover:underline">
+            class="text-sm text-[#0D89CB] hover:text-[#00659C] font-medium transition-colors hover:underline">
             ¿Olvidaste tu contraseña?
           </router-link>
           <p class="text-sm text-gray-400">
             ¿No tienes cuenta?
-            <router-link to="/register" class="text-[#1B3A5C] hover:underline font-semibold">Solicita acceso</router-link>
+            <router-link to="/register" class="text-[#0D89CB] hover:underline font-semibold">Solicita acceso</router-link>
           </p>
         </div>
 

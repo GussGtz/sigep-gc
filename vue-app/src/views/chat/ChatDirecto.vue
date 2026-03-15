@@ -58,7 +58,7 @@
             </svg>
             <input v-model="busqueda" type="text" placeholder="Buscar contacto…"
               class="w-full pl-8 pr-3 py-2.5 text-sm bg-gray-50 border border-gray-200
-                     rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20
+                     rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20
                      placeholder-gray-400"/>
           </div>
         </div>
@@ -121,7 +121,7 @@
               <div class="max-w-[75%]">
                 <div class="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"
                   :class="esPropio(msg)
-                    ? 'bg-[#1B3A5C] text-white rounded-tr-sm'
+                    ? 'bg-[#0D89CB] text-white rounded-tr-sm'
                     : 'bg-white text-gray-900 border border-gray-100 rounded-tl-sm shadow-soft'">
                   {{ msg.mensaje }}
                 </div>
@@ -150,8 +150,8 @@
             />
             <button @click="enviar"
               :disabled="!texto.trim()"
-              class="flex-shrink-0 w-10 h-10 rounded-xl bg-[#1B3A5C] text-white flex items-center justify-center
-                     hover:bg-[#15304D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
+              class="flex-shrink-0 w-10 h-10 rounded-xl bg-[#0D89CB] text-white flex items-center justify-center
+                     hover:bg-[#00659C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
               <svg class="w-4 h-4 rotate-90" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
               </svg>

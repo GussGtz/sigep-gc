@@ -11,18 +11,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep steel blue — primary accent
+        // Glass Caribe blue — primary accent
         steel: {
-          50:  '#eff4fb',
-          100: '#d9e4f2',
-          200: '#b3c9e5',
-          300: '#8daed8',
-          400: '#6793cb',
-          500: '#2c5f8a',
-          600: '#1B3A5C',
-          700: '#15304D',
-          800: '#0f2540',
-          900: '#091933',
+          50:  '#EBF5FB',
+          100: '#C6E3F3',
+          200: '#9DD0EC',
+          300: '#6EBCE3',
+          400: '#3FA8DB',
+          500: '#0F8ACB',
+          600: '#0D89CB',
+          700: '#00659C',
+          800: '#004E79',
+          900: '#003A5A',
         },
         // Ink / charcoal — text and dark elements
         ink: {
@@ -44,16 +44,16 @@ export default {
         },
         // Keep brand for legacy references
         brand: {
-          50:  '#eff4fb',
-          100: '#d9e4f2',
-          200: '#b3c9e5',
-          300: '#8daed8',
-          400: '#6793cb',
-          500: '#1B3A5C',
-          600: '#15304D',
-          700: '#0f2540',
-          800: '#0a1d34',
-          900: '#061527',
+          50:  '#EBF5FB',
+          100: '#C6E3F3',
+          200: '#9DD0EC',
+          300: '#6EBCE3',
+          400: '#3FA8DB',
+          500: '#0D89CB',
+          600: '#00659C',
+          700: '#004E79',
+          800: '#003A5A',
+          900: '#002A42',
         },
       },
       fontFamily: {

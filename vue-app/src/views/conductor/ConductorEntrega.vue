@@ -37,7 +37,7 @@
         <template v-else-if="entrega">
 
           <!-- ── Info del pedido ── -->
-          <div class="bg-[#1B3A5C] rounded-2xl p-5">
+          <div class="bg-[#0D89CB] rounded-2xl p-5">
             <p class="text-white/50 text-[11px] uppercase tracking-widest font-semibold mb-2">Detalle de Entrega</p>
             <p class="font-serif text-2xl font-bold text-white">#{{ entrega.numero_pedido }}</p>
             <p v-if="entrega.cliente_nombre" class="text-white/70 text-sm font-medium mt-1">{{ entrega.cliente_nombre }}</p>
@@ -59,7 +59,7 @@
             <div class="grid grid-cols-2 gap-2 pt-1">
               <a :href="`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(entrega.direccion_entrega)}`"
                 target="_blank" rel="noopener noreferrer"
-                class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#1B3A5C] text-white text-xs font-semibold transition-colors hover:bg-[#15304D]">
+                class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#0D89CB] text-white text-xs font-semibold transition-colors hover:bg-[#00659C]">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
                 Google Maps
               </a>
@@ -99,8 +99,8 @@
             <!-- Take photo button -->
             <button v-else @click="fotoInput.click()"
               class="w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl
-                     border-2 border-dashed border-gray-200 hover:border-[#1B3A5C]/40
-                     text-gray-400 hover:text-[#1B3A5C] text-sm font-medium transition-colors">
+                     border-2 border-dashed border-gray-200 hover:border-[#0D89CB]/40
+                     text-gray-400 hover:text-[#0D89CB] text-sm font-medium transition-colors">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               Tomar foto de la entrega
               <span class="text-xs text-gray-300">(opcional)</span>

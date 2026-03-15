@@ -465,7 +465,7 @@
                 <button type="button" @click="showCrear = false; resetNuevoPedido()"
                   class="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">Cancelar</button>
                 <button type="submit" :disabled="creando"
-                  class="flex-1 py-3 rounded-xl bg-[#1B3A5C] hover:bg-[#15304D] text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-sm">
+                  class="flex-1 py-3 rounded-xl bg-[#0D89CB] hover:bg-[#00659C] text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-sm">
                   <svg v-if="creando" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -576,7 +576,7 @@
               <!-- Drop zone -->
               <label class="cursor-pointer w-full max-w-sm">
                 <input ref="fileInputImport" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="handleFileUpload"/>
-                <div class="flex flex-col items-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl p-8 hover:border-[#1B3A5C] hover:bg-blue-50/20 transition-all">
+                <div class="flex flex-col items-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl p-8 hover:border-[#0D89CB] hover:bg-blue-50/20 transition-all">
                   <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                   </svg>
@@ -687,7 +687,7 @@
                 <button @click="importStep = 2" :disabled="importando || !!importResult"
                   class="btn-secondary flex-1 justify-center disabled:opacity-40">← Mapeo</button>
                 <button v-if="!importResult" @click="ejecutarImport" :disabled="importando"
-                  class="flex-1 py-2.5 rounded-xl bg-[#1B3A5C] hover:bg-[#15304D] text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+                  class="flex-1 py-2.5 rounded-xl bg-[#0D89CB] hover:bg-[#00659C] text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
                   <svg v-if="importando" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>

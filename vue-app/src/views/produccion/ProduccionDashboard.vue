@@ -4,7 +4,7 @@
     <!-- ── Header fijo ── -->
     <header class="fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06] flex items-center px-4 gap-3 shadow-soft">
       <div class="flex items-center gap-2 flex-1">
-        <img src="/icons/logo.jpg" class="w-7 h-7 rounded-lg object-contain" alt="Glass Caribe"/>
+        <img src="/icons/icon-square.svg" class="w-7 h-7 rounded-lg object-contain" alt="Glass Caribe"/>
         <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
       </div>
       <!-- Chat — solo desktop; en mobile lo maneja el bottom nav -->
@@ -22,7 +22,7 @@
       <!-- User avatar dropdown — solo desktop; en mobile lo maneja el bottom nav -->
       <div class="hidden md:block relative" ref="userMenuRef">
         <button @click="userMenuOpen = !userMenuOpen"
-          class="w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          class="w-8 h-8 rounded-full bg-[#0D89CB] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
           {{ initials }}
         </button>
         <Transition name="slide">
@@ -357,14 +357,14 @@
                 <label class="block text-xs font-medium text-gray-500 mb-1">Contraseña actual</label>
                 <input v-model="passActual" type="password" autocomplete="current-password"
                   placeholder="••••••••"
-                  class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                   @keyup.enter="guardarPassword"/>
               </div>
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
                 <input v-model="passNueva" type="password" autocomplete="new-password"
                   placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
-                  class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                   @keyup.enter="guardarPassword"/>
                 <PasswordStrengthBar :password="passNueva" />
               </div>
@@ -376,7 +376,7 @@
                 Cancelar
               </button>
               <button @click="guardarPassword" :disabled="guardandoPass || !passwordValida"
-                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1B3A5C] hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0D89CB] hover:bg-[#00659C] disabled:opacity-50 transition-colors">
                 {{ guardandoPass ? 'Guardando…' : 'Cambiar' }}
               </button>
             </div>

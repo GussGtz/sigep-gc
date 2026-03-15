@@ -4,7 +4,7 @@
     <!-- ── Mobile Top Bar ── -->
     <header class="fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06] flex items-center px-4 gap-3 shadow-soft">
       <div class="flex items-center gap-2.5 flex-1">
-        <img src="/icons/logo.jpg" class="w-7 h-7 rounded-lg object-contain" alt="Glass Caribe"/>
+        <img src="/icons/icon-square.svg" class="w-7 h-7 rounded-lg object-contain" alt="Glass Caribe"/>
         <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
       </div>
       <!-- GPS status pill -->
@@ -28,7 +28,7 @@
       <!-- User avatar dropdown — solo desktop; en mobile lo maneja el bottom nav -->
       <div class="hidden md:block relative" ref="userMenuRef">
         <button @click="userMenuOpen = !userMenuOpen"
-          class="relative w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          class="relative w-8 h-8 rounded-full bg-[#0D89CB] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
           {{ initials }}
         </button>
         <Transition name="slide">
@@ -96,7 +96,7 @@
               class="px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 flex-shrink-0"
               :class="enRuta
                 ? 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'
-                : 'bg-[#1B3A5C] text-white hover:bg-[#15304D] shadow-sm'">
+                : 'bg-[#0D89CB] text-white hover:bg-[#00659C] shadow-sm'">
               {{ toggling ? '...' : enRuta ? 'Finalizar' : 'Iniciar turno' }}
             </button>
           </div>
@@ -109,7 +109,7 @@
             </div>
             <div class="w-px bg-gray-100"></div>
             <div class="flex-1 text-center">
-              <p class="font-serif text-xl font-bold text-[#1B3A5C]">
+              <p class="font-serif text-xl font-bold text-[#0D89CB]">
                 {{ entregas.filter(e => e.estado === 'en_camino').length }}
               </p>
               <p class="text-[10px] text-gray-400 uppercase tracking-wider font-medium">En ruta</p>
@@ -163,7 +163,7 @@
             <p class="text-gray-700 text-sm font-semibold">Sin entregas asignadas</p>
             <p class="text-gray-400 text-xs mt-1 mb-4">El administrador te asignará rutas aquí</p>
             <button @click="fetchEntregas"
-              class="text-xs font-semibold text-[#1B3A5C] hover:underline">
+              class="text-xs font-semibold text-[#0D89CB] hover:underline">
               Actualizar
             </button>
           </div>
@@ -174,7 +174,7 @@
               class="bg-white rounded-2xl border shadow-soft p-4 transition-colors"
               :class="{
                 'border-emerald-200 bg-emerald-50/30': e.estado === 'entregada',
-                'border-[#1B3A5C]/20 bg-blue-50/20':  e.estado === 'en_camino',
+                'border-[#0D89CB]/20 bg-blue-50/20':  e.estado === 'en_camino',
                 'border-black/[0.06]':                 e.estado === 'asignada'
               }">
 
@@ -242,14 +242,14 @@
               <label class="block text-xs font-medium text-gray-500 mb-1">Contraseña actual</label>
               <input v-model="passActual" type="password" autocomplete="current-password"
                 placeholder="••••••••"
-                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                 @keyup.enter="guardarPassword"/>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
               <input v-model="passNueva" type="password" autocomplete="new-password"
                 placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
-                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                 @keyup.enter="guardarPassword"/>
               <PasswordStrengthBar :password="passNueva" />
             </div>
@@ -261,7 +261,7 @@
               Cancelar
             </button>
             <button @click="guardarPassword" :disabled="guardandoPass || !passwordValida"
-              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1B3A5C] hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0D89CB] hover:bg-[#00659C] disabled:opacity-50 transition-colors">
               {{ guardandoPass ? 'Guardando…' : 'Cambiar' }}
             </button>
           </div>

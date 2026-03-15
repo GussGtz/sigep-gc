@@ -15,7 +15,7 @@
       <!-- Logo -->
       <div class="relative z-10">
         <div class="flex items-center gap-2.5">
-          <img src="/icons/logo.jpg" class="w-9 h-9 rounded-lg object-contain" alt="Glass Caribe"/>
+          <img src="/icons/glass-caribe.svg" class="h-9 w-auto object-contain" alt="Glass Caribe"/>
           <span class="text-white/90 text-sm font-semibold tracking-wide">Glass Caribe</span>
         </div>
       </div>
@@ -47,7 +47,7 @@
 
         <!-- Logo mobile -->
         <div class="flex lg:hidden items-center justify-center gap-2.5 mb-8">
-          <img src="/icons/logo.jpg" class="w-9 h-9 rounded-lg object-contain" alt="Glass Caribe"/>
+          <img src="/icons/glass-caribe.svg" class="h-9 w-auto object-contain" alt="Glass Caribe"/>
           <span class="text-gray-900 text-sm font-semibold tracking-wide">Glass Caribe</span>
         </div>
 
@@ -69,8 +69,8 @@
               </div>
               <!-- Icon -->
               <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ml-4"
-                :class="done ? 'bg-emerald-50' : 'bg-[#1B3A5C]/10'">
-                <svg v-if="!done" class="w-6 h-6 text-[#1B3A5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                :class="done ? 'bg-emerald-50' : 'bg-[#0D89CB]/10'">
+                <svg v-if="!done" class="w-6 h-6 text-[#0D89CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </svg>
@@ -94,7 +94,7 @@
             <p class="text-gray-400 text-sm mb-6">Este enlace no es válido o ya fue utilizado. Solicita uno nuevo.</p>
             <router-link
               to="/forgot-password"
-              class="inline-flex items-center gap-2 bg-[#1B3A5C] text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-[#15304D] transition-colors">
+              class="inline-flex items-center gap-2 bg-[#0D89CB] text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-[#00659C] transition-colors">
               Solicitar nuevo enlace
             </router-link>
           </div>
@@ -113,7 +113,7 @@
             </p>
             <router-link
               to="/login"
-              class="inline-flex items-center gap-2 bg-[#1B3A5C] text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-[#15304D] transition-colors shadow-sm">
+              class="inline-flex items-center gap-2 bg-[#0D89CB] text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-[#00659C] transition-colors shadow-sm">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
@@ -135,7 +135,7 @@
                   v-model="form.password"
                   :type="showPw ? 'text' : 'password'"
                   class="w-full border rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent placeholder-gray-400 transition-all pr-12"
-                  :class="errors.password ? 'border-red-400 ring-1 ring-red-400 bg-red-50 focus:ring-red-400' : 'border-gray-200 focus:ring-[#1B3A5C]'"
+                  :class="errors.password ? 'border-red-400 ring-1 ring-red-400 bg-red-50 focus:ring-red-400' : 'border-gray-200 focus:ring-[#0D89CB]'"
                   placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
                   minlength="8"
                   autocomplete="new-password"
@@ -174,7 +174,7 @@
                 v-model="form.confirm"
                 :type="showPw ? 'text' : 'password'"
                 class="w-full border rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent placeholder-gray-400 transition-all"
-                :class="errors.confirm ? 'border-red-400 ring-1 ring-red-400 bg-red-50 focus:ring-red-400' : 'border-gray-200 focus:ring-[#1B3A5C]'"
+                :class="errors.confirm ? 'border-red-400 ring-1 ring-red-400 bg-red-50 focus:ring-red-400' : 'border-gray-200 focus:ring-[#0D89CB]'"
                 placeholder="Repite tu contraseña"
                 autocomplete="new-password"
                 @input="errors.confirm = ''"
@@ -200,7 +200,7 @@
             <button
               type="submit"
               :disabled="loading || !passwordValida"
-              class="w-full bg-[#1B3A5C] hover:bg-[#15304D] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2 text-sm"
+              class="w-full bg-[#0D89CB] hover:bg-[#00659C] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2 text-sm"
             >
               <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -218,7 +218,7 @@
           <div v-if="token && !done" class="px-8 pb-6 text-center">
             <router-link
               to="/login"
-              class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#1B3A5C] transition-colors font-medium"
+              class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#0D89CB] transition-colors font-medium"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>

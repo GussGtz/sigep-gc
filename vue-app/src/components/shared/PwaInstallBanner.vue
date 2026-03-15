@@ -6,7 +6,7 @@
         class="fixed bottom-4 left-4 right-4 max-w-sm mx-auto z-[300]
                bg-white rounded-2xl shadow-modal border border-gray-100
                flex items-center gap-3 px-4 py-3.5">
-        <img src="/icons/logo.jpg" class="w-10 h-10 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
+        <img src="/icons/icon-square.svg" class="w-10 h-10 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-gray-900 leading-tight">Instalar Glass Caribe</p>
           <p class="text-xs text-gray-500 mt-0.5">Acceso rápido desde tu pantalla de inicio</p>
@@ -20,7 +20,7 @@
             </svg>
           </button>
           <button @click="install"
-            class="px-3 py-1.5 bg-[#1B3A5C] hover:bg-[#152d47] text-white
+            class="px-3 py-1.5 bg-[#0D89CB] hover:bg-[#00659C] text-white
                    text-xs font-semibold rounded-xl transition-colors">
             Instalar
           </button>
@@ -33,7 +33,7 @@
                bg-white rounded-2xl shadow-modal border border-gray-100 px-4 py-3.5">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2.5">
-            <img src="/icons/logo.jpg" class="w-8 h-8 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
+            <img src="/icons/icon-square.svg" class="w-8 h-8 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
             <p class="text-sm font-semibold text-gray-900">Instalar Glass Caribe</p>
           </div>
           <button @click="dismiss"
@@ -46,13 +46,13 @@
         </div>
         <p class="text-xs text-gray-600 leading-relaxed">
           Toca
-          <span class="inline-flex items-center gap-1 font-medium text-[#1B3A5C]">
+          <span class="inline-flex items-center gap-1 font-medium text-[#0D89CB]">
             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2L8 6h3v8h2V6h3L12 2zm-7 14v4h14v-4h-2v2H7v-2H5z"/>
             </svg>
             Compartir
           </span>
-          y luego <span class="font-medium text-[#1B3A5C]">"Agregar a pantalla de inicio"</span>
+          y luego <span class="font-medium text-[#0D89CB]">"Agregar a pantalla de inicio"</span>
         </p>
         <!-- Flecha apuntando hacia abajo donde está el botón de Safari -->
         <div class="flex justify-center mt-2">

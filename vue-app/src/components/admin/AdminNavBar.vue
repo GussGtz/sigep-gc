@@ -10,7 +10,7 @@
     </button>
 
     <div class="flex items-center gap-2 flex-1">
-      <img src="/icons/logo.jpg" class="w-7 h-7 rounded-lg flex-shrink-0 object-contain" alt="Glass Caribe"/>
+      <img src="/icons/icon-square.svg" class="w-7 h-7 rounded-lg flex-shrink-0 object-contain" alt="Glass Caribe"/>
       <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
     </div>
 
@@ -42,7 +42,7 @@
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 class="font-semibold text-sm text-gray-900">Notificaciones</h3>
             <button v-if="notifs.unreadCount > 0" @click="notifs.markAllAsRead()"
-              class="text-xs text-[#1B3A5C] font-medium hover:underline">Marcar todas</button>
+              class="text-xs text-[#0D89CB] font-medium hover:underline">Marcar todas</button>
           </div>
           <div class="max-h-64 overflow-y-auto divide-y divide-gray-50">
             <p v-if="notifs.notifications.length === 0" class="py-8 text-center text-gray-400 text-xs">Sin notificaciones</p>
@@ -55,7 +55,7 @@
                 <p class="text-xs text-gray-700 leading-relaxed">{{ n.message }}</p>
                 <p class="text-[11px] text-gray-400 mt-0.5">{{ formatTime(n.createdAt) }}</p>
               </div>
-              <div v-if="!n._read" class="w-1.5 h-1.5 rounded-full bg-[#1B3A5C] mt-2 flex-shrink-0"></div>
+              <div v-if="!n._read" class="w-1.5 h-1.5 rounded-full bg-[#0D89CB] mt-2 flex-shrink-0"></div>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@
           @click.stop>
           <div class="px-5 pt-6 pb-4 border-b border-black/[0.05]">
             <div class="flex items-center gap-3">
-              <img src="/icons/logo.jpg" class="w-9 h-9 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
+              <img src="/icons/icon-square.svg" class="w-9 h-9 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
               <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
             </div>
           </div>
@@ -95,7 +95,7 @@
           </nav>
           <div class="px-4 py-4 border-t border-black/[0.05]">
             <div class="flex items-center gap-2.5 mb-3">
-              <div class="w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs">
+              <div class="w-8 h-8 rounded-full bg-[#0D89CB] flex items-center justify-center text-white font-bold text-xs">
                 {{ initials }}
               </div>
               <div class="flex-1 min-w-0">
@@ -168,14 +168,14 @@
               <label class="block text-xs font-medium text-gray-500 mb-1">Contraseña actual</label>
               <input v-model="passActual" type="password" autocomplete="current-password"
                 placeholder="••••••••"
-                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                 @keyup.enter="guardarPassword"/>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
               <input v-model="passNueva" type="password" autocomplete="new-password"
                 placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
-                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                 @keyup.enter="guardarPassword"/>
               <PasswordStrengthBar :password="passNueva" />
             </div>
@@ -188,7 +188,7 @@
               Cancelar
             </button>
             <button @click="guardarPassword" :disabled="guardandoPass || !passwordValida"
-              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1B3A5C] hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+              class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0D89CB] hover:bg-[#00659C] disabled:opacity-50 transition-colors">
               {{ guardandoPass ? 'Guardando…' : 'Cambiar' }}
             </button>
           </div>
@@ -203,7 +203,7 @@
     <!-- Logo -->
     <div class="px-5 pt-6 pb-5 border-b border-black/[0.05]">
       <div class="flex items-center gap-3">
-        <img src="/icons/logo.jpg" class="w-9 h-9 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
+        <img src="/icons/icon-square.svg" class="w-9 h-9 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
         <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
       </div>
     </div>
@@ -225,7 +225,7 @@
         </span>
         <!-- Left active bar -->
         <span v-if="isActive(tab.to)"
-          class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#1B3A5C]">
+          class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#0D89CB]">
         </span>
       </router-link>
     </nav>
@@ -255,7 +255,7 @@
             <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 class="font-semibold text-sm text-gray-900">Notificaciones</h3>
               <button v-if="notifs.unreadCount > 0" @click="notifs.markAllAsRead()"
-                class="text-xs text-[#1B3A5C] font-medium hover:underline">Marcar todas</button>
+                class="text-xs text-[#0D89CB] font-medium hover:underline">Marcar todas</button>
             </div>
             <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">
               <p v-if="notifs.notifications.length === 0" class="py-8 text-center text-gray-400 text-xs">Sin notificaciones</p>
@@ -268,7 +268,7 @@
                   <p class="text-xs text-gray-700 leading-relaxed">{{ n.message }}</p>
                   <p class="text-[11px] text-gray-400 mt-0.5">{{ formatTime(n.createdAt) }}</p>
                 </div>
-                <div v-if="!n._read" class="w-1.5 h-1.5 rounded-full bg-[#1B3A5C] mt-2 flex-shrink-0"></div>
+                <div v-if="!n._read" class="w-1.5 h-1.5 rounded-full bg-[#0D89CB] mt-2 flex-shrink-0"></div>
               </div>
             </div>
           </div>
@@ -279,7 +279,7 @@
       <div class="relative" ref="desktopMenuRef">
         <button @click="desktopMenu = !desktopMenu"
           class="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors group">
-          <div class="w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-[#0D89CB] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
             {{ initials }}
           </div>
           <div class="flex-1 text-left min-w-0">

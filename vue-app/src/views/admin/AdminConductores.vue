@@ -207,7 +207,7 @@
                 <span class="text-xs text-gray-500">{{ conductoresGPS }} en ruta</span>
               </div>
               <button v-if="conductoresGPS > 0" @click="centerMap"
-                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#1B3A5C] bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100">
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#0D89CB] bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -321,9 +321,9 @@
                       @input="pedidoSeleccionado = null; nuevaEntrega.pedido_id = ''"
                       :placeholder="pedidoSeleccionado ? '' : 'Buscar por #número, cliente o dirección…'"
                       :readonly="!!pedidoSeleccionado"
-                      class="w-full pl-9 pr-9 py-3 text-sm border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
+                      class="w-full pl-9 pr-9 py-3 text-sm border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 focus:border-[#0D89CB] transition-all"
                       :class="pedidoSeleccionado
-                        ? 'border-[#1B3A5C] bg-[#1B3A5C]/5 font-semibold text-[#1B3A5C] cursor-default'
+                        ? 'border-[#0D89CB] bg-[#0D89CB]/5 font-semibold text-[#0D89CB] cursor-default'
                         : 'border-gray-200 placeholder-gray-400'"
                     />
                     <!-- Spinner -->
@@ -367,7 +367,7 @@
                       <div class="max-h-52 overflow-y-auto divide-y divide-gray-50">
                         <div v-for="p in pedidosFiltrados" :key="p.id"
                           @mousedown.prevent="seleccionarPedido(p)"
-                          class="flex items-start gap-3 px-4 py-3 hover:bg-[#1B3A5C]/5 cursor-pointer transition-colors group">
+                          class="flex items-start gap-3 px-4 py-3 hover:bg-[#0D89CB]/5 cursor-pointer transition-colors group">
                           <!-- Priority badge -->
                           <span class="flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase"
                             :class="{
@@ -393,7 +393,7 @@
                             </p>
                           </div>
                           <!-- Arrow -->
-                          <svg class="w-4 h-4 text-gray-200 group-hover:text-[#1B3A5C] flex-shrink-0 mt-1 transition-colors"
+                          <svg class="w-4 h-4 text-gray-200 group-hover:text-[#0D89CB] flex-shrink-0 mt-1 transition-colors"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                           </svg>
@@ -406,9 +406,9 @@
                 <!-- Selected pedido card -->
                 <Transition name="slide">
                   <div v-if="pedidoSeleccionado"
-                    class="mt-2 p-3.5 bg-[#1B3A5C]/5 rounded-xl border border-[#1B3A5C]/20 space-y-1.5">
+                    class="mt-2 p-3.5 bg-[#0D89CB]/5 rounded-xl border border-[#0D89CB]/20 space-y-1.5">
                     <div class="flex items-center justify-between">
-                      <span class="font-bold text-[#1B3A5C] text-sm">#{{ pedidoSeleccionado.numero_pedido }}</span>
+                      <span class="font-bold text-[#0D89CB] text-sm">#{{ pedidoSeleccionado.numero_pedido }}</span>
                       <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase"
                         :class="{
                           'bg-red-100 text-red-700': pedidoSeleccionado.prioridad === 'urgente',
@@ -451,7 +451,7 @@
                     @click="nuevaEntrega.conductor_id = c.id"
                     class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none"
                     :class="nuevaEntrega.conductor_id === c.id
-                      ? 'border-[#1B3A5C] bg-[#1B3A5C]/5 ring-1 ring-[#1B3A5C]/20'
+                      ? 'border-[#0D89CB] bg-[#0D89CB]/5 ring-1 ring-[#0D89CB]/20'
                       : 'border-gray-100 hover:border-gray-300 hover:bg-gray-50'">
                     <!-- Avatar -->
                     <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ring-2"
@@ -475,7 +475,7 @@
                     <!-- Check -->
                     <Transition name="fade">
                       <div v-if="nuevaEntrega.conductor_id === c.id"
-                        class="w-5 h-5 rounded-full bg-[#1B3A5C] flex items-center justify-center flex-shrink-0">
+                        class="w-5 h-5 rounded-full bg-[#0D89CB] flex items-center justify-center flex-shrink-0">
                         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                         </svg>
@@ -490,12 +490,12 @@
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                   Fecha de entrega
                   <span v-if="pedidoSeleccionado?.fecha_entrega"
-                    class="ml-1 normal-case font-normal text-[10px] text-[#1B3A5C]">(del pedido)</span>
+                    class="ml-1 normal-case font-normal text-[10px] text-[#0D89CB]">(del pedido)</span>
                 </label>
                 <input
                   v-model="nuevaEntrega.fecha_entrega"
                   type="date"
-                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 text-gray-700"
+                  class="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20 text-gray-700"
                 />
               </div>
 
@@ -506,7 +506,7 @@
                   Cancelar
                 </button>
                 <button type="submit" :disabled="guardando"
-                  class="flex-1 py-3 text-sm font-semibold text-white bg-[#1B3A5C] rounded-xl hover:bg-[#152d47] disabled:opacity-50 transition-colors">
+                  class="flex-1 py-3 text-sm font-semibold text-white bg-[#0D89CB] rounded-xl hover:bg-[#00659C] disabled:opacity-50 transition-colors">
                   {{ guardando ? 'Asignando…' : 'Asignar entrega' }}
                 </button>
               </div>
@@ -717,7 +717,7 @@ function updateMarkers(ubicaciones) {
     const ic = window.L.divIcon({
       className: '',
       html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-        <div style="background:#1B3A5C;border-radius:10px;width:38px;height:38px;
+        <div style="background:#0D89CB;border-radius:10px;width:38px;height:38px;
           display:flex;align-items:center;justify-content:center;
           border:2.5px solid #10b981;box-shadow:0 3px 10px rgba(0,0,0,.4)">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white"
@@ -728,7 +728,7 @@ function updateMarkers(ubicaciones) {
             <circle cx="18.5" cy="18.5" r="2.5"/>
           </svg>
         </div>
-        <div style="background:rgba(27,58,92,.9);color:#fff;font-size:9px;font-weight:700;
+        <div style="background:rgba(13,137,203,.9);color:#fff;font-size:9px;font-weight:700;
           padding:1px 6px;border-radius:4px;white-space:nowrap;
           max-width:72px;overflow:hidden;text-overflow:ellipsis;font-family:sans-serif">
           ${firstName}
