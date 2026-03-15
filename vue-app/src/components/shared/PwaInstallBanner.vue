@@ -66,20 +66,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { usePwaStore } from '../../stores/pwa.js'
 
-// ── Detectar si ya está instalada como PWA ──────────────────────────────────
-const isStandalone =
-  window.matchMedia('(display-mode: standalone)').matches ||
-  window.navigator.standalone === true  // iOS Safari instalada
+const pwa = usePwaStore()
 
-// ── Detectar iOS Safari (único browser donde beforeinstallprompt NO existe) ─
-const ua          = navigator.userAgent
-const isIosDevice = /iPad|iPhone|iPod/.test(ua) && !(window).MSStream
-const isSafari    = isIosDevice && /WebKit/.test(ua) && !/CriOS|FxiOS/.test(ua)
-
-const STORAGE_KEY = 'pwa_install_dismissed_at'
-const DISMISS_DAYS = 30  // no volver a mostrar hasta dentro de 30 días
+const STORAGE_KEY  = 'pwa_install_dismissed_at'
+const DISMISS_DAYS = 30
 
 function wasDismissedRecently() {
   try {
@@ -89,59 +82,33 @@ function wasDismissedRecently() {
   } catch { return false }
 }
 
-// ── Estado del banner ───────────────────────────────────────────────────────
-const deferredPrompt = ref(null)   // evento beforeinstallprompt guardado
-const showNative     = ref(false)  // mostrar banner Chrome/Android/Desktop
-const showIos        = ref(false)  // mostrar instrucciones iOS Safari
+// visible se activa después de 3 s (si no fue descartado y no es standalone)
+const visible = ref(false)
+
+if (!pwa.isStandalone && !wasDismissedRecently()) {
+  setTimeout(() => { visible.value = true }, 3000)
+}
+
+// Para iOS el banner solo aparece si el store lo detecta y no fue descartado
+const showNative = computed(() => pwa.canInstall  && visible.value)
+const showIos    = computed(() => pwa.isIosSafari && visible.value)
 
 function dismiss() {
-  showNative.value = false
-  showIos.value    = false
+  visible.value = false
   try { localStorage.setItem(STORAGE_KEY, String(Date.now())) } catch {}
 }
 
 async function install() {
-  if (!deferredPrompt.value) return
-  deferredPrompt.value.prompt()
-  const { outcome } = await deferredPrompt.value.userChoice
-  deferredPrompt.value = null
-  showNative.value = false
-  // Si aceptó, marcar como "ya instalado" permanentemente
-  if (outcome === 'accepted') {
+  const accepted = await pwa.install()
+  visible.value = false
+  if (accepted) {
+    // Marcar dismiss "permanente" para no volver a mostrar el banner
     try { localStorage.setItem(STORAGE_KEY, String(Date.now() + 365 * 86_400_000)) } catch {}
   }
 }
 
-function handleBeforeInstall(e) {
-  e.preventDefault()
-  deferredPrompt.value = e
-  if (!isStandalone && !wasDismissedRecently()) {
-    // Pequeño delay para no mostrar antes de que la app cargue
-    setTimeout(() => { showNative.value = true }, 3000)
-  }
-}
-
-function handleAppInstalled() {
-  showNative.value = false
-  deferredPrompt.value = null
-}
-
-onMounted(() => {
-  if (isStandalone) return  // ya está instalada, no mostrar nada
-
-  window.addEventListener('beforeinstallprompt', handleBeforeInstall)
-  window.addEventListener('appinstalled',        handleAppInstalled)
-
-  // iOS Safari: mostrar instrucciones manuales si aún no fue descartado
-  if (isSafari && !wasDismissedRecently()) {
-    setTimeout(() => { showIos.value = true }, 3000)
-  }
-})
-
-onUnmounted(() => {
-  window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
-  window.removeEventListener('appinstalled',        handleAppInstalled)
-})
+// Si la app se instala desde fuera del banner (ej: barra del navegador), ocultarlo
+watch(() => pwa.isStandalone, (v) => { if (v) visible.value = false })
 </script>
 
 <style scoped>

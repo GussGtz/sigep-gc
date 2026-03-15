@@ -49,6 +49,14 @@
               </svg>
               Cambiar contraseña
             </button>
+            <button v-if="pwaStore.showInstallOption" @click="instalarApp"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Instalar app
+            </button>
             <div class="border-t border-gray-100 my-1"></div>
             <button @click="cerrarSesion"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
@@ -274,12 +282,14 @@ import { useAuthStore }      from '../../stores/auth.js'
 import { useWebSocketStore } from '../../stores/websocket.js'
 import { useGpsStore }       from '../../stores/gps.js'
 import { useChatStore }     from '../../stores/chat.js'
+import { usePwaStore }     from '../../stores/pwa.js'
 import axios from 'axios'
 
 const auth      = useAuthStore()
 const wsStore   = useWebSocketStore()
 const gpsStore  = useGpsStore()
 const chatStore = useChatStore()
+const pwaStore  = usePwaStore()
 const router   = useRouter()
 const toast    = inject('toast')
 
@@ -336,6 +346,15 @@ async function cerrarSesion() {
   userMenuOpen.value = false
   await auth.logout()
   router.push('/')
+}
+
+async function instalarApp() {
+  userMenuOpen.value = false
+  if (pwaStore.isIosSafari) {
+    toast?.add({ type: 'info', title: 'Instalar en iOS', message: 'Toca el ícono Compartir ↑ y luego "Agregar a inicio"' })
+  } else {
+    await pwaStore.install()
+  }
 }
 
 function onClickOutside(e) {

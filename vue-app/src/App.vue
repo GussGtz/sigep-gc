@@ -68,6 +68,7 @@ import { useGpsStore }           from './stores/gps.js'
 import { usePedidosStore }       from './stores/pedidos.js'
 import { useInventarioStore }    from './stores/inventario.js'
 import { initPushNotifications } from './utils/pushNotifications.js'
+import { usePwaStore }           from './stores/pwa.js'
 
 const auth          = useAuthStore()
 const notifs        = useNotificationsStore()
@@ -76,6 +77,7 @@ const chat          = useChatStore()
 const gps           = useGpsStore()
 const pedidosStore  = usePedidosStore()
 const inventarioStore = useInventarioStore()
+const pwaStore      = usePwaStore()
 
 // ── Debounce: evita múltiples re-fetch si llegan señales en ráfaga ──
 function debounce(fn, delay) {
@@ -97,6 +99,12 @@ onMounted(() => {
     notifs.startPolling()
     if (auth.token) wsStore.connect(auth.token)
   }
+  // ── Capturar evento PWA para instalación global ──
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    pwaStore.capturePrompt(e)
+  })
+  window.addEventListener('appinstalled', () => pwaStore.markInstalled())
 })
 watch(() => auth.isAuthenticated, (loggedIn) => {
   if (loggedIn) {

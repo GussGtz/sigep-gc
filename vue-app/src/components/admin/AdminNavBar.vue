@@ -127,6 +127,14 @@
               </svg>
               Cambiar contraseña
             </button>
+            <button v-if="pwa.showInstallOption" @click="instalarApp"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors mb-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Instalar app
+            </button>
             <button @click="handleLogout"
               class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,6 +321,14 @@
               </svg>
               Cambiar contraseña
             </button>
+            <button v-if="pwa.showInstallOption" @click="instalarApp"
+              class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Instalar app
+            </button>
             <button @click="handleLogout"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -329,12 +345,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore }          from '../../stores/auth.js'
 import { useNotificationsStore } from '../../stores/notifications.js'
 import { useChatStore }          from '../../stores/chat.js'
 import { useWebSocketStore }     from '../../stores/websocket.js'
+import { usePwaStore }           from '../../stores/pwa.js'
 import axios                     from 'axios'
 import PasswordStrengthBar       from '../shared/PasswordStrengthBar.vue'
 
@@ -357,6 +374,9 @@ async function fetchPendingCount() {
     pendingCount.value = data.total
   } catch {}
 }
+
+const pwa   = usePwaStore()
+const toast = inject('toast', { add: () => {} })
 
 const drawerOpen    = ref(false)
 const mobileBell    = ref(false)
@@ -473,6 +493,16 @@ async function handleLogout() {
   notifs.clear()
   await auth.logout()
   router.push('/login')
+}
+
+async function instalarApp() {
+  drawerOpen.value  = false
+  desktopMenu.value = false
+  if (pwa.isIosSafari) {
+    toast.add({ type: 'info', title: 'Instalar en iOS', message: 'Toca el ícono Compartir ↑ y luego "Agregar a inicio"' })
+  } else {
+    await pwa.install()
+  }
 }
 
 function onClickOutside(e) {
