@@ -136,8 +136,8 @@
                   :type="showPw ? 'text' : 'password'"
                   class="w-full border rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:border-transparent placeholder-gray-400 transition-all pr-12"
                   :class="errors.password ? 'border-red-400 ring-1 ring-red-400 bg-red-50 focus:ring-red-400' : 'border-gray-200 focus:ring-[#1B3A5C]'"
-                  placeholder="Mínimo 6 caracteres"
-                  minlength="6"
+                  placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
+                  minlength="8"
                   autocomplete="new-password"
                   @input="errors.password = ''"
                 />
@@ -156,6 +156,7 @@
                   </svg>
                 </button>
               </div>
+              <PasswordStrengthBar :password="form.password" />
               <p v-if="errors.password" class="text-xs text-red-500 mt-1.5 flex items-center gap-1">
                 <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
@@ -198,7 +199,7 @@
             <!-- Botón -->
             <button
               type="submit"
-              :disabled="loading"
+              :disabled="loading || !passwordValida"
               class="w-full bg-[#1B3A5C] hover:bg-[#15304D] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2 text-sm"
             >
               <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -237,9 +238,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import PasswordStrengthBar from '../components/shared/PasswordStrengthBar.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -251,6 +253,11 @@ const errorMsg = ref('')
 const done     = ref(false)
 const showPw   = ref(false)
 const errors   = ref({ password: '', confirm: '' })
+
+const passwordValida = computed(() => {
+  const p = form.value.password
+  return p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p)
+})
 
 onMounted(() => {
   token.value = route.query.token || ''
@@ -265,8 +272,8 @@ async function handleReset() {
     errors.value.password = 'Ingresa tu nueva contraseña'
     return
   }
-  if (form.value.password.length < 6) {
-    errors.value.password = 'La contraseña debe tener al menos 6 caracteres'
+  if (!passwordValida.value) {
+    errors.value.password = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número'
     return
   }
   if (form.value.password !== form.value.confirm) {

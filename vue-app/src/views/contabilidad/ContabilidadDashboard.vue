@@ -318,9 +318,10 @@
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
                 <input v-model="passNueva" type="password" autocomplete="new-password"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
                   class="w-full px-3 py-2.5 text-sm border border-gray-200 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B3A5C]/20 focus:border-[#1B3A5C] transition-all"
                   @keyup.enter="guardarPassword"/>
+                <PasswordStrengthBar :password="passNueva" />
               </div>
               <p v-if="passError" class="text-xs text-red-500 font-medium">{{ passError }}</p>
             </div>
@@ -329,7 +330,7 @@
                 class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
-              <button @click="guardarPassword" :disabled="guardandoPass"
+              <button @click="guardarPassword" :disabled="guardandoPass || !passwordValida"
                 class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1B3A5C] hover:bg-[#152d47] disabled:opacity-50 transition-colors">
                 {{ guardandoPass ? 'Guardando…' : 'Cambiar' }}
               </button>
@@ -345,8 +346,9 @@
 import { ref, reactive, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import StatusBadge  from '../../components/shared/StatusBadge.vue'
-import PedidoModal  from '../../components/shared/PedidoModal.vue'
+import StatusBadge         from '../../components/shared/StatusBadge.vue'
+import PedidoModal         from '../../components/shared/PedidoModal.vue'
+import PasswordStrengthBar from '../../components/shared/PasswordStrengthBar.vue'
 import { useAuthStore }          from '../../stores/auth.js'
 import { usePedidosStore }       from '../../stores/pedidos.js'
 import { useNotificationsStore } from '../../stores/notifications.js'
@@ -370,6 +372,11 @@ const passNueva       = ref('')
 const passError       = ref('')
 const guardandoPass   = ref(false)
 
+const passwordValida = computed(() => {
+  const p = passNueva.value
+  return p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p)
+})
+
 const initials = computed(() =>
   (auth.user?.nombre || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 )
@@ -385,8 +392,8 @@ async function guardarPassword() {
   passError.value = ''
   if (!passActual.value || !passNueva.value)
     return (passError.value = 'Completa ambos campos')
-  if (passNueva.value.length < 6)
-    return (passError.value = 'La nueva contraseña debe tener mínimo 6 caracteres')
+  if (!passwordValida.value)
+    return (passError.value = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número')
   guardandoPass.value = true
   try {
     await axios.patch('/api/auth/cambiar-password', {

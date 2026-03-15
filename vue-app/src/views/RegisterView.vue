@@ -147,8 +147,8 @@
                 v-model="form.password"
                 :type="showPw ? 'text' : 'password'"
                 class="input-field w-full pr-12"
-                placeholder="Mínimo 6 caracteres"
-                minlength="6"
+                placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
+                minlength="8"
                 required
                 autocomplete="new-password"
               />
@@ -166,6 +166,7 @@
                 </svg>
               </button>
             </div>
+            <PasswordStrengthBar :password="form.password" />
           </div>
 
           <!-- Confirmar Contraseña -->
@@ -205,7 +206,7 @@
           <!-- Botón -->
           <button
             type="submit"
-            :disabled="loading"
+            :disabled="loading || !passwordValida"
             class="btn-primary w-full justify-center py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -237,9 +238,10 @@
 </template>
 
 <script setup>
-import { ref, inject }  from 'vue'
-import axios            from 'axios'
-import AppRecaptcha     from '../components/shared/AppRecaptcha.vue'
+import { ref, computed, inject } from 'vue'
+import axios                      from 'axios'
+import AppRecaptcha               from '../components/shared/AppRecaptcha.vue'
+import PasswordStrengthBar        from '../components/shared/PasswordStrengthBar.vue'
 
 const toast    = inject('toast')
 
@@ -255,6 +257,11 @@ const form = ref({
 const loading        = ref(false)
 const errorMsg       = ref('')
 const showPw         = ref(false)
+
+const passwordValida = computed(() => {
+  const p = form.value.password
+  return p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p)
+})
 const registered     = ref(false)
 const recaptchaToken = ref('')
 const recaptchaRef   = ref(null)
@@ -265,12 +272,12 @@ function onExpire()      { recaptchaToken.value = '' }
 async function handleRegister() {
   errorMsg.value = ''
 
-  if (form.value.password !== form.value.confirmPassword) {
-    errorMsg.value = 'Las contraseñas no coinciden'
+  if (!passwordValida.value) {
+    errorMsg.value = 'La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número'
     return
   }
-  if (form.value.password.length < 6) {
-    errorMsg.value = 'La contraseña debe tener al menos 6 caracteres'
+  if (form.value.password !== form.value.confirmPassword) {
+    errorMsg.value = 'Las contraseñas no coinciden'
     return
   }
   if (!recaptchaToken.value) {
