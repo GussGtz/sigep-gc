@@ -41,6 +41,39 @@
     <div class="w-full lg:w-7/12 bg-white flex items-center justify-center p-8 min-h-screen">
       <div class="w-full max-w-md">
 
+        <!-- ── Estado: Solicitud enviada ── -->
+        <div v-if="registered" class="text-center">
+          <div class="flex items-center justify-center mb-8">
+            <img src="/icons/logo.jpg" class="w-10 h-10 rounded-xl object-contain" alt="Glass Caribe"/>
+          </div>
+          <div class="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-amber-100">
+            <svg class="w-10 h-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h2 class="font-serif text-2xl font-bold text-gray-900 mb-3">¡Solicitud enviada!</h2>
+          <p class="text-gray-500 text-sm leading-relaxed mb-2">
+            Tu cuenta está en revisión por el administrador.
+          </p>
+          <p class="text-gray-400 text-sm leading-relaxed mb-8">
+            Recibirás acceso al sistema en cuanto sea aprobada tu solicitud.
+          </p>
+          <router-link
+            to="/login"
+            class="inline-flex items-center gap-2 bg-[#1B3A5C] text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-[#15304D] transition-colors shadow-sm"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Volver al inicio de sesión
+          </router-link>
+          <p class="text-center text-xs text-gray-300 mt-8">Glass Caribe © {{ new Date().getFullYear() }}</p>
+        </div>
+
+        <!-- ── Formulario de registro ── -->
+        <template v-else>
+
         <!-- Logo + Título -->
         <div class="flex items-start justify-between mb-8">
           <div>
@@ -194,8 +227,10 @@
         </div>
 
         <p class="text-center text-xs text-gray-300 mt-8">
-          Glass Caribe © 2025
+          Glass Caribe © {{ new Date().getFullYear() }}
         </p>
+
+        </template><!-- fin v-else formulario -->
       </div>
     </div>
   </div>
@@ -203,11 +238,9 @@
 
 <script setup>
 import { ref, inject }  from 'vue'
-import { useRouter }    from 'vue-router'
 import axios            from 'axios'
 import AppRecaptcha     from '../components/shared/AppRecaptcha.vue'
 
-const router   = useRouter()
 const toast    = inject('toast')
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
@@ -222,6 +255,7 @@ const form = ref({
 const loading        = ref(false)
 const errorMsg       = ref('')
 const showPw         = ref(false)
+const registered     = ref(false)
 const recaptchaToken = ref('')
 const recaptchaRef   = ref(null)
 
@@ -253,8 +287,7 @@ async function handleRegister() {
       password:       form.value.password,
       recaptchaToken: recaptchaToken.value,
     })
-    toast.add({ type: 'success', message: 'Cuenta creada. ¡Ya puedes iniciar sesión!' })
-    router.push('/login')
+    registered.value = true  // Mostrar pantalla "en revisión"
   } catch (e) {
     errorMsg.value = e.response?.data?.message || 'Error al crear la cuenta'
     recaptchaRef.value?.reset()

@@ -294,8 +294,8 @@ onMounted(async () => {
     if (gpsStore.isTracking) {
       // Ya está rastreando — solo actualizar el pedido_id
       gpsStore.updatePedidoId(data.pedido_id)
-    } else if (auth.user?.en_turno) {
-      // El turno está activo pero el GPS no corrió (ej. primera carga directa a esta URL)
+    } else {
+      // GPS siempre activo mientras la app esté abierta (independiente del turno)
       gpsStore.startTracking(wsStore, data.pedido_id)
     }
   } catch {

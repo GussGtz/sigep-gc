@@ -57,8 +57,19 @@ function verifyRecaptcha(token) {
 /**
  * Middleware: verifica reCAPTCHA antes de continuar.
  * Espera { recaptchaToken } en req.body.
+ * Los administradores (JWT válido con role_id=1) omiten la verificación.
  */
 async function checkRecaptcha(req, res, next) {
+  // Admins no necesitan resolver reCAPTCHA (ej. crean usuarios desde el panel)
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    try {
+      const { jwt: _jwt } = { jwt: require('jsonwebtoken') };
+      const decoded = _jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+      if (decoded.role_id === 1) return next();
+    } catch {}
+  }
+
   const ok = await verifyRecaptcha(req.body.recaptchaToken);
   if (!ok) {
     return res.status(400).json({

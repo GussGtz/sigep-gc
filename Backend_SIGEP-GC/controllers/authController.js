@@ -11,16 +11,19 @@ const register = async (req, res) => {
     return res.status(400).json({ message: 'Nombre, email y contraseña son obligatorios' });
   }
 
-  // ── Determinar rol (solo admin puede asignar rol distinto a 2) ──
-  let rolAsignado = 2;
+  // ── Determinar rol y si es auto-registro o lo crea un admin ──
+  let rolAsignado    = 2;
+  let esAutoRegistro = true; // true = usuario se registra solo; false = admin crea la cuenta
+
   const authHeader = req.headers.authorization;
   if (authHeader && role_id) {
     try {
       const token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      // Ahora permite role_id 1, 2 y 3 (conductor)
+      // Permite role_id 1, 2 y 3 (conductor) solo si es admin
       if (decoded.role_id === 1 && [1, 2, 3].includes(Number(role_id))) {
-        rolAsignado = Number(role_id);
+        rolAsignado    = Number(role_id);
+        esAutoRegistro = false; // Admin crea usuario → activar de inmediato
       }
     } catch {}
   }
@@ -49,13 +52,49 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'El correo ya está registrado' });
     }
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash          = await bcrypt.hash(password, 10);
+    const activoInicial = !esAutoRegistro; // Auto-registro → inactivo; Admin crea → activo
 
     const insert = await pool.query(
-      'INSERT INTO usuarios (nombre, email, password_hash, role_id, departamento) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [nombre, email, hash, rolAsignado, esConductor ? null : departamento]
+      'INSERT INTO usuarios (nombre, email, password_hash, role_id, departamento, activo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [nombre, email, hash, rolAsignado, esConductor ? null : departamento, activoInicial]
     );
 
+    if (esAutoRegistro) {
+      // ── Auto-registro: notificar admins y responder sin token ──
+      const deptLabel = esConductor ? 'Conductor' : (departamento || 'Sin depto.');
+
+      // WebSocket: notificar admins con la app abierta
+      if (global.broadcastToAdmins) {
+        global.broadcastToAdmins({
+          type: 'nuevo_registro',
+          user: { id: insert.rows[0].id, nombre, email, departamento: deptLabel }
+        });
+      }
+
+      // Push: notificar admins con la app cerrada
+      try {
+        const { rows: admins } = await pool.query(
+          'SELECT id FROM usuarios WHERE role_id = 1 AND activo = true'
+        );
+        for (const a of admins) {
+          global.sendPushToUser?.(a.id, {
+            title: 'Glass Caribe — Nuevo registro',
+            body:  `${nombre} solicita acceso (${deptLabel})`,
+            url:   '/admin/usuarios',
+            tag:   'nuevo-registro'
+          });
+        }
+      } catch (pushErr) {
+        console.error('[register] Error enviando push a admins:', pushErr.message);
+      }
+
+      return res.status(201).json({
+        message: 'Cuenta creada. Tu solicitud está pendiente de aprobación por el administrador.'
+      });
+    }
+
+    // ── Admin creando usuario: respuesta normal con token ──
     const user = await pool.query(
       'SELECT id, nombre, email, role_id, departamento, en_turno FROM usuarios WHERE id = $1',
       [insert.rows[0].id]
@@ -88,7 +127,9 @@ const login = async (req, res) => {
     const user = result.rows[0];
 
     if (!user.activo) {
-      return res.status(403).json({ message: 'Cuenta desactivada' });
+      return res.status(403).json({
+        message: 'Tu cuenta está pendiente de activación. El administrador revisará tu solicitud.'
+      });
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);

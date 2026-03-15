@@ -415,14 +415,11 @@ onMounted(async () => {
 
   await fetchEntregas()
 
-  // Si el turno está activo, asegurar que el GPS esté corriendo
-  if (enRuta.value && !gpsStore.isTracking) {
-    const activa = entregas.value.find(e => e.estado === 'en_camino')
+  // GPS siempre activo mientras la app esté abierta (independiente del turno)
+  const activa = entregas.value.find(e => e.estado === 'en_camino')
+  if (!gpsStore.isTracking) {
     gpsStore.startTracking(wsStore, activa?.pedido_id ?? null)
-  }
-  // Si hay entrega en_camino pero el GPS ya corre, sólo actualizar el pedido_id
-  else if (enRuta.value && gpsStore.isTracking) {
-    const activa = entregas.value.find(e => e.estado === 'en_camino')
+  } else {
     if (activa) gpsStore.updatePedidoId(activa.pedido_id)
   }
 })

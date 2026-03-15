@@ -78,6 +78,10 @@
                 class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
                 {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
               </span>
+              <span v-if="tab.to === '/admin/usuarios' && pendingCount > 0"
+                class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white leading-none">
+                {{ pendingCount > 9 ? '9+' : pendingCount }}
+              </span>
             </router-link>
           </nav>
           <div class="px-4 py-4 border-t border-black/[0.05]">
@@ -185,6 +189,10 @@
           class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
           {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
         </span>
+        <span v-if="tab.to === '/admin/usuarios' && pendingCount > 0"
+          class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white leading-none">
+          {{ pendingCount > 9 ? '9+' : pendingCount }}
+        </span>
         <!-- Left active bar -->
         <span v-if="isActive(tab.to)"
           class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#1B3A5C]">
@@ -288,14 +296,28 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore }          from '../../stores/auth.js'
 import { useNotificationsStore } from '../../stores/notifications.js'
 import { useChatStore }          from '../../stores/chat.js'
+import { useWebSocketStore }     from '../../stores/websocket.js'
+import axios                     from 'axios'
 
 defineEmits(['toggleSidebar'])
 
-const route  = useRoute()
-const router = useRouter()
-const auth   = useAuthStore()
-const notifs = useNotificationsStore()
-const chat   = useChatStore()
+const route   = useRoute()
+const router  = useRouter()
+const auth    = useAuthStore()
+const notifs  = useNotificationsStore()
+const chat    = useChatStore()
+const wsStore = useWebSocketStore()
+
+// ── Pendientes de aprobación ──────────────────────────────────────────────────
+const pendingCount = ref(0)
+
+async function fetchPendingCount() {
+  if (auth.user?.role_id !== 1) return
+  try {
+    const { data } = await axios.get('/api/usuarios/pendientes')
+    pendingCount.value = data.total
+  } catch {}
+}
 
 const drawerOpen    = ref(false)
 const mobileBell    = ref(false)
@@ -423,6 +445,17 @@ function onClickOutside(e) {
   if (desktopBellRef.value && !desktopBellRef.value.contains(e.target)) desktopBell.value = false
   if (desktopMenuRef.value && !desktopMenuRef.value.contains(e.target)) desktopMenu.value = false
 }
-onMounted(()   => document.addEventListener('mousedown', onClickOutside))
-onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
+onMounted(() => {
+  document.addEventListener('mousedown', onClickOutside)
+  fetchPendingCount()
+  // Nuevo registro: incrementar badge
+  wsStore.on('nuevo_registro', () => { pendingCount.value++ })
+  // Activación/desactivación de usuario: refrescar count exacto
+  wsStore.on('data_usuarios',  fetchPendingCount)
+})
+onUnmounted(() => {
+  document.removeEventListener('mousedown', onClickOutside)
+  wsStore.off('nuevo_registro')
+  wsStore.off('data_usuarios')
+})
 </script>

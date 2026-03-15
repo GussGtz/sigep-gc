@@ -76,10 +76,24 @@
               <option value="contabilidad">Contabilidad</option>
               <option value="produccion">Producción</option>
             </select>
+            <!-- Pendientes -->
+            <button
+              @click="filtroEstado = filtroEstado === 'pendiente' ? '' : 'pendiente'"
+              class="px-4 py-2.5 text-sm font-semibold rounded-xl border transition-colors flex items-center gap-1.5"
+              :class="filtroEstado === 'pendiente'
+                ? 'bg-amber-500 text-white border-amber-500'
+                : 'text-amber-600 border-amber-300 bg-amber-50 hover:bg-amber-100'"
+            >
+              <span class="w-2 h-2 rounded-full bg-current"></span>
+              Pendientes
+              <span v-if="pendientesCount > 0" class="bg-white/30 text-current rounded-full px-1.5 text-[10px] font-bold leading-4">
+                {{ pendientesCount }}
+              </span>
+            </button>
             <!-- Limpiar -->
             <button
-              v-if="busqueda || filtroRol || filtroDept"
-              @click="busqueda = ''; filtroRol = ''; filtroDept = ''"
+              v-if="busqueda || filtroRol || filtroDept || filtroEstado"
+              @click="busqueda = ''; filtroRol = ''; filtroDept = ''; filtroEstado = ''"
               class="px-4 py-2.5 text-sm font-medium text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
             >
               Limpiar
@@ -170,10 +184,10 @@
               </span>
               <span
                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold"
-                :class="u.activo !== false ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'"
+                :class="u.activo !== false ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
               >
-                <span class="w-1.5 h-1.5 rounded-full" :class="u.activo !== false ? 'bg-emerald-400' : 'bg-gray-400'"></span>
-                {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
+                <span class="w-1.5 h-1.5 rounded-full" :class="u.activo !== false ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'"></span>
+                {{ u.activo !== false ? 'Activo' : 'Pendiente' }}
               </span>
             </div>
           </div>
@@ -256,14 +270,26 @@
               <div class="col-span-2">
                 <span
                   class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
-                  :class="u.activo !== false ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'"
+                  :class="u.activo !== false ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
                 >
-                  <span class="w-1.5 h-1.5 rounded-full" :class="u.activo !== false ? 'bg-emerald-400' : 'bg-gray-400'"></span>
-                  {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
+                  <span class="w-1.5 h-1.5 rounded-full" :class="u.activo !== false ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'"></span>
+                  {{ u.activo !== false ? 'Activo' : 'Pendiente' }}
                 </span>
               </div>
               <!-- Acciones -->
               <div class="col-span-2 flex justify-end gap-1">
+                <!-- Botón Aprobar visible siempre para usuarios pendientes -->
+                <button
+                  v-if="u.activo === false"
+                  @click="toggleActivo(u)"
+                  class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors flex items-center gap-1"
+                  title="Aprobar acceso"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Aprobar
+                </button>
                 <button
                   @click="abrirEditar(u)"
                   class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-all"
@@ -274,15 +300,14 @@
                   </svg>
                 </button>
                 <button
+                  v-if="u.activo !== false"
                   @click="toggleActivo(u)"
-                  class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all"
-                  :class="u.activo !== false ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-500 hover:bg-emerald-50'"
-                  :title="u.activo !== false ? 'Desactivar' : 'Activar'"
+                  class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 transition-all"
+                  title="Desactivar"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="u.activo !== false
-                      ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
-                      : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                   </svg>
                 </button>
                 <button
@@ -594,14 +619,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import AdminNavBar from '../../components/admin/AdminNavBar.vue'
 import { fuzzyMatch, fuzzyScore } from '../../utils/fuzzy.js'
-import { useAuthStore } from '../../stores/auth.js'
+import { useAuthStore }      from '../../stores/auth.js'
+import { useWebSocketStore } from '../../stores/websocket.js'
 import axios from 'axios'
 
 const toast     = inject('toast', { add: () => {} })
 const authStore = useAuthStore()
+const wsStore   = useWebSocketStore()
 
 /* ── Estado ── */
 const usuarios     = ref([])
@@ -609,6 +636,7 @@ const loading      = ref(true)
 const busqueda     = ref('')
 const filtroRol    = ref('')
 const filtroDept   = ref('')
+const filtroEstado = ref('')   // '' = todos | 'pendiente' = activo=false
 const paginaActual = ref(1)
 const porPagina    = 10
 const showModal    = ref(false)
@@ -671,6 +699,9 @@ const stats = computed(() => [
   },
 ])
 
+/* ── Pendientes (activo = false) ── */
+const pendientesCount = computed(() => usuarios.value.filter(u => u.activo === false).length)
+
 /* ── Listas por rol ── */
 const admins         = computed(() => usuarios.value.filter(u => u.role_id === 1))
 const colaboradores  = computed(() => usuarios.value.filter(u => u.role_id === 2))
@@ -690,8 +721,9 @@ const usuariosFiltrados = computed(() => {
       .sort((a, b) => b.score - a.score)
       .map(({ u }) => u)
   }
-  if (filtroRol.value)  list = list.filter(u => u.role_id === Number(filtroRol.value))
-  if (filtroDept.value) list = list.filter(u => u.departamento === filtroDept.value)
+  if (filtroRol.value)    list = list.filter(u => u.role_id === Number(filtroRol.value))
+  if (filtroDept.value)   list = list.filter(u => u.departamento === filtroDept.value)
+  if (filtroEstado.value === 'pendiente') list = list.filter(u => u.activo === false)
   return list
 })
 const totalPaginas  = computed(() => Math.ceil(usuariosFiltrados.value.length / porPagina))
@@ -859,7 +891,18 @@ async function resetPasswordAdmin() {
   }
 }
 
-onMounted(fetchUsuarios)
+onMounted(() => {
+  fetchUsuarios()
+  // Actualizar lista cuando llega un nuevo registro (en tiempo real)
+  wsStore.on('nuevo_registro', fetchUsuarios)
+  // Actualizar lista cuando un admin activa/desactiva a alguien
+  wsStore.on('data_usuarios',  fetchUsuarios)
+})
+
+onUnmounted(() => {
+  wsStore.off('nuevo_registro')
+  wsStore.off('data_usuarios')
+})
 </script>
 
 <style scoped>

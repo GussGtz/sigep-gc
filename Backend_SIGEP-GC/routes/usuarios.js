@@ -38,6 +38,18 @@ router.patch('/turno/toggle', verifyToken, async (req, res) => {
   }
 });
 
+/* GET /api/usuarios/pendientes — cantidad de usuarios inactivos pendientes de aprobación (admin) */
+router.get('/pendientes', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT COUNT(*)::int AS total FROM usuarios WHERE activo = false'
+    );
+    res.json({ total: rows[0].total });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al obtener pendientes', error: err.message });
+  }
+});
+
 /* DELETE /api/usuarios/:id — eliminar usuario (admin, no puede eliminarse a sí mismo) */
 router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
   const { id } = req.params;
@@ -127,6 +139,9 @@ router.patch('/:id/activo', verifyToken, isAdmin, async (req, res) => {
     if (result.rowCount === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
+
+    // Notificar a admins para que actualicen el contador de pendientes
+    if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_usuarios' });
 
     res.json({ message: `Usuario ${activo ? 'activado' : 'desactivado'} correctamente` });
   } catch (err) {
