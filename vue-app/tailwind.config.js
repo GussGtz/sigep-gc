@@ -57,8 +57,8 @@ export default {
         },
       },
       fontFamily: {
-        sans:  ['Inter',           'ui-sans-serif',  'system-ui',  'sans-serif'],
-        serif: ['Playfair Display','Georgia',        'Cambria',    'serif'     ],
+        sans:  ['Roboto', 'ui-sans-serif',  'system-ui',  'sans-serif'],
+        serif: ['Roboto', 'ui-sans-serif',  'system-ui',  'sans-serif'],
       },
       boxShadow: {
         'soft':   '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',

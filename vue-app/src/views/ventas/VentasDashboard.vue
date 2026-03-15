@@ -7,15 +7,6 @@
         <img src="/icons/logo.jpg" class="w-7 h-7 rounded-lg object-contain" alt="Glass Caribe"/>
         <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
       </div>
-      <!-- Nuevo Pedido -->
-      <button @click="showCrear = true"
-        class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1B3A5C] text-white text-xs font-bold hover:bg-[#152d47] transition-colors flex-shrink-0">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-        </svg>
-        <span class="hidden sm:inline">Nuevo Pedido</span>
-      </button>
-
       <!-- Chat — solo desktop; en mobile lo maneja el bottom nav -->
       <router-link to="/chat"
         class="hidden md:flex relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
@@ -158,7 +149,7 @@
               </svg>
             </div>
             <p class="text-sm font-semibold text-gray-500">Sin pedidos aquí</p>
-            <p class="text-xs text-gray-400">Usa "Nuevo Pedido" para crear el primero</p>
+            <p class="text-xs text-gray-400">No hay pedidos que coincidan con el filtro</p>
           </div>
 
           <div
@@ -320,157 +311,6 @@
       @updated="pedidosStore.fetchPedidos()"
     />
 
-    <!-- ── Modal crear pedido ── -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showCrear"
-          class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          @mousedown.self="showCrear = false; resetNuevoPedido()">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-              <h2 class="text-lg font-bold text-gray-900">Nuevo Pedido</h2>
-              <button @click="showCrear = false; resetNuevoPedido()"
-                class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-            <form @submit.prevent="crearPedido" class="p-6 space-y-4 overflow-y-auto" novalidate>
-
-              <!-- Número + Fecha -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Nº Pedido <span class="text-red-500">*</span>
-                  </label>
-                  <input v-model="nuevoPedido.numero_pedido" @input="formErrors.numero_pedido = ''"
-                    class="w-full border rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400 transition-colors"
-                    :class="formErrors.numero_pedido ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"
-                    placeholder="GC-2025-001"/>
-                  <p v-if="formErrors.numero_pedido" class="text-xs text-red-500 mt-1">{{ formErrors.numero_pedido }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Fecha de Entrega <span class="text-red-500">*</span>
-                  </label>
-                  <input v-model="nuevoPedido.fecha_entrega" type="date" @change="formErrors.fecha_entrega = ''"
-                    class="w-full border rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors"
-                    :class="formErrors.fecha_entrega ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"/>
-                  <p v-if="formErrors.fecha_entrega" class="text-xs text-red-500 mt-1">{{ formErrors.fecha_entrega }}</p>
-                </div>
-              </div>
-
-              <!-- Prioridad -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Prioridad</label>
-                <div class="flex gap-3">
-                  <label class="flex-1 flex items-center gap-2.5 border rounded-xl px-4 py-2.5 cursor-pointer transition-colors"
-                    :class="nuevoPedido.prioridad === 'normal' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:bg-gray-50'">
-                    <input type="radio" v-model="nuevoPedido.prioridad" value="normal" class="accent-gray-900"/>
-                    <span class="text-sm font-medium text-gray-700">Normal</span>
-                  </label>
-                  <label class="flex-1 flex items-center gap-2.5 border rounded-xl px-4 py-2.5 cursor-pointer transition-colors"
-                    :class="nuevoPedido.prioridad === 'urgente' ? 'border-orange-500 bg-orange-50' : 'border-orange-200 hover:bg-orange-50/50'">
-                    <input type="radio" v-model="nuevoPedido.prioridad" value="urgente" class="accent-orange-500"/>
-                    <span class="text-sm font-medium text-orange-700">Urgente</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Cliente -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Cliente <span class="text-gray-400 font-normal text-xs">(opcional)</span>
-                </label>
-                <input v-model="nuevoPedido.cliente_nombre"
-                  class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400"
-                  placeholder="Nombre del cliente"/>
-              </div>
-
-              <!-- Dirección -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Dirección de entrega <span class="text-gray-400 font-normal text-xs">(opcional)</span>
-                </label>
-                <input v-model="nuevoPedido.direccion_entrega"
-                  class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400"
-                  placeholder="Calle, colonia, ciudad..."/>
-              </div>
-
-              <!-- Medidas -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Medidas <span class="text-gray-400 font-normal text-xs">(metros — opcional)</span>
-                </label>
-                <div class="grid grid-cols-3 gap-3">
-                  <div>
-                    <input v-model="nuevoPedido.alto" type="number" min="0" step="0.01"
-                      @input="formErrors.alto = ''"
-                      class="w-full border rounded-xl px-3 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400 text-sm transition-colors"
-                      :class="formErrors.alto ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"
-                      placeholder="Alto (m)"/>
-                    <p v-if="formErrors.alto" class="text-xs text-red-500 mt-0.5">{{ formErrors.alto }}</p>
-                  </div>
-                  <div>
-                    <input v-model="nuevoPedido.ancho" type="number" min="0" step="0.01"
-                      @input="formErrors.ancho = ''"
-                      class="w-full border rounded-xl px-3 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400 text-sm transition-colors"
-                      :class="formErrors.ancho ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"
-                      placeholder="Ancho (m)"/>
-                    <p v-if="formErrors.ancho" class="text-xs text-red-500 mt-0.5">{{ formErrors.ancho }}</p>
-                  </div>
-                  <div>
-                    <input v-model="nuevoPedido.cantidad" type="number" min="1" step="1"
-                      class="w-full border border-gray-300 rounded-xl px-3 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
-                      placeholder="Piezas"/>
-                  </div>
-                </div>
-                <div v-if="m2Preview" class="mt-2 flex items-center gap-1.5 text-sm text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-3 py-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  {{ m2Preview }} m² totales
-                </div>
-              </div>
-
-              <!-- Especificaciones -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Especificaciones <span class="text-gray-400 font-normal text-xs">(opcional)</span>
-                </label>
-                <textarea v-model="nuevoPedido.especificaciones" rows="2"
-                  class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400 text-sm resize-none"
-                  placeholder="Tipo de vidrio, color, acabado..."/>
-              </div>
-
-              <div v-if="crearError" class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 flex items-center gap-2">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-                {{ crearError }}
-              </div>
-
-              <div class="flex gap-3 pt-1">
-                <button type="button" @click="showCrear = false; resetNuevoPedido()"
-                  class="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
-                  Cancelar
-                </button>
-                <button type="submit" :disabled="creando"
-                  class="flex-1 py-3 rounded-xl bg-[#1B3A5C] hover:bg-[#15304D] text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-sm">
-                  <svg v-if="creando" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  {{ creando ? 'Creando...' : 'Crear Pedido' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
     <!-- ── Modal cambiar contraseña ── -->
     <Teleport to="body">
       <Transition name="fade">
@@ -617,26 +457,6 @@ function onClickOutside(e) {
     userMenuOpen.value = false
 }
 
-// ── Crear pedido ──────────────────────────────────────────────────────────────
-const showCrear   = ref(false)
-const creando     = ref(false)
-const crearError  = ref('')
-const formErrors  = ref({})
-const nuevoPedido = ref({
-  numero_pedido: '', fecha_entrega: '',
-  cliente_nombre: '', direccion_entrega: '',
-  alto: '', ancho: '', cantidad: 1,
-  prioridad: 'normal', especificaciones: ''
-})
-
-const m2Preview = computed(() => {
-  const a = parseFloat(nuevoPedido.value.alto)
-  const b = parseFloat(nuevoPedido.value.ancho)
-  const c = parseInt(nuevoPedido.value.cantidad) || 1
-  if (a > 0 && b > 0) return (a * b * c).toFixed(2)
-  return null
-})
-
 const showModal          = ref(false)
 const pedidoSeleccionado = ref(null)
 const filtroActivo       = ref('todos')
@@ -692,49 +512,6 @@ async function guardarNota(p) {
     toast.add({ type: 'error', message: 'Error al guardar nota' })
   } finally {
     guardandoNota[p.id] = false
-  }
-}
-
-function resetNuevoPedido() {
-  nuevoPedido.value = {
-    numero_pedido: '', fecha_entrega: '',
-    cliente_nombre: '', direccion_entrega: '',
-    alto: '', ancho: '', cantidad: 1,
-    prioridad: 'normal', especificaciones: ''
-  }
-  formErrors.value = {}
-  crearError.value = ''
-}
-
-function validarForm() {
-  const e = {}
-  if (!nuevoPedido.value.numero_pedido?.trim())
-    e.numero_pedido = 'El número de pedido es obligatorio'
-  if (!nuevoPedido.value.fecha_entrega)
-    e.fecha_entrega = 'Selecciona la fecha de entrega'
-  const a = parseFloat(nuevoPedido.value.alto)
-  const b = parseFloat(nuevoPedido.value.ancho)
-  if (!isNaN(a) && a > 0 && (isNaN(b) || b <= 0))
-    e.ancho = 'Ingresa el ancho si proporcionas el alto'
-  if (!isNaN(b) && b > 0 && (isNaN(a) || a <= 0))
-    e.alto = 'Ingresa el alto si proporcionas el ancho'
-  formErrors.value = e
-  return Object.keys(e).length === 0
-}
-
-async function crearPedido() {
-  if (!validarForm()) return
-  crearError.value = ''
-  creando.value = true
-  try {
-    await pedidosStore.crearPedido(nuevoPedido.value)
-    showCrear.value = false
-    toast.add({ type: 'success', message: `Pedido #${nuevoPedido.value.numero_pedido} creado` })
-    resetNuevoPedido()
-  } catch (e) {
-    crearError.value = e.response?.data?.message || 'Error al crear el pedido'
-  } finally {
-    creando.value = false
   }
 }
 
