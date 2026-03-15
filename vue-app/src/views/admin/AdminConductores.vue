@@ -201,9 +201,20 @@
               <h3 class="font-bold text-gray-900 text-sm">GPS en tiempo real</h3>
               <p class="text-xs text-gray-400 mt-0.5">Conductores activos (últimos 5 min)</p>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span class="text-xs text-gray-500">{{ conductoresGPS }} en ruta</span>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-xs text-gray-500">{{ conductoresGPS }} en ruta</span>
+              </div>
+              <button v-if="conductoresGPS > 0" @click="centerMap"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#1B3A5C] bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Centrar
+              </button>
             </div>
           </div>
           <!-- Contenedor del mapa + overlay — relative para posicionamiento correcto -->
@@ -657,8 +668,9 @@ const toast  = inject('toast', { add: () => {} })
 const gpsStore = useGpsStore()
 
 // ── Mapa Leaflet ────────────────────────────────────────────────────────────
-let map     = null
-const markers = {}   // conductorId → L.marker
+let map            = null
+let _mapPositioned = false   // ¿ya se centró automáticamente al menos una vez?
+const markers = {}           // conductorId → L.marker
 
 const conductoresGPS = computed(() => Object.keys(gpsStore.ubicaciones).length)
 
@@ -716,8 +728,26 @@ function updateMarkers(ubicaciones) {
     }
   }
 
-  // Centrar el mapa si hay conductores
+  // Centrar automáticamente SOLO la primera vez que hay conductores activos
+  // (o cuando pasan de 0 a tener al menos 1). Después de eso el admin mueve
+  // libremente el mapa sin que salte.
   const latlngs = Object.values(ubicaciones).map(u => [u.lat, u.lng])
+  if (!_mapPositioned && latlngs.length > 0) {
+    if (latlngs.length === 1) {
+      map.setView(latlngs[0], 14)
+    } else {
+      map.fitBounds(latlngs, { padding: [40, 40] })
+    }
+    _mapPositioned = true
+  }
+  // Cuando ya no hay nadie activo, resetear para volver a centrar la próxima vez
+  if (latlngs.length === 0) _mapPositioned = false
+}
+
+/** Centrado manual desde el botón "Centrar" */
+function centerMap() {
+  if (!map) return
+  const latlngs = Object.values(gpsStore.ubicaciones).map(u => [u.lat, u.lng])
   if (latlngs.length === 1) {
     map.setView(latlngs[0], 14)
   } else if (latlngs.length > 1) {
@@ -1063,6 +1093,7 @@ watch(() => gpsStore.ubicaciones, (u) => updateMarkers(u), { deep: true })
 
 onUnmounted(() => {
   if (map) { map.remove(); map = null }
+  _mapPositioned = false
 })
 </script>
 
