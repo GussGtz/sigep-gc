@@ -1,0 +1,11 @@
+# Manifest: nunca cachear — el navegador siempre obtiene el nombre/icono actualizados
+/manifest.json
+  Cache-Control: no-store, no-cache, must-revalidate
+
+# Service Worker: nunca cachear — garantiza que el SW nuevo se activa de inmediato
+/sw.js
+  Cache-Control: no-store, no-cache, must-revalidate
+
+# Íconos: cachear 1 día (no crítico)
+/icons/*
+  Cache-Control: public, max-age=86400
