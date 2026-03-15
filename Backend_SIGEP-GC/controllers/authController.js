@@ -25,6 +25,11 @@ const register = async (req, res) => {
     } catch {}
   }
 
+  // ── Si el usuario eligió "conductor" en el formulario → rol 3 automático ──
+  if (departamento === 'conductor') {
+    rolAsignado = 3;
+  }
+
   const esConductor = rolAsignado === 3;
 
   // ── Departamento: requerido solo para no-conductores ──
