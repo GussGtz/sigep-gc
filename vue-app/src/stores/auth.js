@@ -11,24 +11,27 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isAdmin         = computed(() => user.value?.role_id === 1)
   const isVentas        = computed(() => user.value?.role_id === 2 && user.value?.departamento === 'ventas')
+  const isContabilidad  = computed(() => user.value?.role_id === 2 && user.value?.departamento === 'contabilidad')
   const isProduccion    = computed(() => user.value?.role_id === 2 && user.value?.departamento === 'produccion')
   const isConductor     = computed(() => user.value?.role_id === 3)
 
   // Rol legible
   const rolLabel = computed(() => {
-    if (isAdmin.value)      return 'Administrador'
-    if (isVentas.value)     return 'Ventas'
-    if (isProduccion.value) return 'Producción'
-    if (isConductor.value)  return 'Conductor'
+    if (isAdmin.value)        return 'Administrador'
+    if (isVentas.value)       return 'Ventas'
+    if (isContabilidad.value) return 'Contabilidad'
+    if (isProduccion.value)   return 'Producción'
+    if (isConductor.value)    return 'Conductor'
     return 'Usuario'
   })
 
   // Ruta home según rol
   const homeRoute = computed(() => {
-    if (isAdmin.value)      return '/admin'
-    if (isVentas.value)     return '/ventas'
-    if (isProduccion.value) return '/produccion'
-    if (isConductor.value)  return '/conductor'
+    if (isAdmin.value)        return '/admin'
+    if (isVentas.value)       return '/ventas'
+    if (isContabilidad.value) return '/contabilidad'
+    if (isProduccion.value)   return '/produccion'
+    if (isConductor.value)    return '/conductor'
     return '/login'
   })
 
@@ -78,7 +81,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    token, user, isAuthenticated, isAdmin, isVentas, isProduccion, isConductor,
+    token, user, isAuthenticated, isAdmin, isVentas, isContabilidad, isProduccion, isConductor,
     rolLabel, homeRoute, login, logout, verifyToken, setSession, clearSession
   }
 })

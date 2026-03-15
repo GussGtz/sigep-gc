@@ -11,8 +11,9 @@ const AdminPedidos        = () => import('../views/admin/AdminPedidos.vue')
 const AdminConductores    = () => import('../views/admin/AdminConductores.vue')
 const AdminUsuarios       = () => import('../views/admin/AdminUsuarios.vue')
 const AdminInventario     = () => import('../views/admin/AdminInventario.vue')
-const VentasDashboard     = () => import('../views/ventas/VentasDashboard.vue')
-const ProduccionDashboard = () => import('../views/produccion/ProduccionDashboard.vue')
+const VentasDashboard        = () => import('../views/ventas/VentasDashboard.vue')
+const ContabilidadDashboard  = () => import('../views/contabilidad/ContabilidadDashboard.vue')
+const ProduccionDashboard    = () => import('../views/produccion/ProduccionDashboard.vue')
 const ConductorDashboard  = () => import('../views/conductor/ConductorDashboard.vue')
 const ConductorEntrega    = () => import('../views/conductor/ConductorEntrega.vue')
 const ChatDirecto         = () => import('../views/chat/ChatDirecto.vue')
@@ -82,6 +83,14 @@ const routes = [
     name: 'VentasDashboard',
     component: VentasDashboard,
     meta: { requiresAuth: true, roles: [2], departamento: 'ventas' }
+  },
+
+  // ── CONTABILIDAD ───────────────────────────────────────
+  {
+    path: '/contabilidad',
+    name: 'ContabilidadDashboard',
+    component: ContabilidadDashboard,
+    meta: { requiresAuth: true, roles: [2], departamento: 'contabilidad' }
   },
 
   // ── PRODUCCIÓN ─────────────────────────────────────────
