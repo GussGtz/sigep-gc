@@ -129,65 +129,60 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
         [emailNorm, token, expiresAt]
       );
 
-      // Enviar email vía Gmail SMTP (nodemailer)
-      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+      // Enviar email vía Brevo API HTTP (sin SMTP — compatible con Render free tier)
+      if (process.env.BREVO_API_KEY) {
         try {
-          const nodemailer = require('nodemailer');
-
-          // Render free tier no tiene IPv6 — resolver manualmente a IPv4
-          const dns = require('dns').promises;
-          const [smtpIp] = await dns.resolve4('smtp.gmail.com');
-
-          const transporter = nodemailer.createTransport({
-            host: smtpIp,          // IP IPv4 directa, evita resolución IPv6
-            port: 465,
-            secure: true,
-            tls: { servername: 'smtp.gmail.com' }, // SNI para el certificado TLS
-            auth: {
-              user: process.env.GMAIL_USER,
-              pass: process.env.GMAIL_APP_PASSWORD,
-            },
-          });
-
           const appUrl = process.env.APP_URL || 'https://sigep-gc.onrender.com';
           const link   = `${appUrl}/reset-password?token=${token}`;
           const nombre = rows[0].nombre || 'Usuario';
 
-          await transporter.sendMail({
-            from:    `"Glass Caribe" <${process.env.GMAIL_USER}>`,
-            to:      emailNorm,
-            subject: 'Restablecer contraseña — Glass Caribe',
-            html: `
-              <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#f8f8f6;">
-                <div style="background:#fff;border-radius:16px;padding:32px;border:1px solid #e5e7eb;">
-                  <div style="margin-bottom:24px;">
-                    <span style="font-size:20px;font-weight:900;color:#1B3A5C;letter-spacing:-0.5px;">Glass Caribe</span>
+          const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': process.env.BREVO_API_KEY,
+            },
+            body: JSON.stringify({
+              sender:  { name: 'Glass Caribe', email: process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER },
+              to:      [{ email: emailNorm }],
+              subject: 'Restablecer contraseña — Glass Caribe',
+              htmlContent: `
+                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#f8f8f6;">
+                  <div style="background:#fff;border-radius:16px;padding:32px;border:1px solid #e5e7eb;">
+                    <div style="margin-bottom:24px;">
+                      <span style="font-size:20px;font-weight:900;color:#1B3A5C;letter-spacing:-0.5px;">Glass Caribe</span>
+                    </div>
+                    <h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px;">Hola, ${nombre} 👋</h2>
+                    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;">
+                      Recibimos una solicitud para restablecer la contraseña de tu cuenta.<br>
+                      Haz clic en el botón de abajo. Este enlace expira en <strong>1 hora</strong>.
+                    </p>
+                    <a href="${link}"
+                       style="display:inline-block;background:#1B3A5C;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:0.3px;">
+                      🔑 Restablecer contraseña
+                    </a>
+                    <p style="color:#9ca3af;font-size:12px;margin:24px 0 0;line-height:1.6;">
+                      Si no solicitaste este cambio, ignora este correo. Tu contraseña no cambiará.<br>
+                      <span style="word-break:break-all;color:#d1d5db;">${link}</span>
+                    </p>
                   </div>
-                  <h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px;">Hola, ${nombre} 👋</h2>
-                  <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;">
-                    Recibimos una solicitud para restablecer la contraseña de tu cuenta.<br>
-                    Haz clic en el botón de abajo. Este enlace expira en <strong>1 hora</strong>.
-                  </p>
-                  <a href="${link}"
-                     style="display:inline-block;background:#1B3A5C;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:0.3px;">
-                    🔑 Restablecer contraseña
-                  </a>
-                  <p style="color:#9ca3af;font-size:12px;margin:24px 0 0;line-height:1.6;">
-                    Si no solicitaste este cambio, ignora este correo. Tu contraseña no cambiará.<br>
-                    <span style="word-break:break-all;color:#d1d5db;">${link}</span>
-                  </p>
+                  <p style="text-align:center;color:#d1d5db;font-size:11px;margin-top:16px;">Glass Caribe © ${new Date().getFullYear()}</p>
                 </div>
-                <p style="text-align:center;color:#d1d5db;font-size:11px;margin-top:16px;">Glass Caribe © ${new Date().getFullYear()}</p>
-              </div>
-            `,
+              `,
+            }),
           });
 
-          console.log(`[forgot-password] Email enviado a: ${emailNorm}`);
+          if (resp.ok) {
+            console.log(`[forgot-password] Email enviado a: ${emailNorm}`);
+          } else {
+            const errBody = await resp.json().catch(() => ({}));
+            console.error('[forgot-password] Brevo error:', resp.status, JSON.stringify(errBody));
+          }
         } catch (emailErr) {
           console.error('[forgot-password] Error al enviar email:', emailErr.message);
         }
       } else {
-        console.log(`[forgot-password] GMAIL_USER/GMAIL_APP_PASSWORD no configuradas. Token: ${token}`);
+        console.log(`[forgot-password] BREVO_API_KEY no configurada. Token: ${token}`);
       }
     } else {
       console.log(`[forgot-password] Email no encontrado (silenciado): ${emailNorm}`);
