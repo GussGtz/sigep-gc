@@ -416,6 +416,7 @@ const navTabs = computed(() => {
     { to: '/admin/inventario',  label: 'Inventario',  icon: 'archive'    },
     { to: '/admin/conductores', label: 'Conductores', icon: 'truck'      },
     { to: '/admin/usuarios',    label: 'Usuarios',    icon: 'users'      },
+    { to: '/chat',              label: 'Chat',        icon: 'chat'       },
   ]
   if (dept === 'ventas')    return [{ to: '/ventas',    label: 'Mis Pedidos', icon: 'clipboard' }]
   if (dept === 'produccion') return [{ to: '/produccion', label: 'Producción',  icon: 'cog'       }]
