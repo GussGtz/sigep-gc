@@ -105,7 +105,7 @@
         </div>
 
         <!-- ── GPS Warning Banner ── -->
-        <div v-if="gpsStore.isTracking"
+        <div v-if="enRuta"
           class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3.5">
           <div class="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
             <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,10 +114,10 @@
             </svg>
           </div>
           <div class="min-w-0">
-            <p class="text-sm font-semibold text-amber-800">Tu turno sigue activo — GPS en curso</p>
+            <p class="text-sm font-semibold text-amber-800">Turno activo — GPS compartiendo ubicación</p>
             <p class="text-xs text-amber-700 mt-0.5 leading-relaxed">
-              Mantén la app abierta para que tu ubicación continúe compartiéndose con el equipo.
-              Cerrar el navegador detendrá el seguimiento.
+              Puedes usar otras apps con tranquilidad; el GPS seguirá activo en segundo plano.
+              Solo se detendrá si cierras el navegador por completo.
             </p>
           </div>
         </div>
@@ -358,7 +358,7 @@ async function toggleTurno() {
       // Buscar entrega activa para pasar el pedido_id al GPS
       const activa = entregas.value.find(e => e.estado === 'en_camino')
       gpsStore.startTracking(wsStore, activa?.pedido_id ?? null)
-      toast.add({ type: 'success', title: 'Turno iniciado', message: 'El GPS está activo. El admin puede ver tu posición.' })
+      toast.add({ type: 'success', title: 'Turno iniciado', message: 'GPS activo. Puedes minimizar la app y el seguimiento continuará.' })
     } else {
       gpsStore.stopTracking()
       toast.add({ type: 'info', title: 'Turno finalizado', message: 'Has cerrado sesión de trabajo.' })

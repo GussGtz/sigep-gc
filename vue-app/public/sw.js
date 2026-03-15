@@ -94,7 +94,7 @@ self.addEventListener('message', e => {
   if (e.data?.type === 'GPS_FOREGROUND_START') {
     e.waitUntil(
       self.registration.showNotification('Glass Caribe', {
-        body:             '📍 GPS activo — tu ubicación se está compartiendo',
+        body:             '📍 GPS activo · Puedes minimizar la app sin perder el seguimiento',
         icon:             '/icons/logo.jpg',
         badge:            '/icons/logo.jpg',
         tag:              'gps-foreground',
