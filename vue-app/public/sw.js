@@ -1,26 +1,26 @@
 /* ═══════════════════════════════════════════════════════════
-   Glass Caribe — Service Worker v3
-   Responsabilidad:
-     1. Push Notifications — mostrar notificaciones nativas
-     2. GPS Reminder — notificación persistente con botón "Abrir GPS"
+   Glass Caribe — Service Worker v5
+   Responsabilidades:
+     1. Push Notifications   — mostrar notificaciones nativas
+     2. GPS Foreground Notif — notificación persistente GPS activo
+        (equivalente al "foreground service" de Android)
    ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'glass-caribe-sw-v4'
+const CACHE_NAME = 'glass-caribe-sw-v5'
 
 // Activar inmediatamente sin esperar a que las páginas se recarguen
 self.addEventListener('install',  () => self.skipWaiting())
 
-// Al activar: eliminar TODOS los cachés viejos (vitrex-*, sgpv-*, etc.)
-// y tomar control de las páginas abiertas de inmediato
+// Al activar: eliminar TODOS los cachés viejos y tomar control de inmediato
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
         keys
-          .filter(k => k !== CACHE_NAME)   // borrar cualquier caché que no sea el actual
+          .filter(k => k !== CACHE_NAME)
           .map(k => caches.delete(k))
       ))
-      .then(() => clients.claim())          // tomar control sin recargar
+      .then(() => clients.claim())
   )
 })
 
@@ -57,7 +57,7 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close()
 
-  const targetUrl = e.notification.data?.url || '/'
+  const targetUrl = e.notification.data?.url || '/conductor'
 
   e.waitUntil(
     clients
@@ -78,7 +78,43 @@ self.addEventListener('notificationclick', e => {
 })
 
 // ── Message — recibir mensajes de la página ───────────────────────────────
-// Útil para que la página le diga al SW el token JWT (para futuras acciones)
 self.addEventListener('message', e => {
-  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting()
+
+  // Actualización del SW
+  if (e.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+    return
+  }
+
+  // ── GPS Foreground Start ─────────────────────────────────────────────────
+  // La página notifica que el GPS del conductor está activo.
+  // Mostramos una notificación persistente en la barra de notificaciones.
+  // En Android, esta notificación evita que el SO mate el proceso
+  // (equivalente al "startForegroundService" de apps nativas).
+  if (e.data?.type === 'GPS_FOREGROUND_START') {
+    e.waitUntil(
+      self.registration.showNotification('Glass Caribe', {
+        body:             '📍 GPS activo — tu ubicación se está compartiendo',
+        icon:             '/icons/logo.jpg',
+        badge:            '/icons/logo.jpg',
+        tag:              'gps-foreground',
+        renotify:         false,   // no vibrar ni hacer ruido al actualizar
+        silent:           true,    // sin sonido (es solo indicador de estado)
+        requireInteraction: true,  // no se cierra sola → persiste en la barra
+        data:             { url: '/conductor' },
+      })
+    )
+    return
+  }
+
+  // ── GPS Foreground Stop ──────────────────────────────────────────────────
+  // El conductor finalizó su turno → cerrar la notificación persistente.
+  if (e.data?.type === 'GPS_FOREGROUND_STOP') {
+    e.waitUntil(
+      self.registration
+        .getNotifications({ tag: 'gps-foreground' })
+        .then(notifs => notifs.forEach(n => n.close()))
+    )
+    return
+  }
 })

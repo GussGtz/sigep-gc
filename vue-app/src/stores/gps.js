@@ -4,6 +4,9 @@ import axios from 'axios'
 
 const API = import.meta.env.VITE_API_URL || '/api'
 
+// ── Clave para persistir estado GPS en localStorage ──────────────────────────
+const GPS_STORAGE_KEY = 'gps_bg_state'
+
 export const useGpsStore = defineStore('gps', () => {
 
   // ── Admin: posiciones de todos los conductores ──────────────────────────────
@@ -46,7 +49,6 @@ export const useGpsStore = defineStore('gps', () => {
   }
 
   // ── Conductor: tracking GPS persistente entre páginas ──────────────────────
-  // El tracking vive en el store para no perderse al navegar entre componentes
   const watchId        = ref(null)   // ID del geolocation.watchPosition
   const trackingActive = ref(false)  // ¿está el GPS corriendo?
   let _wsStore         = null        // referencia al websocket store
@@ -54,7 +56,6 @@ export const useGpsStore = defineStore('gps', () => {
   let _retryTimeout    = null        // timeout de reintento tras error
 
   // ── Wake Lock: mantiene la pantalla encendida mientras el GPS está activo ──
-  // Sin Wake Lock, Android suspende JS al apagarse la pantalla y el GPS se detiene.
   let _wakeLock        = null
 
   async function _requestWakeLock() {
@@ -63,10 +64,8 @@ export const useGpsStore = defineStore('gps', () => {
       _wakeLock = await navigator.wakeLock.request('screen')
       _wakeLock.addEventListener('release', () => {
         _wakeLock = null
-        // Si el GPS sigue activo, re-solicitar cuando la pantalla vuelva a estar visible
       })
     } catch (err) {
-      // Puede fallar si la pantalla ya está apagada o el navegador no lo permite
       console.warn('[GPS] Wake Lock no disponible:', err.message)
     }
   }
@@ -78,14 +77,102 @@ export const useGpsStore = defineStore('gps', () => {
     }
   }
 
+  // ── Service Worker: notificación persistente tipo "foreground service" ──────
+  // En Android, una notificación activa en la barra evita que el SO mate el
+  // proceso del navegador. Es el equivalente web del startForegroundService().
+  function _swNotify(type) {
+    try {
+      if (!('serviceWorker' in navigator)) return
+      const send = () => navigator.serviceWorker.controller?.postMessage({ type })
+      // Si el SW ya está listo → enviar de inmediato; si no → esperar
+      if (navigator.serviceWorker.controller) {
+        send()
+      } else {
+        navigator.serviceWorker.ready.then(send).catch(() => {})
+      }
+    } catch { /* SW no disponible en este entorno */ }
+  }
+
+  // ── localStorage: persistir estado para auto-reanudar al reabrir la app ────
+  function _saveTrackingState(active, pedidoId) {
+    try {
+      if (active) {
+        localStorage.setItem(GPS_STORAGE_KEY, JSON.stringify({
+          active:    true,
+          pedidoId:  pedidoId ?? null,
+          startedAt: Date.now()
+        }))
+      } else {
+        localStorage.removeItem(GPS_STORAGE_KEY)
+      }
+    } catch { /* localStorage no disponible */ }
+  }
+
+  /**
+   * Devuelve el estado GPS guardado en localStorage, o null si no hay ninguno
+   * o si el estado tiene más de 14 horas (un turno no puede durar más que eso).
+   */
+  function getSavedTrackingState() {
+    try {
+      const raw = localStorage.getItem(GPS_STORAGE_KEY)
+      if (!raw) return null
+      const state = JSON.parse(raw)
+      const MAX_SHIFT_MS = 14 * 60 * 60 * 1000  // 14 horas
+      if (state.active && (Date.now() - state.startedAt) < MAX_SHIFT_MS) {
+        return state
+      }
+      // Estado expirado → limpiar
+      localStorage.removeItem(GPS_STORAGE_KEY)
+    } catch {}
+    return null
+  }
+
+  // ── Keepalive interval ───────────────────────────────────────────────────────
+  // Cada 30 segundos mientras el GPS está activo:
+  //  1. Re-solicita Wake Lock si fue liberado (pantalla encendida de nuevo)
+  //  2. Cuando la página está oculta (minimizada): usa getCurrentPosition()
+  //     como respaldo porque Android puede pausar watchPosition en background.
+  let _keepAliveInterval = null
+
+  function _startKeepAlive() {
+    _stopKeepAlive()
+    _keepAliveInterval = setInterval(async () => {
+      if (!trackingActive.value) return
+
+      // 1. Re-solicitar Wake Lock si se liberó
+      if (!_wakeLock) await _requestWakeLock()
+
+      // 2. Fallback GPS cuando la página está en segundo plano
+      //    enableHighAccuracy: false → batería reducida para el fallback en background
+      if (document.visibilityState !== 'visible' && navigator.geolocation && _wsStore) {
+        navigator.geolocation.getCurrentPosition(
+          ({ coords }) => {
+            _wsStore.send({
+              type:      'location_update',
+              lat:       coords.latitude,
+              lng:       coords.longitude,
+              accuracy:  Math.round(coords.accuracy || 0),
+              pedido_id: _pedidoId || null
+            })
+          },
+          () => {},  // ignorar errores del fallback silenciosamente
+          { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
+        )
+      }
+    }, 30_000)
+  }
+
+  function _stopKeepAlive() {
+    if (_keepAliveInterval) {
+      clearInterval(_keepAliveInterval)
+      _keepAliveInterval = null
+    }
+  }
+
   // ── Visibility change: reiniciar watchPosition cuando la app vuelve al frente ──
-  // Chrome Android pausa JS en background; al volver al frente el watchPosition
-  // puede quedar zombi → limpiarlo y crear uno nuevo garantiza señal fresca.
   function _handleVisibilityChange() {
     if (document.visibilityState === 'visible' && trackingActive.value && _wsStore) {
-      // Reactivar GPS (puede haber quedado parado tras suspensión)
       startTracking(_wsStore, _pedidoId)
-      // Re-solicitar Wake Lock (puede haberse liberado al bloquear la pantalla)
       _requestWakeLock()
     }
   }
@@ -95,6 +182,11 @@ export const useGpsStore = defineStore('gps', () => {
   /**
    * Inicia (o reinicia) el GPS del conductor con máxima precisión.
    * Es seguro llamarlo varias veces: cancela el watch anterior antes de crear uno nuevo.
+   * Al iniciarse:
+   *   - Muestra notificación persistente en la barra de notificaciones (Android foreground)
+   *   - Guarda estado en localStorage para auto-reanudar si la app se cierra
+   *   - Activa keepalive interval para mantener GPS en segundo plano
+   *
    * @param {object} wsStoreInstance - instancia de useWebSocketStore
    * @param {number|null} pedidoId   - ID del pedido en entrega (null si turno sin entrega)
    */
@@ -125,7 +217,6 @@ export const useGpsStore = defineStore('gps', () => {
 
     watchId.value = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        // Enviar posición via WebSocket al backend
         _wsStore?.send({
           type:      'location_update',
           lat:       coords.latitude,
@@ -137,9 +228,11 @@ export const useGpsStore = defineStore('gps', () => {
       (err) => {
         console.warn('[GPS] Error:', err.code, err.message)
         if (err.code === 1 /* PERMISSION_DENIED */) {
-          // El usuario rechazó el permiso — no reintentar
           trackingActive.value = false
           watchId.value = null
+          _swNotify('GPS_FOREGROUND_STOP')
+          _saveTrackingState(false)
+          _stopKeepAlive()
         } else {
           // TIMEOUT o POSITION_UNAVAILABLE — reintentar en 5s
           _retryTimeout = setTimeout(() => {
@@ -148,13 +241,25 @@ export const useGpsStore = defineStore('gps', () => {
         }
       },
       {
-        enableHighAccuracy: true, // Usa chip GPS real (no solo WiFi/celular)
-        timeout:            30000, // Hasta 30s para obtener señal
-        maximumAge:         0      // Sin caché — siempre posición fresca
+        enableHighAccuracy: true,
+        timeout:            30000,
+        maximumAge:         0
       }
     )
 
     trackingActive.value = true
+
+    // ── Activar mecanismos de segundo plano ──────────────────────────────────
+
+    // Notificación persistente (foreground service) en la barra de notificaciones
+    _swNotify('GPS_FOREGROUND_START')
+
+    // Guardar estado para auto-reanudar al reabrir la app
+    _saveTrackingState(true, pedidoId)
+
+    // Keepalive: mantiene GPS cuando la pantalla se apaga o la app se minimiza
+    _startKeepAlive()
+
     return true
   }
 
@@ -164,6 +269,8 @@ export const useGpsStore = defineStore('gps', () => {
    */
   function updatePedidoId(pedidoId) {
     _pedidoId = pedidoId
+    // Actualizar estado persistido con el nuevo pedidoId
+    if (trackingActive.value) _saveTrackingState(true, pedidoId)
   }
 
   /**
@@ -176,9 +283,17 @@ export const useGpsStore = defineStore('gps', () => {
       navigator.geolocation.clearWatch(watchId.value)
       watchId.value = null
     }
-    // ── Liberar Wake Lock y listener de visibilidad ──
+
+    // ── Liberar todos los mecanismos de segundo plano ──
     _releaseWakeLock()
+    _stopKeepAlive()
     document.removeEventListener('visibilitychange', _handleVisibilityChange)
+
+    // Cerrar notificación persistente
+    _swNotify('GPS_FOREGROUND_STOP')
+
+    // Limpiar estado localStorage
+    _saveTrackingState(false)
 
     trackingActive.value = false
     _wsStore  = null
@@ -196,6 +311,8 @@ export const useGpsStore = defineStore('gps', () => {
     ubicaciones, fetchUbicaciones, recibirUbicacion,
     // Conductor
     isTracking, startTracking, stopTracking, updatePedidoId,
+    // Estado persistido (para auto-reanudar en ConductorDashboard)
+    getSavedTrackingState,
     // General
     clear
   }
