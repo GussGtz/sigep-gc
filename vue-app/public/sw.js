@@ -5,11 +5,24 @@
      2. GPS Reminder — notificación persistente con botón "Abrir GPS"
    ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'glass-caribe-sw-v3'
+const CACHE_NAME = 'glass-caribe-sw-v4'
 
 // Activar inmediatamente sin esperar a que las páginas se recarguen
 self.addEventListener('install',  () => self.skipWaiting())
-self.addEventListener('activate', e => e.waitUntil(clients.claim()))
+
+// Al activar: eliminar TODOS los cachés viejos (vitrex-*, sgpv-*, etc.)
+// y tomar control de las páginas abiertas de inmediato
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(k => k !== CACHE_NAME)   // borrar cualquier caché que no sea el actual
+          .map(k => caches.delete(k))
+      ))
+      .then(() => clients.claim())          // tomar control sin recargar
+  )
+})
 
 // ── Push Event — mostrar notificación nativa ──────────────────────────────
 self.addEventListener('push', e => {

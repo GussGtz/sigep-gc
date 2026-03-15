@@ -15,7 +15,7 @@ const pool = require('./config/db.js');
 const webpush = require('web-push');
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
-    `mailto:${process.env.VAPID_EMAIL || 'admin@vitrex.com'}`,
+    `mailto:${process.env.VAPID_EMAIL || 'admin@glasscaribe.com'}`,
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );

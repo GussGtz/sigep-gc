@@ -5,8 +5,8 @@ import axios from 'axios'
 const API = '/api'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('sgpv_token') || null)
-  const user  = ref(JSON.parse(localStorage.getItem('sgpv_user') || 'null'))
+  const token = ref(localStorage.getItem('gc_token') || null)
+  const user  = ref(JSON.parse(localStorage.getItem('gc_user') || 'null'))
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isAdmin         = computed(() => user.value?.role_id === 1)
@@ -35,16 +35,16 @@ export const useAuthStore = defineStore('auth', () => {
   function setSession(data) {
     token.value = data.token
     user.value  = data.user
-    localStorage.setItem('sgpv_token', data.token)
-    localStorage.setItem('sgpv_user', JSON.stringify(data.user))
+    localStorage.setItem('gc_token', data.token)
+    localStorage.setItem('gc_user', JSON.stringify(data.user))
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
   }
 
   function clearSession() {
     token.value = null
     user.value  = null
-    localStorage.removeItem('sgpv_token')
-    localStorage.removeItem('sgpv_user')
+    localStorage.removeItem('gc_token')
+    localStorage.removeItem('gc_user')
     delete axios.defaults.headers.common['Authorization']
   }
 
@@ -69,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await axios.get(`${API}/auth/me`)
       user.value = data
-      localStorage.setItem('sgpv_user', JSON.stringify(data))
+      localStorage.setItem('gc_user', JSON.stringify(data))
       return true
     } catch {
       clearSession()

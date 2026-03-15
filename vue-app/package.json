@@ -1,7 +1,7 @@
 {
-  "name": "sgpv-gc",
+  "name": "glass-caribe",
   "version": "1.0.0",
-  "description": "SGPV — Sistema de Gestión de Pedidos para Vidrio",
+  "description": "Glass Caribe — Sistema de Gestión de Pedidos",
   "type": "module",
   "scripts": {
     "dev": "vite",

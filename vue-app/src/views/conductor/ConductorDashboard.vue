@@ -326,7 +326,7 @@ async function toggleTurno() {
     // Sincronizar en auth store / localStorage
     if (auth.user) {
       auth.user.en_turno = data.en_turno
-      localStorage.setItem('sgpv_user', JSON.stringify(auth.user))
+      localStorage.setItem('gc_user', JSON.stringify(auth.user))
     }
 
     if (enRuta.value) {
@@ -363,7 +363,7 @@ async function iniciarEntrega(e) {
         enRuta.value = data.en_turno
         if (auth.user) {
           auth.user.en_turno = data.en_turno
-          localStorage.setItem('sgpv_user', JSON.stringify(auth.user))
+          localStorage.setItem('gc_user', JSON.stringify(auth.user))
         }
       } catch {}
     }
