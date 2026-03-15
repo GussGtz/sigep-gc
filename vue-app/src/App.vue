@@ -1,5 +1,6 @@
 <template>
   <router-view />
+  <PwaInstallBanner />
 
   <!-- ══ TOAST PREMIUM — fixed top-right ══ -->
   <Teleport to="body">
@@ -58,6 +59,7 @@
 
 <script setup>
 import { ref, provide, watch, onMounted } from 'vue'
+import PwaInstallBanner          from './components/shared/PwaInstallBanner.vue'
 import { useAuthStore }          from './stores/auth.js'
 import { useNotificationsStore } from './stores/notifications.js'
 import { useWebSocketStore }     from './stores/websocket.js'
