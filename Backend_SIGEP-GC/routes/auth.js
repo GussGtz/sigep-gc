@@ -139,7 +139,8 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
           const link    = `${appUrl}/reset-password?token=${token}`;
           const nombre  = rows[0].nombre || 'Usuario';
 
-          await resend.emails.send({
+          // Resend SDK v2+ devuelve { data, error } en lugar de lanzar excepción
+          const { data, error: resendError } = await resend.emails.send({
             from:    'Glass Caribe <noreply@glasscaribe.com>',
             to:      emailNorm,
             subject: 'Restablecer contraseña — Glass Caribe',
@@ -167,9 +168,15 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
               </div>
             `,
           });
-          console.log(`[forgot-password] Email enviado a: ${emailNorm}`);
+
+          if (resendError) {
+            // El SDK devolvió un error (ej. dominio no verificado, API key inválida)
+            console.error('[forgot-password] Resend rechazó el email:', JSON.stringify(resendError));
+          } else {
+            console.log(`[forgot-password] Email enviado a: ${emailNorm} | id: ${data?.id}`);
+          }
         } catch (emailErr) {
-          console.error('[forgot-password] Error al enviar email:', emailErr.message);
+          console.error('[forgot-password] Excepción al enviar email:', emailErr.message, emailErr.stack);
           // No interrumpir el flujo si el email falla — el token ya está guardado
         }
       } else {
