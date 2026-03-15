@@ -129,19 +129,25 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
         [emailNorm, token, expiresAt]
       );
 
-      // Enviar email con Resend (solo si la clave está configurada)
-      if (process.env.RESEND_API_KEY) {
+      // Enviar email vía Gmail SMTP (nodemailer)
+      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
         try {
-          const { Resend } = require('resend');
-          const resend = new Resend(process.env.RESEND_API_KEY);
+          const nodemailer = require('nodemailer');
 
-          const appUrl  = process.env.APP_URL || 'https://sigep-gc.onrender.com';
-          const link    = `${appUrl}/reset-password?token=${token}`;
-          const nombre  = rows[0].nombre || 'Usuario';
+          const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.GMAIL_USER,
+              pass: process.env.GMAIL_APP_PASSWORD,
+            },
+          });
 
-          // Resend SDK v2+ devuelve { data, error } en lugar de lanzar excepción
-          const { data, error: resendError } = await resend.emails.send({
-            from:    'Glass Caribe <noreply@glasscaribe.com>',
+          const appUrl = process.env.APP_URL || 'https://sigep-gc.onrender.com';
+          const link   = `${appUrl}/reset-password?token=${token}`;
+          const nombre = rows[0].nombre || 'Usuario';
+
+          await transporter.sendMail({
+            from:    `"Glass Caribe" <${process.env.GMAIL_USER}>`,
             to:      emailNorm,
             subject: 'Restablecer contraseña — Glass Caribe',
             html: `
@@ -169,18 +175,12 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
             `,
           });
 
-          if (resendError) {
-            // El SDK devolvió un error (ej. dominio no verificado, API key inválida)
-            console.error('[forgot-password] Resend rechazó el email:', JSON.stringify(resendError));
-          } else {
-            console.log(`[forgot-password] Email enviado a: ${emailNorm} | id: ${data?.id}`);
-          }
+          console.log(`[forgot-password] Email enviado a: ${emailNorm}`);
         } catch (emailErr) {
-          console.error('[forgot-password] Excepción al enviar email:', emailErr.message, emailErr.stack);
-          // No interrumpir el flujo si el email falla — el token ya está guardado
+          console.error('[forgot-password] Error al enviar email:', emailErr.message);
         }
       } else {
-        console.log(`[forgot-password] RESEND_API_KEY no configurada. Token: ${token}`);
+        console.log(`[forgot-password] GMAIL_USER/GMAIL_APP_PASSWORD no configuradas. Token: ${token}`);
       }
     } else {
       console.log(`[forgot-password] Email no encontrado (silenciado): ${emailNorm}`);
