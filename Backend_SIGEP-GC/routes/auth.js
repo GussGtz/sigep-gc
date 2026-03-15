@@ -7,6 +7,46 @@ const { register, login, me } = require('../controllers/authController');
 const { verifyToken }         = require('../middlewares/authMiddleware');
 
 /* ══════════════════════════════════════════════════
+   Rate limiter: 5 intentos de login por IP por minuto
+   (implementado en memoria, sin dependencias extra)
+   ══════════════════════════════════════════════════ */
+
+const loginAttempts = new Map() // { ip → { count, resetAt } }
+
+function loginRateLimiter(req, res, next) {
+  const ip     = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown'
+  const now    = Date.now()
+  const WINDOW = 60_000   // ventana de 1 minuto
+  const MAX    = 5        // intentos máximos
+
+  let entry = loginAttempts.get(ip)
+
+  if (!entry || now >= entry.resetAt) {
+    // Nueva ventana: primer intento
+    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW })
+    return next()
+  }
+
+  if (entry.count >= MAX) {
+    const segs = Math.ceil((entry.resetAt - now) / 1000)
+    return res.status(429).json({
+      message: `Demasiados intentos fallidos. Espera ${segs} segundo${segs !== 1 ? 's' : ''} e intenta de nuevo.`
+    })
+  }
+
+  entry.count++
+  next()
+}
+
+// Limpieza periódica para evitar memory leaks
+setInterval(() => {
+  const now = Date.now()
+  for (const [ip, entry] of loginAttempts.entries()) {
+    if (now >= entry.resetAt) loginAttempts.delete(ip)
+  }
+}, 5 * 60_000).unref()
+
+/* ══════════════════════════════════════════════════
    reCAPTCHA v2 — Verificación con Google
    ══════════════════════════════════════════════════ */
 
@@ -86,8 +126,8 @@ async function checkRecaptcha(req, res, next) {
 // POST /api/auth/register
 router.post('/register', checkRecaptcha, register);
 
-// POST /api/auth/login
-router.post('/login', checkRecaptcha, login);
+// POST /api/auth/login  (rate limiter → reCAPTCHA → controller)
+router.post('/login', loginRateLimiter, checkRecaptcha, login);
 
 // GET /api/auth/me  (requiere token)
 router.get('/me', verifyToken, me);
@@ -203,8 +243,8 @@ router.post('/reset-password', async (req, res) => {
   if (!token || !password) {
     return res.status(400).json({ message: 'Token y contraseña son requeridos' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+  if (password.length < 8) {
+    return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres' });
   }
 
   try {
@@ -254,8 +294,8 @@ router.patch('/cambiar-password', verifyToken, async (req, res) => {
   if (!password_actual || !nueva_password) {
     return res.status(400).json({ message: 'Se requieren password_actual y nueva_password' });
   }
-  if (nueva_password.length < 6) {
-    return res.status(400).json({ message: 'La nueva contraseña debe tener mínimo 6 caracteres' });
+  if (nueva_password.length < 8) {
+    return res.status(400).json({ message: 'La nueva contraseña debe tener mínimo 8 caracteres' });
   }
   try {
     const pool   = require('../config/db');

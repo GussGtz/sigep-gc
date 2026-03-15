@@ -1,7 +1,24 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const pool = require('../config/db');
+const jwt    = require('jsonwebtoken');
+const dns    = require('dns').promises;
+const pool   = require('../config/db');
 const generateToken = require('../utils/generateToken');
+
+/**
+ * Verifica que el dominio del email tenga registros MX (correo real).
+ * El dominio @glasscaribe.com siempre se considera válido.
+ */
+async function dominioTieneEmail(email) {
+  const dominio = (email.split('@')[1] || '').toLowerCase();
+  if (!dominio) return false;
+  if (dominio === 'glasscaribe.com') return true;  // dominio propio → siempre válido
+  try {
+    const mx = await dns.resolveMx(dominio);
+    return Array.isArray(mx) && mx.length > 0;
+  } catch {
+    return false;  // NXDOMAIN o sin MX → dominio inválido
+  }
+}
 
 // POST /api/auth/register
 const register = async (req, res) => {
@@ -46,10 +63,19 @@ const register = async (req, res) => {
   }
 
   try {
+    // Verificar que el dominio del correo sea real (tiene registros MX)
+    const emailNorm = email.toLowerCase().trim();
+    const dominioValido = await dominioTieneEmail(emailNorm);
+    if (!dominioValido) {
+      return res.status(400).json({
+        message: 'El correo electrónico no parece válido. Verifica el dominio e intenta de nuevo.'
+      });
+    }
+
     // Verificar si el email ya existe
-    const existe = await pool.query('SELECT id FROM usuarios WHERE email = $1', [email]);
+    const existe = await pool.query('SELECT id FROM usuarios WHERE email = $1', [emailNorm]);
     if (existe.rows.length > 0) {
-      return res.status(400).json({ message: 'El correo ya está registrado' });
+      return res.status(400).json({ message: 'Este correo ya está registrado. ¿Olvidaste tu contraseña?' });
     }
 
     const hash          = await bcrypt.hash(password, 10);
@@ -57,7 +83,7 @@ const register = async (req, res) => {
 
     const insert = await pool.query(
       'INSERT INTO usuarios (nombre, email, password_hash, role_id, departamento, activo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [nombre, email, hash, rolAsignado, esConductor ? null : departamento, activoInicial]
+      [nombre, emailNorm, hash, rolAsignado, esConductor ? null : departamento, activoInicial]
     );
 
     if (esAutoRegistro) {
@@ -68,7 +94,7 @@ const register = async (req, res) => {
       if (global.broadcastToAdmins) {
         global.broadcastToAdmins({
           type: 'nuevo_registro',
-          user: { id: insert.rows[0].id, nombre, email, departamento: deptLabel }
+          user: { id: insert.rows[0].id, nombre, email: emailNorm, departamento: deptLabel }
         });
       }
 
@@ -121,7 +147,7 @@ const login = async (req, res) => {
     const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+      return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
     }
 
     const user = result.rows[0];
@@ -134,7 +160,7 @@ const login = async (req, res) => {
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      return res.status(401).json({ message: 'Contrasena incorrecta' });
+      return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
     }
 
     const token = generateToken(user);
