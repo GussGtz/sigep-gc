@@ -134,11 +134,15 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
         try {
           const nodemailer = require('nodemailer');
 
+          // Render free tier no tiene IPv6 — resolver manualmente a IPv4
+          const dns = require('dns').promises;
+          const [smtpIp] = await dns.resolve4('smtp.gmail.com');
+
           const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
+            host: smtpIp,          // IP IPv4 directa, evita resolución IPv6
             port: 465,
             secure: true,
-            family: 4, // forzar IPv4 — Render free tier no tiene acceso IPv6
+            tls: { servername: 'smtp.gmail.com' }, // SNI para el certificado TLS
             auth: {
               user: process.env.GMAIL_USER,
               pass: process.env.GMAIL_APP_PASSWORD,
