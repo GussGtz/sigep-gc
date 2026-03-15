@@ -135,7 +135,10 @@ router.post('/forgot-password', checkRecaptcha, async (req, res) => {
           const nodemailer = require('nodemailer');
 
           const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            family: 4, // forzar IPv4 — Render free tier no tiene acceso IPv6
             auth: {
               user: process.env.GMAIL_USER,
               pass: process.env.GMAIL_APP_PASSWORD,
