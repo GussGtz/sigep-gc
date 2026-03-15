@@ -10,7 +10,7 @@
           </svg>
         </button>
         <div class="flex items-center gap-2">
-          <img src="/icons/icon.svg" class="w-7 h-7 rounded-lg flex-shrink-0" alt="Glass Caribe"/>
+          <img src="/icons/logo.jpg" class="w-7 h-7 rounded-lg flex-shrink-0 object-contain" alt="Glass Caribe"/>
           <span class="font-bold text-white text-sm hidden sm:block tracking-wide">Glass Caribe</span>
         </div>
         <span v-if="title" class="text-slate-400 text-sm truncate hidden md:block">/ {{ title }}</span>

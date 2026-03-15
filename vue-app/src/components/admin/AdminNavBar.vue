@@ -10,7 +10,7 @@
     </button>
 
     <div class="flex items-center gap-2 flex-1">
-      <img src="/icons/icon.svg" class="w-7 h-7 rounded-lg flex-shrink-0" alt="Glass Caribe"/>
+      <img src="/icons/logo.jpg" class="w-7 h-7 rounded-lg flex-shrink-0 object-contain" alt="Glass Caribe"/>
       <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
     </div>
 
@@ -63,7 +63,7 @@
           @click.stop>
           <div class="px-5 pt-6 pb-4 border-b border-black/[0.05]">
             <div class="flex items-center gap-3">
-              <img src="/icons/icon.svg" class="w-9 h-9 rounded-xl flex-shrink-0" alt="Glass Caribe"/>
+              <img src="/icons/logo.jpg" class="w-9 h-9 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
               <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
             </div>
           </div>
@@ -169,7 +169,7 @@
     <!-- Logo -->
     <div class="px-5 pt-6 pb-5 border-b border-black/[0.05]">
       <div class="flex items-center gap-3">
-        <img src="/icons/icon.svg" class="w-9 h-9 rounded-xl flex-shrink-0" alt="Glass Caribe"/>
+        <img src="/icons/logo.jpg" class="w-9 h-9 rounded-xl flex-shrink-0 object-contain" alt="Glass Caribe"/>
         <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
       </div>
     </div>

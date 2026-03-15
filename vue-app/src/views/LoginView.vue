@@ -13,7 +13,7 @@
 
       <!-- Logo top -->
       <div class="relative z-10 flex items-center gap-3">
-        <img src="/icons/icon.svg" class="w-10 h-10 rounded-xl" alt="Glass Caribe"/>
+        <img src="/icons/logo.jpg" class="w-10 h-10 rounded-xl object-contain" alt="Glass Caribe"/>
         <p class="text-white font-bold text-base tracking-wide">Glass Caribe</p>
       </div>
 
@@ -47,7 +47,7 @@
 
         <!-- Mobile logo -->
         <div class="flex items-center justify-center gap-3 mb-10 lg:hidden">
-          <img src="/icons/icon.svg" class="w-10 h-10 rounded-xl" alt="Glass Caribe"/>
+          <img src="/icons/logo.jpg" class="w-10 h-10 rounded-xl object-contain" alt="Glass Caribe"/>
           <p class="font-bold text-gray-900 text-base tracking-wide">Glass Caribe</p>
         </div>
 
@@ -59,7 +59,7 @@
           </div>
           <!-- Glass Caribe logo -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <img src="/icons/icon.svg" class="w-11 h-11 rounded-xl" alt="Glass Caribe"/>
+            <img src="/icons/logo.jpg" class="w-11 h-11 rounded-xl object-contain" alt="Glass Caribe"/>
           </div>
         </div>
 

@@ -21,8 +21,8 @@ self.addEventListener('push', e => {
   const title   = data.title || 'Glass Caribe'
   const options = {
     body:     data.body  || '',
-    icon:     '/icons/icon.svg',
-    badge:    '/icons/icon.svg',
+    icon:     '/icons/logo.jpg',
+    badge:    '/icons/logo.jpg',
     tag:      data.tag   || 'glass-caribe-notif',
     renotify: true,
     vibrate:  [200, 100, 200],

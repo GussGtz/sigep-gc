@@ -4,7 +4,7 @@
     <!-- ── Header fijo ── -->
     <header class="fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-black/[0.06] flex items-center px-4 gap-3 shadow-soft">
       <div class="flex items-center gap-2 flex-1">
-        <img src="/icons/icon.svg" class="w-7 h-7 rounded-lg" alt="Glass Caribe"/>
+        <img src="/icons/logo.jpg" class="w-7 h-7 rounded-lg object-contain" alt="Glass Caribe"/>
         <span class="font-bold text-gray-900 text-sm tracking-wide">Glass Caribe</span>
       </div>
       <!-- User avatar dropdown -->

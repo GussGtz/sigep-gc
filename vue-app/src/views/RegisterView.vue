@@ -14,7 +14,7 @@
 
       <!-- Logo mark -->
       <div class="relative z-10 flex items-center gap-3">
-        <img src="/icons/icon.svg" class="w-8 h-8 rounded-lg" alt="Glass Caribe"/>
+        <img src="/icons/logo.jpg" class="w-8 h-8 rounded-lg object-contain" alt="Glass Caribe"/>
         <span class="text-white/90 text-sm font-semibold tracking-wide">Glass Caribe</span>
       </div>
 
@@ -49,7 +49,7 @@
           </div>
           <!-- Glass Caribe logo -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <img src="/icons/icon.svg" class="w-11 h-11 rounded-xl" alt="Glass Caribe"/>
+            <img src="/icons/logo.jpg" class="w-11 h-11 rounded-xl object-contain" alt="Glass Caribe"/>
           </div>
         </div>
 
