@@ -134,6 +134,80 @@ export const useGpsStore = defineStore('gps', () => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   }
 
+  // ── NoSleep: AudioContext silencioso ─────────────────────────────────────────
+  // Mantener un AudioContext activo le indica al sistema operativo (Android) que
+  // hay "media activo" en este tab → Chrome no es suspendido/throttleado aunque
+  // la pantalla se apague o la app esté en segundo plano.
+  // El oscilador conectado a GainNode(0) genera audio matemáticamente silencioso
+  // pero mantiene el audio pipeline activo (inaudible, ~-120 dB).
+  let _audioCtx = null
+  let _audioOsc = null
+
+  async function _startNoSleep() {
+    if (_audioCtx?.state === 'running') return
+    try {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      // Si el contexto está suspendido (p.ej. llamada entrante), resumirlo
+      if (_audioCtx.state === 'suspended') await _audioCtx.resume()
+
+      // Oscilador → GainNode con ganancia casi-cero (inaudible) → destino
+      // El oscilador genera señal no-nula; el gain la atenúa 100 000× (−100 dB).
+      const osc  = _audioCtx.createOscillator()
+      const gain = _audioCtx.createGain()
+      gain.gain.value = 0.00001  // −100 dB — inaudible en cualquier dispositivo
+      osc.connect(gain)
+      gain.connect(_audioCtx.destination)
+      osc.start()
+      _audioOsc = osc
+
+      // Re-resumir si el contexto se suspende (p.ej. durante una llamada)
+      _audioCtx.addEventListener('statechange', async () => {
+        if (_audioCtx?.state === 'suspended' && trackingActive.value) {
+          try { await _audioCtx.resume() } catch {}
+        }
+      })
+
+      console.log('[GPS] NoSleep audio activo (AudioContext running)')
+    } catch (err) {
+      console.warn('[GPS] NoSleep audio no disponible:', err.message)
+      _audioCtx = null
+      _audioOsc = null
+    }
+  }
+
+  function _stopNoSleep() {
+    try { _audioOsc?.stop() }  catch {}
+    try { _audioCtx?.close() } catch {}
+    _audioOsc = null
+    _audioCtx = null
+  }
+
+  // ── Background Sync — backup cuando el SW despierta ──────────────────────────
+  // El browser puede despertar el SW al recuperar conectividad o de forma
+  // proactiva. El SW recibe el evento 'sync' → pinga clientes → GPS position.
+  // Re-registrar en cada keepalive tick para que siempre haya un sync pendiente.
+  async function _registerBackgroundSync() {
+    try {
+      const reg = await navigator.serviceWorker?.ready
+      if (reg?.sync) await reg.sync.register('gps-keepalive')
+    } catch { /* background sync no disponible o permiso denegado */ }
+  }
+
+  // ── Periodic Background Sync — disparo periódico sin la app abierta ──────────
+  // Disponible en Chrome para Android cuando la PWA está instalada y el
+  // permiso 'periodic-background-sync' fue concedido por el browser.
+  // Intenta registrar con intervalo de 60 s (el browser puede elegir mayor).
+  async function _registerPeriodicSync() {
+    try {
+      const reg    = await navigator.serviceWorker?.ready
+      if (!reg?.periodicSync) return
+      const status = await navigator.permissions.query({ name: 'periodic-background-sync' })
+      if (status.state !== 'granted') return
+      await reg.periodicSync.register('gps-bg', { minInterval: 60_000 })
+      console.log('[GPS] Periodic Background Sync registrado (min 60 s)')
+    } catch { /* no disponible o permiso no concedido — silencioso */ }
+  }
+
   // ── Web Lock: previene que el navegador congele el tab en background ────────
   // Chrome/Android no suspenderá el tab mientras se mantenga un Web Lock activo.
   let _webLockRelease = null
@@ -167,7 +241,9 @@ export const useGpsStore = defineStore('gps', () => {
   }
 
   function _handleSwMessage({ data }) {
-    if (data?.type !== 'GPS_PING') return
+    // Responder tanto a GPS_PING (fetch keepalive / push) como a GPS_SYNC
+    // (background sync event del SW)
+    if (data?.type !== 'GPS_PING' && data?.type !== 'GPS_SYNC') return
     if (!trackingActive.value || !_wsStore) return
     // El SW nos pide una posición de respaldo (tab en background)
     navigator.geolocation?.getCurrentPosition(
@@ -193,11 +269,13 @@ export const useGpsStore = defineStore('gps', () => {
   }
 
   // ── Keepalive interval ───────────────────────────────────────────────────────
-  // Cada 20 segundos mientras el GPS está activo:
+  // Cada 15 segundos mientras el GPS está activo:
   //  1. Re-solicita Wake Lock si fue liberado (pantalla encendida de nuevo)
   //  2. Hace fetch('/sw-ping', keepalive:true) → mantiene el SW vivo; el SW
   //     enviará GPS_PING de vuelta para disparar getCurrentPosition
-  //  3. Cuando la página está oculta: fallback directo con getCurrentPosition
+  //  3. Re-registra Background Sync para que el SW tenga siempre un sync
+  //     pendiente (backup si el tab es throttleado)
+  //  4. Cuando la página está oculta: fallback directo con getCurrentPosition
   let _keepAliveInterval = null
 
   function _startKeepAlive() {
@@ -205,7 +283,7 @@ export const useGpsStore = defineStore('gps', () => {
     _keepAliveInterval = setInterval(async () => {
       if (!trackingActive.value) return
 
-      // 1. Re-solicitar Wake Lock si se liberó
+      // 1. Re-solicitar Wake Lock si se liberó (pantalla desbloqueada de nuevo)
       if (!_wakeLock) await _requestWakeLock()
 
       // 2. Ping al SW: lo mantiene vivo y el SW nos enviará un GPS_PING de vuelta.
@@ -215,7 +293,11 @@ export const useGpsStore = defineStore('gps', () => {
           .catch(() => {})
       } catch {}
 
-      // 3. Fallback GPS directo cuando la página está en segundo plano
+      // 3. Re-registrar Background Sync → el SW recibirá 'sync' si el browser
+      //    decide despertar el SW (reconexión, proactive sync, etc.)
+      _registerBackgroundSync()
+
+      // 4. Fallback GPS directo cuando la página está en segundo plano
       //    (cubre el caso en que el SW no responda a tiempo)
       if (document.visibilityState !== 'visible' && navigator.geolocation && _wsStore) {
         navigator.geolocation.getCurrentPosition(
@@ -233,7 +315,7 @@ export const useGpsStore = defineStore('gps', () => {
           { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
         )
       }
-    }, 20_000)   // 20 s — más frecuente que el límite de throttling de Android (1 min sin Web Lock)
+    }, 15_000)   // 15 s — reducido de 20 s para mayor resiliencia en Android con pantalla apagada
   }
 
   function _stopKeepAlive() {
@@ -252,8 +334,9 @@ export const useGpsStore = defineStore('gps', () => {
       startTracking(_wsStore, _pedidoId)
       _requestWakeLock()
     } else {
-      // App va al fondo: capturar posición INMEDIATA antes de que el JS se throttle.
-      // Esto garantiza al menos una actualización al momento de minimizar.
+      // App va al fondo:
+      // (a) Capturar posición INMEDIATA antes de que el JS se throttle.
+      //     Garantiza al menos una actualización al momento de minimizar.
       navigator.geolocation?.getCurrentPosition(
         ({ coords }) => {
           if (coords.accuracy > 250) return
@@ -268,6 +351,9 @@ export const useGpsStore = defineStore('gps', () => {
         () => {},
         { enableHighAccuracy: true, timeout: 8_000, maximumAge: 5_000 }
       )
+      // (b) Registrar Background Sync para que el SW pueda despertar el tab
+      //     si el browser decide throttlearlo mientras está en segundo plano.
+      _registerBackgroundSync()
     }
   }
 
@@ -302,7 +388,11 @@ export const useGpsStore = defineStore('gps', () => {
       watchId.value = null
     }
 
-    // ── Activar Wake Lock: pantalla encendida → JS sigue corriendo ──
+    // ── NoSleep Audio: AudioContext silencioso → Android no suspende Chrome ──
+    // Debe llamarse desde una acción de usuario (el botón "En Ruta" cuenta).
+    _startNoSleep()
+
+    // ── Wake Lock: pantalla encendida → JS sigue corriendo ──
     _requestWakeLock()
 
     // ── Web Lock: previene que Chrome/Android congele el tab en background ──
@@ -313,6 +403,12 @@ export const useGpsStore = defineStore('gps', () => {
 
     // ── Notificar al SW que el GPS está activo ──
     _swSend({ type: 'GPS_START' })
+
+    // ── Background Sync: el SW recibirá 'sync' si el browser lo despierta ──
+    _registerBackgroundSync()
+
+    // ── Periodic Background Sync: disparo periódico si la PWA está instalada ──
+    _registerPeriodicSync()
 
     // ── Listener de visibilidad: reiniciar GPS cuando la app vuelve al frente ──
     document.removeEventListener('visibilitychange', _handleVisibilityChange)
@@ -404,6 +500,7 @@ export const useGpsStore = defineStore('gps', () => {
     _wsStore?.send({ type: 'stop_tracking' })
 
     // ── Liberar todos los mecanismos de segundo plano ──
+    _stopNoSleep()          // ← detener AudioContext silencioso
     _releaseWakeLock()
     _releaseWebLock()
     _swSend({ type: 'GPS_STOP' })
