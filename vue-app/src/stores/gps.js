@@ -131,7 +131,9 @@ export const useGpsStore = defineStore('gps', () => {
       accuracy:  Math.round(accuracy || 0),
       pedido_id: _pedidoId || null
     }
-    if (_wsStore?.connected?.value) {
+    // NOTA: _wsStore es el proxy de Pinia; los refs se auto-desenvuelven,
+    // por lo que _wsStore.connected ya es boolean, NO un Ref.
+    if (_wsStore?.connected) {
       _wsStore.send(payload)
       _pendingLocation = null
     } else {
@@ -366,12 +368,12 @@ export const useGpsStore = defineStore('gps', () => {
       // 5. WebSocket: reconectar si está caído
       //    En background, el timer de reconexión del WS también se throttlea.
       //    Forzamos la reconexión desde aquí para que el GPS no pierda updates.
-      if (_wsStore && !_wsStore.connected?.value) {
+      if (_wsStore && !_wsStore.connected) {
         _wsStore.reconnect?.()
       }
 
       // 6. Vaciar buffer de posición pendiente si el WS ya está online
-      if (_pendingLocation && _wsStore?.connected?.value) {
+      if (_pendingLocation && _wsStore?.connected) {
         _wsStore.send(_pendingLocation)
         _pendingLocation = null
         console.log('[GPS] Posición pendiente enviada ✓')
