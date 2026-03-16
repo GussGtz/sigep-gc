@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { LogOut } from 'lucide-vue-next'
+import { LogOut, ChevronDown } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth.js'

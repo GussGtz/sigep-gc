@@ -205,7 +205,16 @@
       <router-link v-for="tab in navTabs" :key="tab.to" :to="tab.to"
         class="sidebar-link relative"
         :class="isActive(tab.to) ? 'active' : ''">
-        <span class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px]" v-html="tabIcon(tab.icon)"></span>
+        <span class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px]">
+          <LayoutGrid    v-if="tab.icon === 'dashboard'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+          <ClipboardList v-else-if="tab.icon === 'clipboard'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+          <Archive       v-else-if="tab.icon === 'archive'"   class="w-[18px] h-[18px]" :stroke-width="1.75" />
+          <Truck         v-else-if="tab.icon === 'truck'"     class="w-[18px] h-[18px]" :stroke-width="1.75" />
+          <Users         v-else-if="tab.icon === 'users'"     class="w-[18px] h-[18px]" :stroke-width="1.75" />
+          <MessageCircle v-else-if="tab.icon === 'chat'"      class="w-[18px] h-[18px]" :stroke-width="1.75" />
+          <Settings      v-else-if="tab.icon === 'cog'"       class="w-[18px] h-[18px]" :stroke-width="1.75" />
+          <ClipboardList v-else                               class="w-[18px] h-[18px]" :stroke-width="1.75" />
+        </span>
         <span class="flex-1">{{ tab.label }}</span>
         <span v-if="tab.to === '/chat' && chat.unreadTotal > 0"
           class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
@@ -447,7 +456,6 @@ function isActive(path) {
   return route.path.startsWith(path)
 }
 
-// tabIcon and notifIcon removed — replaced with Lucide components in template
 function formatTime(ts) {
   if (!ts) return ''
   const diff = (Date.now() - new Date(ts).getTime()) / 1000
