@@ -76,6 +76,17 @@ export const useWebSocketStore = defineStore('websocket', () => {
     delete handlers[type]
   }
 
+  // ── Reconexión manual (forzada) ───────────────────────────────────────────
+  // Llamado desde el GPS keepalive cuando detecta que el WS está caído.
+  // En background, el timer de onclose (3 s) puede estar throttleado — este
+  // método fuerza la reconexión inmediata sin esperar el timer interno.
+  function reconnect() {
+    if (!_token) return
+    if (ws.value?.readyState === WebSocket.OPEN) return
+    if (_reconnectTid) { clearTimeout(_reconnectTid); _reconnectTid = null }
+    connect(_token)
+  }
+
   // ── Desconectar deliberadamente ────────────────────────────────────────────
   function disconnect() {
     _intentional = true
@@ -85,5 +96,5 @@ export const useWebSocketStore = defineStore('websocket', () => {
     connected.value = false
   }
 
-  return { connected, connect, disconnect, send, on, off }
+  return { connected, connect, disconnect, reconnect, send, on, off }
 })
