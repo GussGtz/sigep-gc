@@ -1,13 +1,15 @@
 /* ═══════════════════════════════════════════════════════════
-   Glass Caribe — Service Worker v5
+   Glass Caribe — Service Worker v6
    Responsabilidades:
      1. Push Notifications — mostrar notificaciones nativas
+     2. GPS Keepalive     — intercepta /sw-ping para mantener el
+        Service Worker y el tab del conductor activos en background
    ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'glass-caribe-sw-v5'
+const CACHE_NAME = 'glass-caribe-sw-v6'
 
 // Activar inmediatamente sin esperar a que las páginas se recarguen
-self.addEventListener('install',  () => self.skipWaiting())
+self.addEventListener('install', () => self.skipWaiting())
 
 // Al activar: eliminar TODOS los cachés viejos y tomar control de inmediato
 self.addEventListener('activate', e => {
@@ -30,8 +32,8 @@ self.addEventListener('push', e => {
   const title   = data.title || 'Glass Caribe'
   const options = {
     body:     data.body  || '',
-    icon:     '/icons/logo.jpg',
-    badge:    '/icons/logo.jpg',
+    icon:     '/icons/icon-192.png',
+    badge:    '/icons/icon-192.png',
     tag:      data.tag   || 'glass-caribe-notif',
     renotify: true,
     vibrate:  [200, 100, 200],
@@ -63,6 +65,46 @@ self.addEventListener('notificationclick', e => {
         if (clients.openWindow) return clients.openWindow(targetUrl)
       })
   )
+})
+
+// ── Fetch — intercepción especial para GPS keepalive ─────────────────────
+//
+// El store gps.js llama fetch('/sw-ping', { keepalive: true }) cada 20 s
+// mientras el GPS está activo. Interceptar aquí sirve para:
+//   (a) Mantener el SW "vivo" (procesar el fetch event evita que el browser
+//       termine el SW por inactividad).
+//   (b) Enviar un GPS_PING a todos los clientes → el store responde llamando
+//       getCurrentPosition como respaldo en background.
+//   (c) Responder 200 inmediatamente — cero tráfico de red.
+//
+// Todos los demás requests pasan sin modificar (no se cachea nada).
+// ─────────────────────────────────────────────────────────────────────────
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url)
+
+  if (url.pathname === '/sw-ping') {
+    // Despertar a los clientes para que tomen una lectura GPS
+    e.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(all => {
+        all.forEach(c => c.postMessage({ type: 'GPS_PING' }))
+      })
+    )
+
+    // Respuesta inmediata — sin red
+    e.respondWith(
+      new Response('ok', {
+        status:  200,
+        headers: {
+          'Content-Type':  'text/plain',
+          'Cache-Control': 'no-store'
+        }
+      })
+    )
+    return
+  }
+
+  // Resto de requests: dejar pasar al navegador sin interferir
+  // (sin cache, sin modificación)
 })
 
 // ── Message — recibir mensajes de la página ───────────────────────────────

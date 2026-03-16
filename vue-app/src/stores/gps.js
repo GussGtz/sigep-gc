@@ -134,11 +134,70 @@ export const useGpsStore = defineStore('gps', () => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   }
 
+  // ── Web Lock: previene que el navegador congele el tab en background ────────
+  // Chrome/Android no suspenderá el tab mientras se mantenga un Web Lock activo.
+  let _webLockRelease = null
+
+  async function _acquireWebLock() {
+    if (!navigator.locks || _webLockRelease) return
+    try {
+      // mode 'shared' → no bloquea otras instancias ni otras pestañas
+      navigator.locks.request(
+        'gps-conductor-active',
+        { mode: 'shared' },
+        () => new Promise(resolve => { _webLockRelease = resolve })
+      )
+    } catch (err) {
+      console.warn('[GPS] Web Lock no disponible:', err.message)
+    }
+  }
+
+  function _releaseWebLock() {
+    if (_webLockRelease) { _webLockRelease(); _webLockRelease = null }
+  }
+
+  // ── Service Worker: canal bidireccional GPS ──────────────────────────────────
+  // El store avisa al SW cuándo el GPS está activo.
+  // El SW intercepta fetch('/sw-ping') para mantenerse vivo y envía GPS_PING
+  // a los clientes → el store responde con getCurrentPosition como fallback.
+  let _swListenerActive = false
+
+  function _swSend(msg) {
+    try { navigator.serviceWorker?.controller?.postMessage(msg) } catch {}
+  }
+
+  function _handleSwMessage({ data }) {
+    if (data?.type !== 'GPS_PING') return
+    if (!trackingActive.value || !_wsStore) return
+    // El SW nos pide una posición de respaldo (tab en background)
+    navigator.geolocation?.getCurrentPosition(
+      ({ coords }) => {
+        if (coords.accuracy > 250) return
+        _wsStore.send({
+          type:      'location_update',
+          lat:       coords.latitude,
+          lng:       coords.longitude,
+          accuracy:  Math.round(coords.accuracy),
+          pedido_id: _pedidoId ?? null
+        })
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 45_000 }
+    )
+  }
+
+  function _registerSwListener() {
+    if (_swListenerActive || typeof navigator === 'undefined') return
+    navigator.serviceWorker?.addEventListener('message', _handleSwMessage)
+    _swListenerActive = true
+  }
+
   // ── Keepalive interval ───────────────────────────────────────────────────────
-  // Cada 30 segundos mientras el GPS está activo:
+  // Cada 20 segundos mientras el GPS está activo:
   //  1. Re-solicita Wake Lock si fue liberado (pantalla encendida de nuevo)
-  //  2. Cuando la página está oculta (minimizada): usa getCurrentPosition()
-  //     como respaldo porque Android puede pausar watchPosition en background.
+  //  2. Hace fetch('/sw-ping', keepalive:true) → mantiene el SW vivo; el SW
+  //     enviará GPS_PING de vuelta para disparar getCurrentPosition
+  //  3. Cuando la página está oculta: fallback directo con getCurrentPosition
   let _keepAliveInterval = null
 
   function _startKeepAlive() {
@@ -149,12 +208,18 @@ export const useGpsStore = defineStore('gps', () => {
       // 1. Re-solicitar Wake Lock si se liberó
       if (!_wakeLock) await _requestWakeLock()
 
-      // 2. Fallback GPS cuando la página está en segundo plano
-      //    enableHighAccuracy: false → batería reducida para el fallback en background
+      // 2. Ping al SW: lo mantiene vivo y el SW nos enviará un GPS_PING de vuelta.
+      //    keepalive:true permite que el fetch complete aunque la página esté oculta.
+      try {
+        fetch('/sw-ping', { method: 'GET', keepalive: true, cache: 'no-store' })
+          .catch(() => {})
+      } catch {}
+
+      // 3. Fallback GPS directo cuando la página está en segundo plano
+      //    (cubre el caso en que el SW no responda a tiempo)
       if (document.visibilityState !== 'visible' && navigator.geolocation && _wsStore) {
         navigator.geolocation.getCurrentPosition(
           ({ coords }) => {
-            // En background ser más tolerante con accuracia (señal puede ser peor)
             if (coords.accuracy > 250) return
             _wsStore.send({
               type:      'location_update',
@@ -164,11 +229,11 @@ export const useGpsStore = defineStore('gps', () => {
               pedido_id: _pedidoId || null
             })
           },
-          () => {},  // ignorar errores del fallback silenciosamente
+          () => {},
           { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
         )
       }
-    }, 30_000)
+    }, 20_000)   // 20 s — más frecuente que el límite de throttling de Android (1 min sin Web Lock)
   }
 
   function _stopKeepAlive() {
@@ -178,11 +243,31 @@ export const useGpsStore = defineStore('gps', () => {
     }
   }
 
-  // ── Visibility change: reiniciar watchPosition cuando la app vuelve al frente ──
+  // ── Visibility change ────────────────────────────────────────────────────────
   function _handleVisibilityChange() {
-    if (document.visibilityState === 'visible' && trackingActive.value && _wsStore) {
+    if (!trackingActive.value || !_wsStore) return
+
+    if (document.visibilityState === 'visible') {
+      // App vuelve al frente: reiniciar watchPosition + Wake Lock
       startTracking(_wsStore, _pedidoId)
       _requestWakeLock()
+    } else {
+      // App va al fondo: capturar posición INMEDIATA antes de que el JS se throttle.
+      // Esto garantiza al menos una actualización al momento de minimizar.
+      navigator.geolocation?.getCurrentPosition(
+        ({ coords }) => {
+          if (coords.accuracy > 250) return
+          _wsStore.send({
+            type:      'location_update',
+            lat:       coords.latitude,
+            lng:       coords.longitude,
+            accuracy:  Math.round(coords.accuracy),
+            pedido_id: _pedidoId ?? null
+          })
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 8_000, maximumAge: 5_000 }
+      )
     }
   }
 
@@ -219,6 +304,15 @@ export const useGpsStore = defineStore('gps', () => {
 
     // ── Activar Wake Lock: pantalla encendida → JS sigue corriendo ──
     _requestWakeLock()
+
+    // ── Web Lock: previene que Chrome/Android congele el tab en background ──
+    _acquireWebLock()
+
+    // ── Registrar listener de mensajes del SW (solo una vez por sesión) ──
+    _registerSwListener()
+
+    // ── Notificar al SW que el GPS está activo ──
+    _swSend({ type: 'GPS_START' })
 
     // ── Listener de visibilidad: reiniciar GPS cuando la app vuelve al frente ──
     document.removeEventListener('visibilitychange', _handleVisibilityChange)
@@ -311,6 +405,8 @@ export const useGpsStore = defineStore('gps', () => {
 
     // ── Liberar todos los mecanismos de segundo plano ──
     _releaseWakeLock()
+    _releaseWebLock()
+    _swSend({ type: 'GPS_STOP' })
     _stopKeepAlive()
     document.removeEventListener('visibilitychange', _handleVisibilityChange)
 
