@@ -16,9 +16,7 @@
             @click="abrirModalNuevo"
             class="btn-primary text-sm"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+            <Plus class="w-4 h-4" :stroke-width="2" />
             Nueva Entrega
           </button>
         </div>
@@ -156,18 +154,14 @@
                   class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-all"
                   title="Cambiar estado"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                  </svg>
+                  <RefreshCw class="w-4 h-4" :stroke-width="1.75" />
                 </button>
                 <button
                   @click.stop="confirmarEliminar(e)"
                   class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-all"
                   title="Eliminar"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
+                  <Trash2 class="w-4 h-4" :stroke-width="1.75" />
                 </button>
               </div>
             </div>
@@ -296,7 +290,7 @@
             <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <h2 class="font-black text-gray-900 text-lg">Nueva Entrega</h2>
               <button @click="showModal = false" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <X class="w-4 h-4" :stroke-width="2" />
               </button>
             </div>
             <!-- Body modal -->
@@ -531,7 +525,7 @@
                 <p class="text-xs text-gray-400 mt-0.5">{{ formatFecha(entregaSeleccionada.fecha_entrega || entregaSeleccionada.created_at) }}</p>
               </div>
               <button @click="showDetalle = false" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <X class="w-4 h-4" :stroke-width="2" />
               </button>
             </div>
             <div class="p-6 space-y-4">
@@ -577,9 +571,7 @@
                   @click="iniciarReasignacion"
                   class="mt-1 w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                  </svg>
+                  <RefreshCw class="w-4 h-4" :stroke-width="1.75" />
                   Reasignar a otro conductor
                 </button>
               </div>
@@ -647,9 +639,7 @@
           <button @click="fotoAmpliada = null"
             class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20
                    flex items-center justify-center text-white transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+            <X class="w-5 h-5" :stroke-width="2" />
           </button>
         </div>
       </Transition>
@@ -659,6 +649,7 @@
 </template>
 
 <script setup>
+import { Plus, X, RefreshCw } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import AdminNavBar  from '../../components/admin/AdminNavBar.vue'
 import { useGpsStore }        from '../../stores/gps.js'

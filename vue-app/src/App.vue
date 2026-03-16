@@ -18,21 +18,13 @@
           <div class="flex-shrink-0 flex items-start pt-3.5 pl-3.5 pr-1">
             <div class="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" :class="toastIconBg(t.type)">
               <!-- success -->
-              <svg v-if="t.type === 'success'" class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-              </svg>
+              <CheckCircle2 v-if="t.type === 'success'" class="w-3.5 h-3.5 text-emerald-600" :stroke-width="2.5" />
               <!-- error -->
-              <svg v-else-if="t.type === 'error'" class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
+              <XCircle v-else-if="t.type === 'error'" class="w-3.5 h-3.5 text-red-600" :stroke-width="2.5" />
               <!-- warning -->
-              <svg v-else-if="t.type === 'warning'" class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              </svg>
+              <AlertTriangle v-else-if="t.type === 'warning'" class="w-3.5 h-3.5 text-amber-600" :stroke-width="2.5" />
               <!-- info -->
-              <svg v-else class="w-3.5 h-3.5 text-[#0D89CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <Info v-else class="w-3.5 h-3.5 text-[#0D89CB]" :stroke-width="2.5" />
             </div>
           </div>
 
@@ -47,9 +39,7 @@
           <!-- Dismiss -->
           <button @click="removeToast(t.id)"
             class="flex-shrink-0 p-3 text-gray-300 hover:text-gray-500 transition-colors self-start">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+            <X class="w-3.5 h-3.5" :stroke-width="2.5" />
           </button>
         </div>
       </TransitionGroup>
@@ -59,6 +49,7 @@
 
 <script setup>
 import { ref, provide, watch, onMounted } from 'vue'
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-vue-next'
 import PwaInstallBanner          from './components/shared/PwaInstallBanner.vue'
 import { useAuthStore }          from './stores/auth.js'
 import { useNotificationsStore } from './stores/notifications.js'
@@ -172,23 +163,3 @@ function toastIconBg(type) {
 provide('toast', { add: addToast })
 </script>
 
-<style>
-/* ── Toast transition ── */
-.toast-enter-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.toast-leave-active {
-  transition: all 0.2s ease-in;
-}
-.toast-enter-from {
-  opacity: 0;
-  transform: translateX(20px) scale(0.97);
-}
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(12px) scale(0.97);
-}
-.toast-move {
-  transition: transform 0.2s ease;
-}
-</style>

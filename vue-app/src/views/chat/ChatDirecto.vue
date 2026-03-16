@@ -10,9 +10,7 @@
       <button
         @click="volverAtras()"
         class="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
+        <ChevronLeft class="w-5 h-5" :stroke-width="2" />
       </button>
       <span class="font-serif font-bold text-gray-900 flex-1 truncate">
         {{ contactoActivo ? contactoActivo.nombre : 'Mensajes' }}
@@ -27,20 +25,14 @@
         @click="showConfirmVaciarChat = true"
         class="p-2 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
         title="Vaciar conversación">
-        <svg class="w-4.5 h-4.5" style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-        </svg>
+        <Trash2 class="w-[18px] h-[18px]" :stroke-width="2" />
       </button>
       <!-- Vaciar todos los chats (lista de contactos) -->
       <button v-if="!contactoActivo && chat.contactos.length > 0"
         @click="showConfirmVaciarTodo = true"
         class="p-2 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
         title="Vaciar todo el historial">
-        <svg class="w-4.5 h-4.5" style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-        </svg>
+        <Trash2 class="w-[18px] h-[18px]" :stroke-width="2" />
       </button>
     </header>
 
@@ -51,11 +43,7 @@
         <!-- Search -->
         <div class="px-4 py-3 bg-white border-b border-gray-100">
           <div class="relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
-            </svg>
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" :stroke-width="2" />
             <input v-model="busqueda" type="text" placeholder="Buscar contacto…"
               class="w-full pl-8 pr-3 py-2.5 text-sm bg-gray-50 border border-gray-200
                      rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D89CB]/20
@@ -152,9 +140,7 @@
               :disabled="!texto.trim()"
               class="flex-shrink-0 w-10 h-10 rounded-xl bg-[#0D89CB] text-white flex items-center justify-center
                      hover:bg-[#00659C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
-              <svg class="w-4 h-4 rotate-90" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-              </svg>
+              <Send class="w-4 h-4" :stroke-width="2" />
             </button>
           </div>
         </div>
@@ -167,16 +153,13 @@
 
     <!-- ══ CONFIRM: Vaciar este chat ══ -->
     <Teleport to="body">
-      <Transition name="modal-fade">
+      <Transition name="modal">
         <div v-if="showConfirmVaciarChat"
           class="fixed inset-0 bg-black/40 z-[80] flex items-end sm:items-center justify-center p-4"
           @mousedown.self="showConfirmVaciarChat = false">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center" @click.stop>
             <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-              </svg>
+              <MessageCircle class="w-7 h-7 text-red-500" :stroke-width="1.75" />
             </div>
             <h3 class="font-bold text-gray-900 text-lg mb-1">Vaciar conversación</h3>
             <p class="text-sm text-gray-500 mb-6">
@@ -201,16 +184,13 @@
 
     <!-- ══ CONFIRM: Vaciar todo el historial ══ -->
     <Teleport to="body">
-      <Transition name="modal-fade">
+      <Transition name="modal">
         <div v-if="showConfirmVaciarTodo"
           class="fixed inset-0 bg-black/40 z-[80] flex items-end sm:items-center justify-center p-4"
           @mousedown.self="showConfirmVaciarTodo = false">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center" @click.stop>
             <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
+              <Trash2 class="w-7 h-7 text-red-500" :stroke-width="1.75" />
             </div>
             <h3 class="font-bold text-gray-900 text-lg mb-1">Vaciar todo el historial</h3>
             <p class="text-sm text-gray-500 mb-6">
@@ -238,6 +218,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, inject } from 'vue'
+import { ChevronLeft, Trash2, Search, Send, MessageCircle } from 'lucide-vue-next'
 import { useRouter }           from 'vue-router'
 import { useAuthStore }        from '../../stores/auth.js'
 import { useChatStore }        from '../../stores/chat.js'
@@ -415,7 +396,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity .2s }
-.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0 }
-</style>

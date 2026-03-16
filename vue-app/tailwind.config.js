@@ -70,6 +70,47 @@ export default {
         '2xl': '16px',
         '3xl': '24px',
       },
+      transitionDuration: {
+        '250': '250ms',
+      },
+      animation: {
+        'fade-up':    'fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both',
+        'fade-in':    'fadeIn 0.25s ease both',
+        'scale-in':   'scaleIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
+        'slide-right':'slideRight 0.3s cubic-bezier(0.16,1,0.3,1) both',
+        'float':      'float 3s ease-in-out infinite',
+        'spin-fast':  'spinFast 0.7s linear infinite',
+        'pulse-ring': 'pulseRing 1.5s cubic-bezier(0.4,0,0.6,1) infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          from: { opacity: '0' },
+          to:   { opacity: '1' },
+        },
+        fadeUp: {
+          from: { opacity: '0', transform: 'translateY(16px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
+        },
+        scaleIn: {
+          from: { opacity: '0', transform: 'scale(0.94) translateY(8px)' },
+          to:   { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+        slideRight: {
+          from: { opacity: '0', transform: 'translateX(20px)' },
+          to:   { opacity: '1', transform: 'translateX(0)' },
+        },
+        float: {
+          '0%,100%': { transform: 'translateY(0px)' },
+          '50%':     { transform: 'translateY(-6px)' },
+        },
+        spinFast: {
+          to: { transform: 'rotate(360deg)' },
+        },
+        pulseRing: {
+          '0%':   { transform: 'scale(1)',   opacity: '1' },
+          '100%': { transform: 'scale(1.8)', opacity: '0' },
+        },
+      },
     }
   },
   plugins: []

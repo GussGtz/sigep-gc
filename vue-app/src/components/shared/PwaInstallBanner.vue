@@ -15,9 +15,7 @@
           <button @click="dismiss"
             class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400
                    hover:text-gray-600 hover:bg-gray-100 transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+            <X class="w-3.5 h-3.5" :stroke-width="2.5" />
           </button>
           <button @click="install"
             class="px-3 py-1.5 bg-[#0D89CB] hover:bg-[#00659C] text-white
@@ -39,26 +37,20 @@
           <button @click="dismiss"
             class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400
                    hover:text-gray-600 hover:bg-gray-100 transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+            <X class="w-3.5 h-3.5" :stroke-width="2.5" />
           </button>
         </div>
         <p class="text-xs text-gray-600 leading-relaxed">
           Toca
           <span class="inline-flex items-center gap-1 font-medium text-[#0D89CB]">
-            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L8 6h3v8h2V6h3L12 2zm-7 14v4h14v-4h-2v2H7v-2H5z"/>
-            </svg>
+            <Share class="w-3.5 h-3.5" :stroke-width="2" />
             Compartir
           </span>
           y luego <span class="font-medium text-[#0D89CB]">"Agregar a pantalla de inicio"</span>
         </p>
         <!-- Flecha apuntando hacia abajo donde está el botón de Safari -->
         <div class="flex justify-center mt-2">
-          <svg class="w-5 h-5 text-gray-300 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-          </svg>
+          <ChevronDown class="w-5 h-5 text-gray-300 animate-bounce" :stroke-width="2" />
         </div>
       </div>
     </Transition>
@@ -67,6 +59,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { X, Share, ChevronDown } from 'lucide-vue-next'
 import { usePwaStore } from '../../stores/pwa.js'
 
 const pwa = usePwaStore()

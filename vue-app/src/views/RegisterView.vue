@@ -47,10 +47,7 @@
             <img src="/icons/glass-caribe.svg" class="h-10 w-auto object-contain" alt="Glass Caribe"/>
           </div>
           <div class="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-amber-100">
-            <svg class="w-10 h-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
+            <Clock class="w-10 h-10 text-amber-500" :stroke-width="1.75" />
           </div>
           <h2 class="font-serif text-2xl font-bold text-gray-900 mb-3">¡Solicitud enviada!</h2>
           <p class="text-gray-500 text-sm leading-relaxed mb-2">
@@ -63,9 +60,7 @@
             to="/login"
             class="inline-flex items-center gap-2 bg-[#0D89CB] text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-[#00659C] transition-colors shadow-sm"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-            </svg>
+            <ChevronLeft class="w-5 h-5" :stroke-width="2" />
             Volver al inicio de sesión
           </router-link>
           <p class="text-center text-xs text-gray-300 mt-8">Glass Caribe © {{ new Date().getFullYear() }}</p>
@@ -157,13 +152,8 @@
                 @click="showPw = !showPw"
                 class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <svg v-if="showPw" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 4.411m0 0L21 21"/>
-                </svg>
-                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
+                <EyeOff v-if="showPw" class="w-4 h-4" :stroke-width="2" />
+                <Eye v-else class="w-4 h-4" :stroke-width="2" />
               </button>
             </div>
             <PasswordStrengthBar :password="form.password" />
@@ -197,9 +187,7 @@
           <!-- Error -->
           <div v-if="errorMsg"
             class="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600">
-            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-            </svg>
+            <AlertCircle class="w-4 h-4 flex-shrink-0" :stroke-width="2" />
             {{ errorMsg }}
           </div>
 
@@ -209,10 +197,7 @@
             :disabled="loading || !passwordValida"
             class="btn-primary w-full justify-center py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
+            <Loader2 v-if="loading" class="w-4 h-4 animate-spin" :stroke-width="2" />
             {{ loading ? 'Creando cuenta...' : 'Crear cuenta' }}
           </button>
         </form>
@@ -242,6 +227,7 @@ import { ref, computed, inject } from 'vue'
 import axios                      from 'axios'
 import AppRecaptcha               from '../components/shared/AppRecaptcha.vue'
 import PasswordStrengthBar        from '../components/shared/PasswordStrengthBar.vue'
+import { Eye, EyeOff, Loader2, AlertCircle, ChevronLeft, Clock } from 'lucide-vue-next'
 
 const toast    = inject('toast')
 

@@ -15,9 +15,7 @@
             @click="abrirModalNuevo"
             class="btn-primary text-sm"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+            <Plus class="w-4 h-4" :stroke-width="2" />
             Nuevo Material
           </button>
         </div>
@@ -44,7 +42,7 @@
 
         <!-- ── Alertas bajo mínimo ── -->
         <div v-if="store.bajoMinimo.length > 0" class="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <AlertTriangle class="w-5 h-5" :stroke-width="1.75" />
           <div>
             <p class="text-sm font-bold text-red-700">Materiales bajo stock mínimo:</p>
             <p class="text-xs text-red-600 mt-0.5">
@@ -402,6 +400,7 @@
 </template>
 
 <script setup>
+import { Plus, AlertTriangle } from 'lucide-vue-next'
 import { ref, reactive, onMounted, inject } from 'vue'
 import AdminNavBar from '../../components/admin/AdminNavBar.vue'
 import { useInventarioStore } from '../../stores/inventario.js'

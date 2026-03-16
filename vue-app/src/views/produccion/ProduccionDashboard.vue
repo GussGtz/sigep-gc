@@ -10,10 +10,7 @@
       <!-- Chat — solo desktop; en mobile lo maneja el bottom nav -->
       <router-link to="/chat"
         class="hidden md:flex relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-        </svg>
+        <MessageCircle class="w-5 h-5" :stroke-width="1.75" />
         <span v-if="chatStore.unreadTotal > 0"
           class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
           {{ chatStore.unreadTotal > 9 ? '9+' : chatStore.unreadTotal }}
@@ -30,34 +27,23 @@
             class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-2xl shadow-float overflow-hidden z-50">
             <router-link to="/chat" @click="userMenuOpen = false"
               class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-              </svg>
+              <MessageCircle class="w-4 h-4" :stroke-width="1.75" />
               Chat del equipo
             </router-link>
             <button @click="showCambiarPass = true; userMenuOpen = false"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-              </svg>
+              <Lock class="w-4 h-4" :stroke-width="1.75" />
               Cambiar contraseña
             </button>
             <button v-if="pwaStore.showInstallOption" @click="instalarApp"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
+              <Smartphone class="w-4 h-4" :stroke-width="1.75" />
               Instalar app
             </button>
             <div class="border-t border-gray-100 my-1"></div>
             <button @click="cerrarSesion"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
+              <LogOut class="w-4 h-4" :stroke-width="1.75" />
               Cerrar sesión
             </button>
           </div>
@@ -149,9 +135,7 @@
                   class="p-2 rounded-xl hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-colors flex-shrink-0"
                   title="Chat / Detalle"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                  </svg>
+                  <MessageCircle class="w-5 h-5" :stroke-width="1.75" />
                 </button>
               </div>
 
@@ -246,7 +230,7 @@
 
                 <div v-if="getProduccion(p) === 'completado'"
                   class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-400 text-sm font-semibold">
-                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <CheckCircle2 class="w-4 h-4" :stroke-width="1.75" />
                   Producción completada
                 </div>
 
@@ -347,9 +331,7 @@
               <h3 class="font-semibold text-gray-900">Cambiar contraseña</h3>
               <button @click="cerrarCambiarPass"
                 class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <X class="w-4 h-4" :stroke-width="2" />
               </button>
             </div>
             <div class="space-y-3">
@@ -391,6 +373,7 @@
 </template>
 
 <script setup>
+import { MessageCircle, Lock, Smartphone, LogOut } from 'lucide-vue-next'
 import { ref, computed, reactive, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'

@@ -18,21 +18,19 @@
               <button
                 @click="showExportMenu = !showExportMenu"
                 class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 text-sm font-semibold transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                </svg>
+                <Download class="w-4 h-4" :stroke-width="1.75" />
                 Exportar ▾
               </button>
               <Transition name="fade">
                 <div v-if="showExportMenu" class="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-20 overflow-hidden">
                   <button @click="exportarCSV(); showExportMenu = false"
                     class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <FileText class="w-4 h-4 text-gray-400" :stroke-width="1.75" />
                     Exportar CSV
                   </button>
                   <button @click="exportarPDF(); showExportMenu = false"
                     class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    <FileText class="w-4 h-4 text-gray-400" :stroke-width="1.75" />
                     Imprimir PDF
                   </button>
                 </div>
@@ -40,21 +38,15 @@
             </div>
 
             <button @click="confirmarEliminarCompletados" class="btn-secondary text-sm">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
+              <Trash2 class="w-4 h-4" :stroke-width="1.75" />
               Limpiar completados
             </button>
             <button @click="showImport = true" class="btn-secondary text-sm">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-              </svg>
+              <Upload class="w-4 h-4" :stroke-width="1.75" />
               Importar Excel
             </button>
             <button @click="showCrear = true" class="btn-primary text-sm">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
+              <Plus class="w-4 h-4" :stroke-width="2" />
               Nuevo Pedido
             </button>
           </div>
@@ -82,9 +74,7 @@
           <div class="flex-1 min-w-[160px]">
             <label class="block text-xs font-semibold text-gray-500 mb-1.5">Buscar pedido</label>
             <div class="relative">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-              </svg>
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" :stroke-width="1.75" />
               <input
                 v-model="busqueda"
                 @input="pedidosStore.setFiltro('texto', busqueda)"
@@ -132,9 +122,7 @@
           <button
             @click="limpiarFiltros"
             class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm font-medium transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+            <X class="w-4 h-4" :stroke-width="1.75" />
             Limpiar
           </button>
         </div>
@@ -165,9 +153,7 @@
               </div>
               <button @click.stop="onDeleteRequest(p.id)"
                 class="p-1.5 rounded-lg text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
+                <Trash2 class="w-4 h-4" :stroke-width="1.75" />
               </button>
             </div>
             <div class="flex items-center justify-between text-xs text-gray-400 mb-3">
@@ -195,10 +181,7 @@
 
           <!-- Loading -->
           <div v-if="pedidosStore.loading" class="flex items-center justify-center py-16 text-gray-400 gap-2">
-            <svg class="w-5 h-5 animate-spin text-gray-300" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
+            <Loader2 class="w-5 h-5 animate-spin text-gray-300" :stroke-width="2" />
             Cargando pedidos...
           </div>
 
@@ -215,9 +198,7 @@
 
             <!-- Vacío -->
             <div v-if="pedidosPagina.length === 0" class="flex flex-col items-center justify-center py-16 text-gray-400">
-              <svg class="w-12 h-12 text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-              </svg>
+              <Archive class="w-12 h-12 text-gray-200 mb-3" :stroke-width="1.5" />
               <p class="text-sm font-medium">Sin pedidos con los filtros aplicados</p>
             </div>
 
@@ -231,10 +212,7 @@
               <!-- Pedido -->
               <div class="col-span-2 flex items-center gap-3">
                 <div class="w-8 h-8 bg-gray-100 group-hover:bg-gray-200 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors">
-                  <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/>
-                    <path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
-                  </svg>
+                  <ClipboardList class="w-4 h-4 text-gray-500" :stroke-width="1.75" />
                 </div>
                 <div>
                   <div class="flex items-center gap-1.5 flex-wrap">
@@ -262,9 +240,7 @@
                 <button
                   @click.stop="onDeleteRequest(p.id)"
                   class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-all">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
+                  <Trash2 class="w-3.5 h-3.5" :stroke-width="1.75" />
                 </button>
               </div>
             </div>
@@ -304,7 +280,7 @@
               <h2 class="text-lg font-bold text-gray-900">Nuevo Pedido</h2>
               <button @click="showCrear = false"
                 class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <X class="w-4 h-4" :stroke-width="2" />
               </button>
             </div>
             <form @submit.prevent="crearPedido" class="p-6 space-y-4 overflow-y-auto" novalidate>
@@ -321,7 +297,7 @@
                     :class="formErrors.numero_pedido ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"
                     placeholder="GC-2025-001"/>
                   <p v-if="formErrors.numero_pedido" class="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    <AlertCircle class="w-3 h-3 flex-shrink-0" :stroke-width="2" />
                     {{ formErrors.numero_pedido }}
                   </p>
                 </div>
@@ -334,7 +310,7 @@
                     class="w-full border rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors"
                     :class="formErrors.fecha_entrega ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"/>
                   <p v-if="formErrors.fecha_entrega" class="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    <AlertCircle class="w-3 h-3 flex-shrink-0" :stroke-width="2" />
                     {{ formErrors.fecha_entrega }}
                   </p>
                 </div>
@@ -407,7 +383,7 @@
                 </div>
                 <!-- Preview m² -->
                 <div v-if="m2Preview" class="mt-2 flex items-center gap-1.5 text-sm text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-3 py-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <CheckCircle2 class="w-4 h-4" :stroke-width="2" />
                   {{ m2Preview }} m² totales
                 </div>
               </div>
@@ -428,10 +404,8 @@
                 <!-- Info de stock del material seleccionado -->
                 <div v-if="materialSeleccionado" class="mt-2 flex items-start gap-2 text-xs px-3 py-2.5 rounded-xl"
                   :class="stockSuficiente ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'">
-                  <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path v-if="stockSuficiente" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    <path v-else fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                  </svg>
+                  <CheckCircle2 v-if="stockSuficiente" class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" :stroke-width="2" />
+                  <AlertCircle v-else class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" :stroke-width="2" />
                   <span v-if="stockSuficiente">
                     Stock disponible: <strong>{{ parseFloat(materialSeleccionado.stock_m2).toFixed(4) }} m²</strong>
                     <template v-if="m2Preview"> — quedará
@@ -734,6 +708,7 @@ import StatusBadge  from '../../components/shared/StatusBadge.vue'
 import PedidoModal  from '../../components/shared/PedidoModal.vue'
 import { usePedidosStore }     from '../../stores/pedidos.js'
 import { useInventarioStore }  from '../../stores/inventario.js'
+import { Download, FileText, Trash2, Upload, Plus, Search, X, Loader2, Archive, ClipboardList, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-vue-next'
 
 const pedidosStore    = usePedidosStore()
 const inventarioStore = useInventarioStore()

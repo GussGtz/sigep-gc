@@ -70,12 +70,8 @@
               <!-- Icon -->
               <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ml-4"
                 :class="sent ? 'bg-emerald-50' : 'bg-[#0D89CB]/10'">
-                <svg v-if="!sent" class="w-6 h-6 text-[#0D89CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                </svg>
-                <svg v-else class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
+                <KeyRound v-if="!sent" class="w-6 h-6 text-[#0D89CB]" :stroke-width="1.75" />
+                <CheckCircle2 v-else class="w-6 h-6 text-emerald-600" :stroke-width="1.75" />
               </div>
             </div>
           </div>
@@ -83,9 +79,7 @@
           <!-- Estado: Enviado ✓ -->
           <div v-if="sent" class="px-8 py-8 text-center">
             <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-emerald-100">
-              <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <CheckCircle2 class="w-8 h-8 text-emerald-500" :stroke-width="2" />
             </div>
             <p class="text-gray-600 text-sm leading-relaxed mb-1">Si el correo está registrado en nuestro sistema,</p>
             <p class="text-gray-600 text-sm leading-relaxed mb-6">recibirás las instrucciones de recuperación en breve.</p>
@@ -93,9 +87,7 @@
             <button
               @click="sent = false; form.email = ''; errorMsg = ''; recaptchaToken = ''; recaptchaRef?.reset()"
               class="text-sm text-[#0D89CB] hover:text-[#00659C] font-semibold transition-colors flex items-center justify-center gap-1.5 mx-auto">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-              </svg>
+              <ArrowLeft class="w-4 h-4" :stroke-width="2" />
               Intentar con otro correo
             </button>
           </div>
@@ -109,8 +101,8 @@
                 Correo electrónico <span class="text-red-500">*</span>
               </label>
               <div class="relative">
-                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
                 <input
                   v-model="form.email"
@@ -123,9 +115,7 @@
                 />
               </div>
               <p v-if="errorMsg" class="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                </svg>
+                <AlertCircle class="w-3 h-3 flex-shrink-0" :stroke-width="2" />
                 {{ errorMsg }}
               </p>
             </div>
@@ -146,13 +136,8 @@
               :disabled="loading"
               class="w-full bg-[#0D89CB] hover:bg-[#00659C] text-white font-semibold py-3.5 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2 text-sm"
             >
-              <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg>
-              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-              </svg>
+              <Loader2 v-if="loading" class="w-4 h-4 animate-spin" :stroke-width="2" />
+              <Send v-else class="w-4 h-4" :stroke-width="2" />
               {{ loading ? 'Enviando...' : 'Enviar instrucciones' }}
             </button>
           </form>
@@ -163,9 +148,7 @@
               to="/login"
               class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#0D89CB] transition-colors font-medium"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-              </svg>
+              <ArrowLeft class="w-4 h-4" :stroke-width="2" />
               Volver al inicio de sesión
             </router-link>
           </div>
@@ -185,6 +168,7 @@
 import { ref }          from 'vue'
 import axios            from 'axios'
 import AppRecaptcha     from '../components/shared/AppRecaptcha.vue'
+import { KeyRound, Mail, CheckCircle2, ArrowLeft, Loader2, AlertCircle, Send } from 'lucide-vue-next'
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 

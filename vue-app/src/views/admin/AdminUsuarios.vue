@@ -168,9 +168,7 @@
                   class="p-2 rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                   title="Eliminar usuario"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
+                  <Trash2 class="w-4 h-4" :stroke-width="1.75" />
                 </button>
               </div>
             </div>
@@ -316,9 +314,7 @@
                   class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
                   title="Eliminar usuario"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
+                  <Trash2 class="w-4 h-4" :stroke-width="1.75" />
                 </button>
               </div>
             </div>
@@ -437,7 +433,7 @@
                 <p class="text-xs text-gray-400 mt-0.5">{{ editando ? 'Modifica los datos del usuario' : 'Ingresa los datos del nuevo usuario' }}</p>
               </div>
               <button @click="showModal = false" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <X class="w-4 h-4" :stroke-width="2" />
               </button>
             </div>
             <!-- Body -->
@@ -619,6 +615,7 @@
 </template>
 
 <script setup>
+import { Trash2, X } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import AdminNavBar from '../../components/admin/AdminNavBar.vue'
 import { fuzzyMatch, fuzzyScore } from '../../utils/fuzzy.js'

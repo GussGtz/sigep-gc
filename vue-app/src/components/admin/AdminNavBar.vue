@@ -4,9 +4,7 @@
                  flex items-center px-4 gap-3 shadow-soft">
     <button @click="drawerOpen = !drawerOpen"
       class="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-      </svg>
+      <Menu class="w-5 h-5" :stroke-width="1.75" />
     </button>
 
     <div class="flex items-center gap-2 flex-1">
@@ -17,20 +15,14 @@
     <!-- Mobile Chat — oculto en mobile, el bottom nav lo reemplaza -->
     <router-link to="/chat"
       class="hidden relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-      </svg>
+      <MessageCircle class="w-5 h-5" :stroke-width="1.75" />
     </router-link>
 
     <!-- Mobile Bell -->
     <div class="relative" ref="mobileBellRef">
       <button @click="mobileBell = !mobileBell"
         class="relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-        </svg>
+        <Bell class="w-5 h-5" :stroke-width="1.75" />
         <span v-if="notifs.unreadCount > 0"
           class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
           {{ notifs.unreadCount > 9 ? '9+' : notifs.unreadCount }}
@@ -50,7 +42,12 @@
               @click="notifs.markAsRead(n.id)"
               class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
               :class="{ 'bg-blue-50/40': !n._read }">
-              <span class="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center" v-html="notifIcon(n.type)"></span>
+              <span class="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                <MessageSquare v-if="n.type === 'comment'" class="w-4 h-4 text-blue-500" :stroke-width="2" />
+                <RefreshCw v-else-if="n.type === 'status_change'" class="w-4 h-4 text-amber-500" :stroke-width="2" />
+                <CheckCircle2 v-else-if="n.type === 'delivery_done'" class="w-4 h-4 text-emerald-500" :stroke-width="2" />
+                <Bell v-else class="w-4 h-4 text-gray-400" :stroke-width="2" />
+              </span>
               <div class="flex-1 min-w-0">
                 <p class="text-xs text-gray-700 leading-relaxed">{{ n.message }}</p>
                 <p class="text-[11px] text-gray-400 mt-0.5">{{ formatTime(n.createdAt) }}</p>
@@ -81,7 +78,16 @@
               @click="drawerOpen = false"
               class="sidebar-link relative"
               :class="isActive(tab.to) ? 'active' : ''">
-              <span class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px]" v-html="tabIcon(tab.icon)"></span>
+              <span class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px]">
+                <LayoutGrid v-if="tab.icon === 'dashboard'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+                <ClipboardList v-else-if="tab.icon === 'clipboard'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+                <Archive v-else-if="tab.icon === 'archive'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+                <Truck v-else-if="tab.icon === 'truck'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+                <Users v-else-if="tab.icon === 'users'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+                <MessageCircle v-else-if="tab.icon === 'chat'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+                <Settings v-else-if="tab.icon === 'cog'" class="w-[18px] h-[18px]" :stroke-width="1.75" />
+                <ClipboardList v-else class="w-[18px] h-[18px]" :stroke-width="1.75" />
+              </span>
               <span class="flex-1">{{ tab.label }}</span>
               <span v-if="tab.to === '/chat' && chat.unreadTotal > 0"
                 class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white leading-none">
@@ -105,10 +111,7 @@
             </div>
             <router-link to="/chat" @click="drawerOpen = false"
               class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors mb-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-              </svg>
+              <MessageCircle class="w-4 h-4" :stroke-width="1.75" />
               Chat del equipo
               <span v-if="chat.unreadTotal > 0"
                 class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
@@ -117,26 +120,17 @@
             </router-link>
             <button @click="showCambiarPass = true; drawerOpen = false"
               class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors mb-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-              </svg>
+              <Lock class="w-4 h-4" :stroke-width="1.75" />
               Cambiar contraseña
             </button>
             <button v-if="pwa.showInstallOption" @click="instalarApp"
               class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors mb-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
+              <Smartphone class="w-4 h-4" :stroke-width="1.75" />
               Instalar app
             </button>
             <button @click="handleLogout"
               class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
+              <LogOut class="w-4 h-4" :stroke-width="1.75" />
               Cerrar sesión
             </button>
           </div>
@@ -157,9 +151,7 @@
             <h3 class="font-semibold text-gray-900">Cambiar contraseña</h3>
             <button @click="cerrarCambiarPass"
               class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
+              <X class="w-4 h-4" :stroke-width="2" />
             </button>
           </div>
           <!-- Form -->
@@ -238,10 +230,7 @@
         <button @click="desktopBell = !desktopBell"
           class="w-full sidebar-link">
           <span class="relative w-5 h-5 flex-shrink-0 flex items-center justify-center">
-            <svg class="w-4.5 h-4.5 w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
+            <Bell class="w-[18px] h-[18px]" :stroke-width="1.75" />
             <span v-if="notifs.unreadCount > 0"
               class="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center leading-none">
               {{ notifs.unreadCount > 9 ? '9+' : notifs.unreadCount }}
@@ -263,7 +252,12 @@
                 @click="notifs.markAsRead(n.id)"
                 class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
                 :class="{ 'bg-blue-50/40': !n._read }">
-                <span class="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center" v-html="notifIcon(n.type)"></span>
+                <span class="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                <MessageSquare v-if="n.type === 'comment'" class="w-4 h-4 text-blue-500" :stroke-width="2" />
+                <RefreshCw v-else-if="n.type === 'status_change'" class="w-4 h-4 text-amber-500" :stroke-width="2" />
+                <CheckCircle2 v-else-if="n.type === 'delivery_done'" class="w-4 h-4 text-emerald-500" :stroke-width="2" />
+                <Bell v-else class="w-4 h-4 text-gray-400" :stroke-width="2" />
+              </span>
                 <div class="flex-1 min-w-0">
                   <p class="text-xs text-gray-700 leading-relaxed">{{ n.message }}</p>
                   <p class="text-[11px] text-gray-400 mt-0.5">{{ formatTime(n.createdAt) }}</p>
@@ -286,8 +280,8 @@
             <p class="text-xs font-semibold text-gray-900 truncate leading-none">{{ auth.user?.nombre }}</p>
             <p class="text-[11px] text-gray-400 truncate leading-none mt-0.5">{{ roleLabel }}</p>
           </div>
-          <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
+          <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
           </svg>
         </button>
         <Transition name="slide">
@@ -299,10 +293,7 @@
             </div>
             <router-link to="/chat" @click="desktopMenu = false"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-              </svg>
+              <MessageCircle class="w-4 h-4" :stroke-width="1.75" />
               Chat del equipo
               <span v-if="chat.unreadTotal > 0"
                 class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
@@ -311,26 +302,17 @@
             </router-link>
             <button @click="showCambiarPass = true; desktopMenu = false"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-              </svg>
+              <Lock class="w-4 h-4" :stroke-width="1.75" />
               Cambiar contraseña
             </button>
             <button v-if="pwa.showInstallOption" @click="instalarApp"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
+              <Smartphone class="w-4 h-4" :stroke-width="1.75" />
               Instalar app
             </button>
             <button @click="handleLogout"
               class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
+              <LogOut class="w-4 h-4" :stroke-width="1.75" />
               Cerrar sesión
             </button>
           </div>
@@ -355,6 +337,11 @@ import { usePwaStore }           from '../../stores/pwa.js'
 import axios                     from 'axios'
 import PasswordStrengthBar       from '../shared/PasswordStrengthBar.vue'
 import BottomNav                 from '../shared/BottomNav.vue'
+import {
+  LayoutGrid, ClipboardList, Archive, Truck, Users, MessageCircle, Settings,
+  Bell, Menu, X, Lock, Smartphone, LogOut,
+  CheckCircle2, MessageSquare, RefreshCw
+} from 'lucide-vue-next'
 
 defineEmits(['toggleSidebar'])
 
@@ -460,27 +447,7 @@ function isActive(path) {
   return route.path.startsWith(path)
 }
 
-function tabIcon(name) {
-  const icons = {
-    dashboard: `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>`,
-    clipboard:  `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>`,
-    archive:    `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>`,
-    truck:      `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 18H5a2 2 0 01-2-2V6a2 2 0 012-2h11a2 2 0 012 2v2m0 8h2a2 2 0 002-2v-4l-3-4h-5V8m0 10a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0z"/></svg>`,
-    users:      `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`,
-    chat:       `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>`,
-    cog:        `<svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`,
-  }
-  return icons[name] || icons.clipboard
-}
-
-function notifIcon(t) {
-  const icons = {
-    comment:       `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>`,
-    status_change: `<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`,
-    delivery_done: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
-  }
-  return icons[t] || `<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>`
-}
+// tabIcon and notifIcon removed — replaced with Lucide components in template
 function formatTime(ts) {
   if (!ts) return ''
   const diff = (Date.now() - new Date(ts).getTime()) / 1000

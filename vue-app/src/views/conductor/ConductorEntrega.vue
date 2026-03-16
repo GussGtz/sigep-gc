@@ -13,10 +13,7 @@
       <!-- Chat — solo desktop; en mobile lo maneja el bottom nav -->
       <router-link to="/chat"
         class="hidden md:flex relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-        </svg>
+        <MessageCircle class="w-5 h-5" :stroke-width="1.75" />
         <span v-if="chatStore.unreadTotal > 0"
           class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
           {{ chatStore.unreadTotal > 9 ? '9+' : chatStore.unreadTotal }}
@@ -49,7 +46,7 @@
             class="bg-white rounded-2xl border border-black/[0.06] shadow-soft p-4 space-y-3">
             <div class="flex items-start gap-3">
               <div class="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <MapPin class="w-4 h-4" :stroke-width="1.75" />
               </div>
               <div>
                 <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Dirección</p>
@@ -137,10 +134,7 @@
           <button @click="showNoEntregada = true" :disabled="enviando"
             class="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold
                    text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
+            <AlertTriangle class="w-4 h-4" :stroke-width="1.75" />
             No se pudo entregar
           </button>
         </template>
@@ -160,9 +154,7 @@
               <h3 class="font-semibold text-gray-900">¿Por qué no se pudo entregar?</h3>
               <button @click="showNoEntregada = false"
                 class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <X class="w-4 h-4" :stroke-width="2" />
               </button>
             </div>
             <textarea v-model="razonNoEntrega" class="input-field resize-none" rows="4"
@@ -188,6 +180,7 @@
 </template>
 
 <script setup>
+import { MapPin, X } from 'lucide-vue-next'
 import { ref, onMounted, inject } from 'vue'
 import { useRoute, useRouter }    from 'vue-router'
 import { useAuthStore }           from '../../stores/auth.js'

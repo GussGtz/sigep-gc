@@ -15,9 +15,7 @@
             <p class="text-gray-400 text-sm mt-1 capitalize">{{ todayLabel }}</p>
           </div>
           <router-link to="/admin/pedidos" class="btn-primary text-sm shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
+            <ClipboardList class="w-4 h-4" :stroke-width="1.75" />
             Ver Pedidos
           </router-link>
         </div>
@@ -102,10 +100,7 @@
                 <p class="text-xs text-gray-400 mt-0.5">Completados</p>
               </div>
               <div class="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                </svg>
+                <BarChart2 class="w-4 h-4 text-gray-400" :stroke-width="1.75" />
               </div>
             </div>
             <div class="space-y-4">
@@ -213,10 +208,7 @@
             <div v-if="conductoresEnRuta === 0"
               class="absolute inset-0 flex items-center justify-center bg-gray-50/80 z-10">
               <div class="bg-white rounded-xl px-5 py-4 text-center shadow-sm border border-gray-100">
-                <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
-                </svg>
+                <Truck class="w-8 h-8 text-gray-300 mx-auto mb-2" :stroke-width="1.5" />
                 <p class="text-sm text-gray-500 font-medium">Sin conductores activos</p>
                 <p class="text-xs text-gray-400 mt-1">Aparecerán aquí cuando tengan la app abierta</p>
               </div>
@@ -342,10 +334,7 @@
           @mousedown.self="showConfirmDelete = false">
           <div class="bg-white rounded-2xl shadow-modal border border-black/[0.06] w-full max-w-sm p-6 text-center" @click.stop>
             <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
+              <Trash2 class="w-7 h-7 text-red-500" :stroke-width="2" />
             </div>
             <h3 class="font-serif text-lg font-bold text-gray-900 mb-1">Eliminar pedido</h3>
             <p class="text-sm text-gray-500 mb-6">Esta acción no puede deshacerse. ¿Confirmas la eliminación?</p>
@@ -373,6 +362,7 @@ import PedidoModal   from '../../components/shared/PedidoModal.vue'
 import { useAuthStore }    from '../../stores/auth.js'
 import { usePedidosStore } from '../../stores/pedidos.js'
 import { useGpsStore }     from '../../stores/gps.js'
+import { ClipboardList, BarChart2, Truck, Trash2 } from 'lucide-vue-next'
 
 const auth         = useAuthStore()
 const pedidosStore = usePedidosStore()

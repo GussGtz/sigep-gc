@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
 import { useRouter, useRoute }   from 'vue-router'
+import { Home, ClipboardList, Truck, MessageCircle, User, Users, Archive, ChevronRight, Lock, Smartphone, LogOut, X } from 'lucide-vue-next'
 import { useAuthStore }          from '../../stores/auth.js'
 import { useChatStore }          from '../../stores/chat.js'
 import { usePwaStore }           from '../../stores/pwa.js'
@@ -163,36 +164,19 @@ function navTo (path) {
           :class="isActive(item) ? 'bg-[#0D89CB]/[0.07]' : ''"
         >
           <!-- HOME -->
-          <svg v-if="item.icon === 'home'" class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-          </svg>
+          <Home v-if="item.icon === 'home'" class="w-[22px] h-[22px]" :stroke-width="1.75" />
 
           <!-- CLIPBOARD (Pedidos) -->
-          <svg v-else-if="item.icon === 'clipboard'" class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-          </svg>
+          <ClipboardList v-else-if="item.icon === 'clipboard'" class="w-[22px] h-[22px]" :stroke-width="1.75" />
 
           <!-- TRUCK (Conductores) -->
-          <svg v-else-if="item.icon === 'truck'" class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8l2-2zM13 7h5l3 3v5h-1"/>
-          </svg>
+          <Truck v-else-if="item.icon === 'truck'" class="w-[22px] h-[22px]" :stroke-width="1.75" />
 
           <!-- CHAT -->
-          <svg v-else-if="item.icon === 'chat'" class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-          </svg>
+          <MessageCircle v-else-if="item.icon === 'chat'" class="w-[22px] h-[22px]" :stroke-width="1.75" />
 
           <!-- USER (Perfil) -->
-          <svg v-else-if="item.icon === 'user'" class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-          </svg>
+          <User v-else-if="item.icon === 'user'" class="w-[22px] h-[22px]" :stroke-width="1.75" />
 
           <!-- Unread badge (chat) -->
           <span
@@ -254,27 +238,17 @@ function navTo (path) {
               @click="navTo('/admin/usuarios')"
               class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-gray-700"
             >
-              <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-              </svg>
+              <Users class="w-5 h-5 text-gray-400 flex-shrink-0" :stroke-width="1.75" />
               <span class="text-sm font-medium">Usuarios</span>
-              <svg class="w-4 h-4 text-gray-300 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
+              <ChevronRight class="w-4 h-4 text-gray-300 ml-auto" :stroke-width="2" />
             </button>
             <button
               @click="navTo('/admin/inventario')"
               class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-gray-700"
             >
-              <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-              </svg>
+              <Archive class="w-5 h-5 text-gray-400 flex-shrink-0" :stroke-width="1.75" />
               <span class="text-sm font-medium">Inventario</span>
-              <svg class="w-4 h-4 text-gray-300 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
+              <ChevronRight class="w-4 h-4 text-gray-300 ml-auto" :stroke-width="2" />
             </button>
           </div>
           <div class="mx-4 h-px bg-gray-100 mb-3"></div>
@@ -287,10 +261,7 @@ function navTo (path) {
             @click="abrirPwModal"
             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-gray-700"
           >
-            <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
+            <Lock class="w-5 h-5 text-gray-400 flex-shrink-0" :stroke-width="1.75" />
             <span class="text-sm font-medium">Cambiar contraseña</span>
           </button>
           <button
@@ -298,10 +269,7 @@ function navTo (path) {
             @click="instalarApp"
             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-gray-700"
           >
-            <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-            </svg>
+            <Smartphone class="w-5 h-5 text-gray-400 flex-shrink-0" :stroke-width="1.75" />
             <span class="text-sm font-medium">Instalar app</span>
           </button>
         </div>
@@ -312,10 +280,7 @@ function navTo (path) {
             @click="handleLogout"
             class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 active:bg-red-200 transition-colors"
           >
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
+            <LogOut class="w-5 h-5 flex-shrink-0" :stroke-width="1.75" />
             <span class="text-sm font-semibold">Cerrar sesión</span>
           </button>
         </div>
@@ -340,9 +305,7 @@ function navTo (path) {
               @click="cerrarPwModal"
               class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-colors"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
+              <X class="w-5 h-5" :stroke-width="2" />
             </button>
           </div>
 
@@ -397,13 +360,3 @@ function navTo (path) {
   </Teleport>
 </template>
 
-<style scoped>
-.bn-slide-up-enter-active,
-.bn-slide-up-leave-active {
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.bn-slide-up-enter-from,
-.bn-slide-up-leave-to {
-  transform: translateY(100%);
-}
-</style>

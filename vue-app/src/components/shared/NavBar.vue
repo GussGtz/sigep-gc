@@ -37,9 +37,7 @@
               <p class="text-xs font-medium text-slate-100 leading-none">{{ auth.user?.nombre }}</p>
               <p class="text-xs text-slate-400 leading-none mt-0.5">{{ auth.rolLabel }}</p>
             </div>
-            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
+            <ChevronDown class="w-4 h-4" :stroke-width="2" />
           </button>
 
           <Transition name="slide">
@@ -49,9 +47,7 @@
                 <p class="text-xs text-slate-400 truncate">{{ auth.user?.email }}</p>
               </div>
               <button @click="handleLogout" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
+                <LogOut class="w-4 h-4" :stroke-width="1.75" />
                 Cerrar sesión
               </button>
             </div>
@@ -63,6 +59,7 @@
 </template>
 
 <script setup>
+import { LogOut } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth.js'
