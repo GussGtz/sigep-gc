@@ -5,7 +5,7 @@
 
     <!-- ══ MAIN CONTENT — offset for sidebar ══ -->
     <main class="pt-14 lg:pt-0 lg:ml-60 pb-20 lg:pb-0 page-enter">
-      <div class="max-w-6xl mx-auto px-5 py-8 space-y-7">
+      <div class="max-w-6xl mx-auto px-5 py-8 space-y-6">
 
         <!-- ── Header row ── -->
         <div class="flex items-start justify-between gap-4 flex-wrap">
@@ -13,39 +13,101 @@
             <p class="text-xs text-gray-400 font-medium uppercase tracking-widest mb-1">{{ greetingLabel }}</p>
             <h1 class="font-serif text-3xl font-bold text-gray-900 leading-tight">{{ firstName }}</h1>
             <p class="text-gray-400 text-sm mt-1 capitalize">{{ todayLabel }}</p>
+
+            <!-- ── Live metrics pills ── -->
+            <div class="flex items-center gap-2 flex-wrap mt-3">
+              <div class="inline-flex items-center gap-1.5 bg-white rounded-full border border-black/[0.06] shadow-soft px-3.5 py-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-xs font-bold text-gray-900">{{ pedidosHoy }}</span>
+                <span class="text-xs text-gray-400">pedidos hoy</span>
+              </div>
+              <div class="inline-flex items-center gap-1.5 bg-white rounded-full border border-black/[0.06] shadow-soft px-3.5 py-1.5">
+                <Truck class="w-3 h-3 text-[#0D89CB]" :stroke-width="2.5" />
+                <span class="text-xs font-bold text-[#0D89CB]">{{ conductoresEnRuta }}</span>
+                <span class="text-xs text-gray-400">en ruta</span>
+              </div>
+              <div v-if="kpis.atrasados > 0"
+                class="inline-flex items-center gap-1.5 bg-red-50 rounded-full border border-red-200 px-3.5 py-1.5">
+                <AlertTriangle class="w-3 h-3 text-red-500" :stroke-width="2.5" />
+                <span class="text-xs font-bold text-red-700">{{ kpis.atrasados }} atrasado{{ kpis.atrasados > 1 ? 's' : '' }}</span>
+              </div>
+              <div v-if="kpis.urgentes > 0"
+                class="inline-flex items-center gap-1.5 bg-orange-50 rounded-full border border-orange-200 px-3.5 py-1.5">
+                <Flame class="w-3 h-3 text-orange-500" :stroke-width="2.5" />
+                <span class="text-xs font-bold text-orange-700">{{ kpis.urgentes }} urgente{{ kpis.urgentes > 1 ? 's' : '' }}</span>
+              </div>
+            </div>
           </div>
-          <router-link to="/admin/pedidos" class="btn-primary text-sm shadow-sm">
+          <router-link to="/admin/pedidos" class="btn-primary text-sm shadow-sm flex-shrink-0">
             <ClipboardList class="w-4 h-4" :stroke-width="1.75" />
             Ver Pedidos
           </router-link>
         </div>
 
+        <!-- ── Alertas inteligentes — solo cuando hay problemas ── -->
+        <Transition name="fade">
+          <div v-if="alertas.length" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div v-for="a in alertas" :key="a.key"
+              class="flex items-center gap-3 px-4 py-3.5 rounded-2xl"
+              :class="a.bg">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse"
+                :class="a.iconBg">
+                <component :is="a.icon" class="w-4 h-4" :class="a.iconColor" :stroke-width="2.5" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold leading-tight" :class="a.textColor">{{ a.title }}</p>
+                <p class="text-xs mt-0.5" :class="a.subColor">{{ a.sub }}</p>
+              </div>
+              <router-link to="/admin/pedidos"
+                class="text-xs font-bold flex-shrink-0 hover:underline" :class="a.linkColor">
+                Ver →
+              </router-link>
+            </div>
+          </div>
+        </Transition>
+
         <!-- ── KPI Strip ── -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div v-for="kpi in bigKpis" :key="kpi.label"
-            class="bg-white rounded-2xl border border-black/[0.06] shadow-soft px-5 py-4 flex flex-col gap-1
-                   hover:shadow-card transition-shadow duration-200">
-            <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest">{{ kpi.label }}</span>
-            <div class="flex items-end justify-between gap-2">
-              <span class="font-serif text-3xl font-bold" :class="kpi.color">{{ kpi.value }}</span>
-              <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mb-0.5" :class="kpi.iconBg">
-                <svg class="w-4 h-4" :class="kpi.iconColor" fill="currentColor" viewBox="0 0 20 20">
-                  <path :d="kpi.iconPath"/>
-                </svg>
+            class="bg-white rounded-2xl border border-black/[0.06] shadow-soft px-5 py-4 flex flex-col
+                   hover:shadow-card hover:-translate-y-0.5 transition-all duration-200 cursor-default">
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest leading-none">{{ kpi.label }}</span>
+            <div class="flex items-end justify-between gap-2 mt-2">
+              <span class="font-serif text-3xl font-bold leading-none" :class="kpi.color">{{ kpi.value }}</span>
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                :class="kpi.iconBg">
+                <component :is="kpi.icon" class="w-4 h-4" :class="kpi.iconColor" :stroke-width="2" />
               </div>
             </div>
+            <!-- Sparkline SVG — solo en "Total" -->
+            <svg v-if="kpi.sparkline" viewBox="0 0 70 20" class="w-full h-5 mt-2.5" preserveAspectRatio="none">
+              <polyline
+                :points="kpi.sparkline"
+                fill="none" stroke="currentColor"
+                :class="kpi.sparkColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </div>
         </div>
 
         <!-- ── Progress bars ── -->
         <div class="bg-white rounded-2xl border border-black/[0.06] shadow-soft px-6 py-5">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="font-semibold text-gray-900">Progreso General</h2>
-            <span class="font-serif text-2xl font-bold text-gray-900">{{ completadoPct }}<span class="text-base font-sans font-normal text-gray-400">%</span></span>
+            <div>
+              <h2 class="font-semibold text-gray-900">Progreso General</h2>
+              <p class="text-xs text-gray-400 mt-0.5">{{ kpis.total }} pedidos en total</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="font-serif text-2xl font-bold text-gray-900">{{ completadoPct }}</span>
+              <span class="text-sm font-normal text-gray-400">% completado</span>
+            </div>
           </div>
           <!-- Tricolor bar -->
-          <div class="flex gap-1 h-2 rounded-full overflow-hidden mb-5">
-            <div class="bg-amber-400  transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.pendientes, 0.1) }"></div>
+          <div class="flex gap-1 h-3 rounded-full overflow-hidden mb-5">
+            <div class="bg-amber-400 transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.pendientes, 0.1) }"></div>
             <div class="bg-[#0D89CB] transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.enProceso, 0.1) }"></div>
             <div class="bg-emerald-400 transition-all duration-700 rounded-full" :style="{ flex: Math.max(kpis.completados, 0.1) }"></div>
           </div>
@@ -55,7 +117,10 @@
               <div class="flex-1">
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-xs font-medium text-gray-500">{{ bar.label }}</span>
-                  <span class="text-xs font-bold text-gray-700">{{ bar.pct }}%</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-gray-700">{{ bar.count }}</span>
+                    <span class="text-xs text-gray-400">({{ bar.pct }}%)</span>
+                  </div>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                   <div class="h-1.5 rounded-full transition-all duration-700" :class="bar.color" :style="{ width: bar.pct + '%' }"></div>
@@ -92,7 +157,7 @@
             </div>
           </div>
 
-          <!-- Card 2: Progreso por área -->
+          <!-- Card 2: Progreso por área + week bars -->
           <div class="bg-white rounded-2xl border border-black/[0.06] shadow-soft p-5">
             <div class="flex items-center justify-between mb-5">
               <div>
@@ -103,11 +168,11 @@
                 <BarChart2 class="w-4 h-4 text-gray-400" :stroke-width="1.75" />
               </div>
             </div>
-            <div class="space-y-4">
+            <div class="space-y-3.5">
               <div v-for="area in areaStats" :key="area.name">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-sm font-medium text-gray-700 capitalize">{{ area.name }}</span>
-                  <span class="text-xs text-gray-400">{{ area.completados }} / {{ kpis.total }}</span>
+                  <span class="text-xs text-gray-400 font-semibold">{{ area.completados }} / {{ kpis.total }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                   <div class="h-2.5 rounded-full transition-all duration-700" :class="area.barColor"
@@ -119,16 +184,19 @@
 
             <!-- Activity bars — 7 days -->
             <div class="mt-5 pt-4 border-t border-gray-100">
-              <p class="text-xs text-gray-400 mb-3">Pedidos — últimos 7 días</p>
-              <div class="flex items-end justify-between gap-1.5 h-16">
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-xs text-gray-400">Pedidos — últimos 7 días</p>
+                <span class="text-[11px] text-gray-300 font-medium">{{ weekBars.reduce((s,b)=>s+b.total,0) }} total</span>
+              </div>
+              <div class="flex items-end justify-between gap-1.5 h-20">
                 <div v-for="(bar, i) in weekBars" :key="i" class="flex-1 flex flex-col items-center gap-1">
                   <span class="text-[11px] font-semibold leading-none"
-                    :class="bar.total > 0 ? 'text-gray-600' : 'text-transparent'">
+                    :class="bar.total > 0 ? (bar.active ? 'text-[#0D89CB]' : 'text-gray-500') : 'text-transparent'">
                     {{ bar.total || 0 }}
                   </span>
-                  <div class="w-full rounded transition-all duration-500"
-                    :class="bar.active ? 'bg-[#0D89CB]' : 'bg-gray-200'"
-                    :style="{ height: Math.max((bar.total / maxBar) * 44, bar.total > 0 ? 6 : 2) + 'px' }">
+                  <div class="w-full rounded-t transition-all duration-500"
+                    :class="bar.active ? 'bg-gradient-to-t from-[#0D89CB] to-[#5BB8E8]' : 'bg-gray-100 hover:bg-gray-200'"
+                    :style="{ height: Math.max((bar.total / maxBar) * 56, bar.total > 0 ? 6 : 2) + 'px' }">
                   </div>
                   <span class="text-[11px] font-medium"
                     :class="bar.active ? 'text-[#0D89CB] font-bold' : 'text-gray-400'">{{ bar.day }}</span>
@@ -137,7 +205,7 @@
             </div>
           </div>
 
-          <!-- Card 3: Estado circular -->
+          <!-- Card 3: Estado circular + mini list -->
           <div class="bg-white rounded-2xl border border-black/[0.06] shadow-soft p-5">
             <div class="flex items-center justify-between mb-4">
               <div>
@@ -145,7 +213,7 @@
                 <p class="text-xs text-gray-400 mt-0.5">Pedidos del mes</p>
               </div>
             </div>
-            <!-- Circular -->
+            <!-- Circular gauge -->
             <div class="flex items-center justify-center my-2">
               <div class="relative w-24 h-24">
                 <svg class="w-full h-full -rotate-90" viewBox="0 0 80 80">
@@ -204,7 +272,6 @@
           </div>
           <div class="relative">
             <div id="mapa-dashboard" class="w-full h-64 z-0"></div>
-            <!-- Overlay sin conductores -->
             <div v-if="conductoresEnRuta === 0"
               class="absolute inset-0 flex items-center justify-center bg-gray-50/80 z-10">
               <div class="bg-white rounded-xl px-5 py-4 text-center shadow-sm border border-gray-100">
@@ -226,7 +293,6 @@
               <router-link to="/admin/pedidos"
                 class="text-xs font-semibold text-[#0D89CB] hover:underline">Ver todos →</router-link>
             </div>
-            <!-- Skeleton loader -->
             <div v-if="pedidosStore.loading" class="p-5 space-y-3">
               <div v-for="i in 5" :key="i" class="skeleton h-10 rounded-xl"></div>
             </div>
@@ -243,10 +309,7 @@
                 :class="{ 'bg-red-50/30': p.retrasado }">
                 <div class="flex items-center gap-2 min-w-0">
                   <div class="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/>
-                      <path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
-                    </svg>
+                    <Package class="w-3.5 h-3.5 text-gray-400" :stroke-width="1.75" />
                   </div>
                   <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
@@ -316,6 +379,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </main>
 
@@ -357,12 +421,16 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from 'vue'
 import axios from 'axios'
 import AdminNavBar   from '../../components/admin/AdminNavBar.vue'
-import StatusBadge   from '../../components/shared/StatusBadge.vue'
 import PedidoModal   from '../../components/shared/PedidoModal.vue'
 import { useAuthStore }    from '../../stores/auth.js'
 import { usePedidosStore } from '../../stores/pedidos.js'
 import { useGpsStore }     from '../../stores/gps.js'
-import { ClipboardList, BarChart2, Truck, Trash2 } from 'lucide-vue-next'
+import {
+  ClipboardList, BarChart2, Truck, Trash2,
+  AlertTriangle, Flame, XCircle,
+  Package, Activity, CheckCircle2,
+  AlertOctagon, TrendingDown
+} from 'lucide-vue-next'
 
 const auth         = useAuthStore()
 const pedidosStore = usePedidosStore()
@@ -397,44 +465,25 @@ const procesoPct    = computed(() => kpis.value.total ? Math.round(kpis.value.en
 const pendientePct  = computed(() => kpis.value.total ? Math.round(kpis.value.pendientes  / kpis.value.total * 100) : 0)
 
 const progressBars = computed(() => [
-  { label:'Pendientes',  pct: pendientePct.value,  color:'bg-amber-400',   dot:'bg-amber-400'   },
-  { label:'En proceso',  pct: procesoPct.value,    color:'bg-[#0D89CB]',   dot:'bg-[#0D89CB]'   },
-  { label:'Completados', pct: completadoPct.value, color:'bg-emerald-400', dot:'bg-emerald-400' },
+  { label:'Pendientes',  pct: pendientePct.value,  count: kpis.value.pendientes,  color:'bg-amber-400',   dot:'bg-amber-400'   },
+  { label:'En proceso',  pct: procesoPct.value,    count: kpis.value.enProceso,   color:'bg-[#0D89CB]',   dot:'bg-[#0D89CB]'   },
+  { label:'Completados', pct: completadoPct.value, count: kpis.value.completados, color:'bg-emerald-400', dot:'bg-emerald-400' },
 ])
 
-const bigKpis = computed(() => [
-  { label:'Total',        value: kpis.value.total,       color:'text-gray-900',   iconBg:'bg-gray-100',    iconColor:'text-gray-500',    iconPath:'M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z' },
-  { label:'En Proceso',   value: kpis.value.enProceso,   color:'text-[#0D89CB]',  iconBg:'bg-blue-50',     iconColor:'text-[#0D89CB]',   iconPath:'M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z' },
-  { label:'Completados',  value: kpis.value.completados, color:'text-emerald-600', iconBg:'bg-emerald-50',  iconColor:'text-emerald-600', iconPath:'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' },
-  { label:'Atrasados',    value: kpis.value.atrasados,   color:'text-red-600',    iconBg:'bg-red-50',      iconColor:'text-red-500',     iconPath:'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' },
-  { label:'Urgentes',     value: kpis.value.urgentes,    color:'text-orange-600', iconBg:'bg-orange-50',   iconColor:'text-orange-500',  iconPath:'M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z' },
-  { label:'Incidencias',  value: incidenciasActivas.value, color: incidenciasActivas.value > 0 ? 'text-rose-600' : 'text-gray-400', iconBg: incidenciasActivas.value > 0 ? 'bg-rose-50' : 'bg-gray-100', iconColor: incidenciasActivas.value > 0 ? 'text-rose-500' : 'text-gray-400', iconPath:'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
-])
-
-// ── Area stats ──
-const areaStats = computed(() => [
-  { name:'ventas',       barColor:'bg-[#0D89CB]',     completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='ventas')?.estatus==='completado').length },
-  { name:'produccion',   barColor:'bg-orange-400',  completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='produccion')?.estatus==='completado').length },
-  { name:'contabilidad', barColor:'bg-emerald-400', completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='contabilidad')?.estatus==='completado').length },
-])
-
-// ── Week bars (API o fallback desde pedidos locales) ──
+// ── Week bars ──
 const weekBars = computed(() => {
-  const dias = []
+  const dias  = []
   const LABEL = ['D','L','M','M','J','V','S']
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0)
     const iso = d.toISOString().slice(0,10)
     let total = 0
     if (resumen.value?.porDia?.length) {
-      // Datos del endpoint /api/pedidos/resumen
       const found = resumen.value.porDia.find(r => r.dia?.slice(0,10) === iso)
       total = Number(found?.total) || 0
     } else {
-      // Fallback: contar desde pedidos cargados en store (usa fecha_entrega)
       total = pedidosStore.pedidos.filter(p =>
-        p.fecha_creacion?.slice(0,10) === iso ||
-        p.created_at?.slice(0,10) === iso
+        p.fecha_creacion?.slice(0,10) === iso || p.created_at?.slice(0,10) === iso
       ).length
     }
     dias.push({ day: LABEL[d.getDay()], total, active: i === 0 })
@@ -442,6 +491,118 @@ const weekBars = computed(() => {
   return dias
 })
 const maxBar = computed(() => Math.max(...weekBars.value.map(b => b.total), 1))
+
+// ── Pedidos creados hoy ──
+const pedidosHoy = computed(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  if (resumen.value?.porDia?.length) {
+    const found = resumen.value.porDia.find(r => r.dia?.slice(0, 10) === today)
+    return Number(found?.total) || 0
+  }
+  return weekBars.value.find(b => b.active)?.total || 0
+})
+
+// ── Sparkline para la KPI "Total" (polyline SVG, datos de últimos 7 días) ──
+const sparklinePoints = computed(() => {
+  const bars = weekBars.value
+  const max  = Math.max(...bars.map(b => b.total), 1)
+  return bars.map((b, i) => {
+    const x = ((i / (bars.length - 1)) * 68 + 1).toFixed(1)
+    const y = (20 - (b.total / max) * 18 + 1).toFixed(1)
+    return `${x},${y}`
+  }).join(' ')
+})
+
+// ── Alertas inteligentes ──
+const alertas = computed(() => {
+  const list = []
+  if (kpis.value.atrasados > 0) list.push({
+    key: 'atrasados', icon: AlertTriangle,
+    bg: 'bg-red-50 border border-red-100',
+    iconBg: 'bg-red-100', iconColor: 'text-red-600',
+    textColor: 'text-red-800', subColor: 'text-red-500', linkColor: 'text-red-600',
+    title: `${kpis.value.atrasados} pedido${kpis.value.atrasados > 1 ? 's' : ''} atrasado${kpis.value.atrasados > 1 ? 's' : ''}`,
+    sub: 'Requieren atención inmediata'
+  })
+  if (kpis.value.urgentes > 0) list.push({
+    key: 'urgentes', icon: Flame,
+    bg: 'bg-orange-50 border border-orange-100',
+    iconBg: 'bg-orange-100', iconColor: 'text-orange-600',
+    textColor: 'text-orange-800', subColor: 'text-orange-500', linkColor: 'text-orange-600',
+    title: `${kpis.value.urgentes} pedido${kpis.value.urgentes > 1 ? 's' : ''} urgente${kpis.value.urgentes > 1 ? 's' : ''}`,
+    sub: 'Prioridad alta en cola'
+  })
+  if (incidenciasActivas.value > 0) list.push({
+    key: 'incidencias', icon: XCircle,
+    bg: 'bg-rose-50 border border-rose-100',
+    iconBg: 'bg-rose-100', iconColor: 'text-rose-600',
+    textColor: 'text-rose-800', subColor: 'text-rose-500', linkColor: 'text-rose-600',
+    title: `${incidenciasActivas.value} incidencia${incidenciasActivas.value > 1 ? 's' : ''} activa${incidenciasActivas.value > 1 ? 's' : ''}`,
+    sub: 'Entregas no completadas'
+  })
+  return list
+})
+
+// ── KPIs strip — Lucide icons, sparkline en Total ──
+const bigKpis = computed(() => [
+  {
+    label: 'Total',
+    value: kpis.value.total,
+    color: 'text-gray-900',
+    iconBg: 'bg-gray-100',
+    iconColor: 'text-gray-500',
+    icon: Package,
+    sparkline: sparklinePoints.value,
+    sparkColor: 'text-gray-400'
+  },
+  {
+    label: 'En Proceso',
+    value: kpis.value.enProceso,
+    color: 'text-[#0D89CB]',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-[#0D89CB]',
+    icon: Activity
+  },
+  {
+    label: 'Completados',
+    value: kpis.value.completados,
+    color: 'text-emerald-600',
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+    icon: CheckCircle2
+  },
+  {
+    label: 'Atrasados',
+    value: kpis.value.atrasados,
+    color: kpis.value.atrasados > 0 ? 'text-red-600' : 'text-gray-400',
+    iconBg: kpis.value.atrasados > 0 ? 'bg-red-50' : 'bg-gray-100',
+    iconColor: kpis.value.atrasados > 0 ? 'text-red-500' : 'text-gray-400',
+    icon: TrendingDown
+  },
+  {
+    label: 'Urgentes',
+    value: kpis.value.urgentes,
+    color: kpis.value.urgentes > 0 ? 'text-orange-600' : 'text-gray-400',
+    iconBg: kpis.value.urgentes > 0 ? 'bg-orange-50' : 'bg-gray-100',
+    iconColor: kpis.value.urgentes > 0 ? 'text-orange-500' : 'text-gray-400',
+    icon: Flame
+  },
+  {
+    label: 'Incidencias',
+    value: incidenciasActivas.value,
+    color: incidenciasActivas.value > 0 ? 'text-rose-600' : 'text-gray-400',
+    iconBg: incidenciasActivas.value > 0 ? 'bg-rose-50' : 'bg-gray-100',
+    iconColor: incidenciasActivas.value > 0 ? 'text-rose-500' : 'text-gray-400',
+    icon: AlertOctagon
+  },
+])
+
+// ── Area stats ──
+const areaStats = computed(() => [
+  { name:'ventas',       barColor:'bg-[#0D89CB]',   completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='ventas')?.estatus==='completado').length },
+  { name:'produccion',   barColor:'bg-orange-400',  completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='produccion')?.estatus==='completado').length },
+  { name:'contabilidad', barColor:'bg-emerald-400', completados: pedidosStore.pedidos.filter(p => p.areas?.find(a => a.area==='contabilidad')?.estatus==='completado').length },
+])
 
 // ── Deliveries ──
 const upcomingDeliveries = computed(() => {
@@ -483,7 +644,7 @@ async function fetchIncidencias() {
   } catch { /* silencioso */ }
 }
 
-// ── Mapa monitoreo (dashboard) ───────────────────────────────────────────────
+// ── Mapa monitoreo (dashboard) ──
 let dashMap = null
 let dashMapPositioned = false
 const dashMarkers = {}
@@ -581,7 +742,6 @@ onMounted(async () => {
   fetchResumen()
   fetchIncidencias()
   gpsStore.fetchUbicaciones()
-  // Poll GPS each 10 s while on dashboard
   _dashPollTimer = setInterval(() => gpsStore.fetchUbicaciones(), 10_000)
   await nextTick()
   initDashMap()
