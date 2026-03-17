@@ -85,7 +85,7 @@
             <p class="text-gray-600 text-sm leading-relaxed mb-6">recibirás las instrucciones de recuperación en breve.</p>
             <p class="text-xs text-gray-400 mb-6">Revisa también tu carpeta de spam o correo no deseado.</p>
             <button
-              @click="sent = false; form.email = ''; errorMsg = ''; recaptchaToken = ''; recaptchaRef?.reset()"
+              @click="sent = false; form.email = ''; errorMsg = ''; recaptchaToken = isNative ? 'NATIVE_APP' : ''; recaptchaRef?.reset()"
               class="text-sm text-[#0D89CB] hover:text-[#00659C] font-semibold transition-colors flex items-center justify-center gap-1.5 mx-auto">
               <ArrowLeft class="w-4 h-4" :stroke-width="2" />
               Intentar con otro correo

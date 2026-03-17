@@ -181,9 +181,13 @@ async function handleLogin() {
     toast.add({ type: 'success', message: `Bienvenido, ${data.user.nombre}` })
     router.push(auth.homeRoute)
   } catch (e) {
-    errorMsg.value = e.response?.data?.message || 'Credenciales incorrectas'
+    if (!e.response) {
+      errorMsg.value = 'Sin conexión con el servidor. Intenta de nuevo en unos segundos.'
+    } else {
+      errorMsg.value = e.response.data?.message || 'Credenciales incorrectas'
+    }
     recaptchaRef.value?.reset()
-    recaptchaToken.value = ''
+    recaptchaToken.value = isNative ? 'NATIVE_APP' : ''
   } finally {
     loading.value = false
   }

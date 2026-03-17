@@ -286,7 +286,7 @@ async function handleRegister() {
   } catch (e) {
     errorMsg.value = e.response?.data?.message || 'Error al crear la cuenta'
     recaptchaRef.value?.reset()
-    recaptchaToken.value = ''
+    recaptchaToken.value = isNative ? 'NATIVE_APP' : ''
   } finally {
     loading.value = false
   }
