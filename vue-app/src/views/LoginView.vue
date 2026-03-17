@@ -114,23 +114,12 @@
             {{ errorMsg }}
           </div>
 
-          <!-- Banner "Conectando..." — solo APK nativa mientras el servidor despierta -->
-          <div v-if="isNative && !serverReady"
-            class="flex items-center gap-2.5 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-            <Loader2 class="w-4 h-4 text-[#0D89CB] animate-spin flex-shrink-0" :stroke-width="2" />
-            <div>
-              <p class="text-sm font-medium text-[#00659C]">Conectando con el servidor...</p>
-              <p class="text-xs text-blue-500 mt-0.5">Esto puede tomar hasta 30 segundos la primera vez</p>
-            </div>
-          </div>
-
           <!-- Submit -->
-          <button type="submit" :disabled="loading || (isNative && !serverReady)"
+          <button type="submit" :disabled="loading"
             class="w-full btn-primary justify-center py-3 text-base shadow-md hover:shadow-lg
                    bg-[#0D89CB] hover:bg-[#00659C] disabled:opacity-50 disabled:cursor-not-allowed">
-            <Loader2 v-if="loading || (isNative && !serverReady)" class="w-5 h-5 animate-spin" :stroke-width="2" />
-            <template v-if="isNative && !serverReady">Esperando conexión...</template>
-            <template v-else>{{ loading ? 'Ingresando...' : 'Iniciar sesión' }}</template>
+            <Loader2 v-if="loading" class="w-5 h-5 animate-spin" :stroke-width="2" />
+            {{ loading ? 'Ingresando...' : 'Iniciar sesión' }}
           </button>
         </form>
 
@@ -154,17 +143,16 @@
 </template>
 
 <script setup>
-import { ref, inject, onMounted } from 'vue'
-import { useRouter }               from 'vue-router'
-import { useAuthStore }            from '../stores/auth.js'
-import AppRecaptcha                from '../components/shared/AppRecaptcha.vue'
+import { ref, inject } from 'vue'
+import { useRouter }   from 'vue-router'
+import { useAuthStore } from '../stores/auth.js'
+import AppRecaptcha    from '../components/shared/AppRecaptcha.vue'
 import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-vue-next'
-import { Capacitor }               from '@capacitor/core'
-import axios                       from 'axios'
+import { Capacitor }   from '@capacitor/core'
 
-const router   = useRouter()
-const auth     = useAuthStore()
-const toast    = inject('toast')
+const router = useRouter()
+const auth   = useAuthStore()
+const toast  = inject('toast')
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 const isNative           = Capacitor.isNativePlatform()
@@ -175,33 +163,6 @@ const errorMsg       = ref('')
 const showPw         = ref(false)
 const recaptchaToken = ref(isNative ? 'NATIVE_APP' : '')
 const recaptchaRef   = ref(null)
-
-// ── Estado del servidor (solo relevante en APK nativa) ────────────────────
-// Render free-tier duerme y tarda ~30-60 s en despertar.
-// Bloqueamos el botón hasta que /api/health responda.
-const serverReady = ref(!isNative)
-
-onMounted(() => {
-  if (!isNative) return          // en web no hace falta
-  const MAX_ATTEMPTS = 20        // máximo 60 s (20 × 3 s)
-  let attempts = 0
-
-  const poll = async () => {
-    attempts++
-    try {
-      await axios.get('/api/health', { timeout: 8000 })
-      serverReady.value = true   // backend despierto → habilitar botón
-    } catch {
-      if (attempts < MAX_ATTEMPTS) {
-        setTimeout(poll, 3000)   // reintentar en 3 s
-      } else {
-        serverReady.value = true // tras 60 s permitir intentar igual
-      }
-    }
-  }
-
-  poll()
-})
 
 function onVerify(token) { recaptchaToken.value = token }
 function onExpire()      { recaptchaToken.value = '' }
@@ -221,7 +182,7 @@ async function handleLogin() {
     router.push(auth.homeRoute)
   } catch (e) {
     if (!e.response) {
-      errorMsg.value = 'Sin conexión con el servidor. Intenta de nuevo en unos segundos.'
+      errorMsg.value = 'Sin conexión con el servidor. Intenta de nuevo.'
     } else {
       errorMsg.value = e.response.data?.message || 'Credenciales incorrectas'
     }

@@ -447,4 +447,21 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Servidor SIGEP-GC corriendo en puerto ${PORT}`);
   console.log(`📡 WebSocket activo en ws://localhost:${PORT}/ws`);
+
+  // ── Keepalive: evita que Render free-tier duerma el servidor ────────────
+  // Render duerme el servicio tras 15 min sin tráfico. Este ping cada 14 min
+  // garantiza que el servidor SIEMPRE esté despierto → sin cold starts.
+  // Solo corre en producción (Render setea RENDER_EXTERNAL_URL automáticamente).
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL;
+  if (SELF_URL) {
+    const https = require('https');
+    setInterval(() => {
+      https.get(`${SELF_URL}/api/health`, (res) => {
+        console.log(`[Keepalive] Ping OK → ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.warn('[Keepalive] Ping error:', err.message);
+      });
+    }, 14 * 60 * 1000); // cada 14 minutos
+    console.log(`[Keepalive] Auto-ping activado → ${SELF_URL}/api/health`);
+  }
 });
