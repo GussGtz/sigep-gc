@@ -61,6 +61,8 @@ function verifyRecaptcha(token) {
 
     // Sin clave configurada → omitir verificación (desarrollo local)
     if (!secret) return resolve(true);
+    // Solicitud desde la APK nativa Android → omitir verificación
+    if (token === 'NATIVE_APP') return resolve(true);
     // Sin token → rechazar
     if (!token)  return resolve(false);
 

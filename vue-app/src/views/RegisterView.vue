@@ -174,8 +174,8 @@
             />
           </div>
 
-          <!-- reCAPTCHA -->
-          <div class="flex justify-center">
+          <!-- reCAPTCHA — solo en web (no en APK nativa) -->
+          <div v-if="!isNative" class="flex justify-center">
             <app-recaptcha
               ref="recaptchaRef"
               :sitekey="RECAPTCHA_SITE_KEY"
@@ -228,10 +228,12 @@ import axios                      from 'axios'
 import AppRecaptcha               from '../components/shared/AppRecaptcha.vue'
 import PasswordStrengthBar        from '../components/shared/PasswordStrengthBar.vue'
 import { Eye, EyeOff, Loader2, AlertCircle, ChevronLeft, Clock } from 'lucide-vue-next'
+import { Capacitor }              from '@capacitor/core'
 
 const toast    = inject('toast')
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
+const isNative           = Capacitor.isNativePlatform()
 
 const form = ref({
   nombre: '',
@@ -249,7 +251,7 @@ const passwordValida = computed(() => {
   return p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p)
 })
 const registered     = ref(false)
-const recaptchaToken = ref('')
+const recaptchaToken = ref(isNative ? 'NATIVE_APP' : '')
 const recaptchaRef   = ref(null)
 
 function onVerify(token) { recaptchaToken.value = token }
