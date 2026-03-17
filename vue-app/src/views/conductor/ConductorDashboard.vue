@@ -138,7 +138,7 @@
             <p class="text-xs text-[#0D89CB] mt-0.5 leading-relaxed">
               La app nativa mantiene el GPS activo aunque cierres el navegador o apagues la pantalla.
             </p>
-            <a href="https://backend-sigep-gc1.onrender.com/downloads/glass-caribe.apk"
+            <a href="https://github.com/GussGtz/sigep-gc/releases/download/v1.0.0/glass-caribe.apk"
               download="glass-caribe.apk"
               class="inline-flex items-center gap-1.5 mt-2.5 px-3.5 py-1.5 bg-[#0D89CB] text-white text-xs font-semibold rounded-xl hover:bg-[#00659C] transition-colors shadow-sm">
               <Download class="w-3.5 h-3.5" :stroke-width="2" />
