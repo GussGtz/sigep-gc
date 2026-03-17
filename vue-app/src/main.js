@@ -5,15 +5,13 @@ import axios from 'axios'
 import App from './App.vue'
 import router from './router/index.js'
 import './assets/main.css'
-import { buildAxiosAdapter } from './utils/nativeAdapter.js'
 
-// ── Cuando corre como APK nativo (Capacitor):
-//    1. baseURL apunta directo al backend (no hay proxy Vite/Render).
-//    2. axios usa CapacitorHttp como adaptador → peticiones HTTP pasan por el
-//       stack nativo de Android, NO por el WebView → sin CORS, sin preflight.
+// ── Cuando corre como APK nativo (Capacitor), las peticiones deben ir a la
+//    URL absoluta del backend. CapacitorHttp (habilitado en capacitor.config.ts)
+//    intercepta automáticamente todos los XHR/fetch y los redirige por el stack
+//    HTTP nativo de Android → sin CORS, sin preflight OPTIONS.
 if (Capacitor.isNativePlatform()) {
   axios.defaults.baseURL = 'https://backend-sigep-gc1.onrender.com'
-  axios.defaults.adapter  = buildAxiosAdapter()
 }
 
 const app = createApp(App)
