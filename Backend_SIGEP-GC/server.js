@@ -275,6 +275,12 @@ app.use('/api/gps',            require('./routes/gps'));
 app.use('/api/push',           require('./routes/push'));
 
 // ═══════════════════════════════════════
+// Descargas públicas (APK del conductor)
+// Accesible en /downloads/glass-caribe.apk
+// ═══════════════════════════════════════
+app.use('/downloads', express.static(path.join(__dirname, 'public')));
+
+// ═══════════════════════════════════════
 // Frontend estático (solo en producción)
 // El build de Vue queda en vue-app/dist/
 // ═══════════════════════════════════════

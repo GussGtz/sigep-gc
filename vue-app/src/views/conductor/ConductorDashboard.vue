@@ -125,6 +125,32 @@
           </div>
         </div>
 
+        <!-- ── APK Download Banner ─────────────────────────────────────────
+             Visible solo en Android + navegador web (no en la APK nativa)
+             Se descarta permanentemente al pulsar la X ── -->
+        <div v-if="showApkBanner"
+          class="flex items-start gap-3 bg-[#EFF8FF] border border-[#0D89CB]/30 rounded-2xl px-4 py-3.5">
+          <div class="w-8 h-8 rounded-xl bg-[#0D89CB]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Smartphone class="w-4 h-4 text-[#0D89CB]" :stroke-width="1.75" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-[#00659C]">¡Instala la app nativa para mejor GPS!</p>
+            <p class="text-xs text-[#0D89CB] mt-0.5 leading-relaxed">
+              La app nativa mantiene el GPS activo aunque cierres el navegador o apagues la pantalla.
+            </p>
+            <a href="https://backend-sigep-gc1.onrender.com/downloads/glass-caribe.apk"
+              download="glass-caribe.apk"
+              class="inline-flex items-center gap-1.5 mt-2.5 px-3.5 py-1.5 bg-[#0D89CB] text-white text-xs font-semibold rounded-xl hover:bg-[#00659C] transition-colors shadow-sm">
+              <Download class="w-3.5 h-3.5" :stroke-width="2" />
+              Descargar APK
+            </a>
+          </div>
+          <button @click="dismissApkBanner"
+            class="text-[#0D89CB]/50 hover:text-[#0D89CB] flex-shrink-0 p-0.5 transition-colors mt-0.5">
+            <X class="w-4 h-4" :stroke-width="2" />
+          </button>
+        </div>
+
         <!-- ── Entregas list ── -->
         <div>
           <h2 class="font-semibold text-gray-700 text-sm uppercase tracking-widest mb-3">Entregas Asignadas</h2>
@@ -257,8 +283,9 @@
 </template>
 
 <script setup>
-import { MessageCircle, Lock, Smartphone, LogOut } from 'lucide-vue-next'
+import { MessageCircle, Lock, Smartphone, LogOut, Download, X } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { Capacitor } from '@capacitor/core'
 import { useRouter } from 'vue-router'
 import StatusBadge          from '../../components/shared/StatusBadge.vue'
 import PasswordStrengthBar  from '../../components/shared/PasswordStrengthBar.vue'
@@ -277,6 +304,20 @@ const chatStore = useChatStore()
 const pwaStore  = usePwaStore()
 const router   = useRouter()
 const toast    = inject('toast')
+
+// ── APK download banner ───────────────────────────────────────────────────
+// Solo visible si: dispositivo Android + navegando en web (no en APK nativa)
+const APK_BANNER_KEY = 'gc_apk_banner_dismissed'
+const _isAndroid     = /android/i.test(navigator.userAgent)
+const showApkBanner  = ref(
+  _isAndroid &&
+  !Capacitor.isNativePlatform() &&
+  !localStorage.getItem(APK_BANNER_KEY)
+)
+function dismissApkBanner() {
+  showApkBanner.value = false
+  localStorage.setItem(APK_BANNER_KEY, '1')
+}
 
 const enRuta          = ref(false)
 const toggling        = ref(false)
