@@ -275,10 +275,20 @@ app.use('/api/gps',            require('./routes/gps'));
 app.use('/api/push',           require('./routes/push'));
 
 // ═══════════════════════════════════════
-// Descargas públicas (APK del conductor)
-// Accesible en /downloads/glass-caribe.apk
+// Descarga del APK del conductor
+// GET /downloads/glass-caribe.apk
 // ═══════════════════════════════════════
-app.use('/downloads', express.static(path.join(__dirname, 'public')));
+app.get('/downloads/glass-caribe.apk', (req, res) => {
+  const apkPath = path.join(__dirname, 'public', 'glass-caribe.apk');
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="glass-caribe.apk"');
+  res.sendFile(apkPath, { root: '/' }, (err) => {
+    if (err && !res.headersSent) {
+      console.error('[APK] No se pudo servir el APK:', err.message);
+      res.status(503).json({ success: false, message: 'APK temporalmente no disponible' });
+    }
+  });
+});
 
 // ═══════════════════════════════════════
 // Frontend estático (solo en producción)
