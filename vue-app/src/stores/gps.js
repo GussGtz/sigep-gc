@@ -1,6 +1,14 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { Capacitor, registerPlugin } from '@capacitor/core'
 import axios from 'axios'
+
+// ── Plugin nativo de GPS en background ───────────────────────────────────────
+// registerPlugin crea un proxy al plugin nativo @capacitor-community/background-geolocation.
+// En un build web normal, este proxy existe pero nunca se llama porque
+// Capacitor.isNativePlatform() devuelve false y se usa la rama web.
+// En la APK (nativo), el proxy enruta llamadas a la implementación Android.
+const BackgroundGeolocation = registerPlugin('BackgroundGeolocation')
 
 const API = import.meta.env.VITE_API_URL || '/api'
 
@@ -297,6 +305,53 @@ export const useGpsStore = defineStore('gps', () => {
     if (_webLockRelease) { _webLockRelease(); _webLockRelease = null }
   }
 
+  // ── GPS NATIVO (Capacitor Android) ────────────────────────────────────────
+  //
+  // En la APK nativa el plugin @capacitor-community/background-geolocation
+  // arranca un Android ForegroundService con notificación persistente.
+  // El OS no puede matar un ForegroundService → GPS 100% confiable con
+  // pantalla apagada o app en segundo plano, sin hacks de AudioContext/WakeLock.
+  //
+  let _nativeWatcherId = null
+
+  async function _startNativeGps() {
+    if (_nativeWatcherId) return   // ya está corriendo
+    try {
+      _nativeWatcherId = await BackgroundGeolocation.addWatcher(
+        {
+          backgroundMessage:  'Glass Caribe — GPS activo',
+          backgroundTitle:    'Glass Caribe',
+          requestPermissions: true,
+          stale:              false,
+          distanceFilter:     8       // metros mínimos entre actualizaciones
+        },
+        (position, error) => {
+          if (error) {
+            console.warn('[GPS Native]', error.code, error.message)
+            return
+          }
+          _lastPositionAt = Date.now()
+          _sendGpsUpdate(position.latitude, position.longitude, position.accuracy)
+        }
+      )
+      console.log('[GPS Native] ForegroundService activo ✓ id=' + _nativeWatcherId)
+    } catch (err) {
+      console.warn('[GPS Native] No disponible:', err.message)
+    }
+  }
+
+  async function _stopNativeGps() {
+    if (!_nativeWatcherId) return
+    try {
+      await BackgroundGeolocation.removeWatcher({ id: _nativeWatcherId })
+      console.log('[GPS Native] ForegroundService detenido ✓')
+    } catch (err) {
+      console.warn('[GPS Native] Error al detener:', err.message)
+    } finally {
+      _nativeWatcherId = null
+    }
+  }
+
   // ── Service Worker: canal bidireccional GPS ───────────────────────────────
   let _swListenerActive = false
 
@@ -343,68 +398,72 @@ export const useGpsStore = defineStore('gps', () => {
 
   function _startKeepAlive() {
     _stopKeepAlive()
+    const isNative = Capacitor.isNativePlatform()
     _keepAliveInterval = setInterval(async () => {
       if (!trackingActive.value) return
 
-      // 1. Wake Lock
-      if (!_wakeLock) await _requestWakeLock()
+      if (!isNative) {
+        // 1. Wake Lock (solo web)
+        if (!_wakeLock) await _requestWakeLock()
 
-      // 2. SW ping
-      try {
-        fetch('/sw-ping', { method: 'GET', keepalive: true, cache: 'no-store' }).catch(() => {})
-      } catch {}
+        // 2. SW ping (solo web)
+        try {
+          fetch('/sw-ping', { method: 'GET', keepalive: true, cache: 'no-store' }).catch(() => {})
+        } catch {}
 
-      // 3. Background Sync
-      _registerBackgroundSync()
+        // 3. Background Sync (solo web)
+        _registerBackgroundSync()
 
-      // 4. NoSleep: intentar activar si el context estaba suspendido
-      if (_audioCtx?.state === 'suspended') {
-        try { await _audioCtx.resume() } catch {}
-        if (_audioCtx?.state === 'running') _createAudioOscillator()
-      } else if (!_audioCtx || !_audioOsc) {
-        _startNoSleep()
+        // 4. NoSleep: intentar activar si el context estaba suspendido (solo web)
+        if (_audioCtx?.state === 'suspended') {
+          try { await _audioCtx.resume() } catch {}
+          if (_audioCtx?.state === 'running') _createAudioOscillator()
+        } else if (!_audioCtx || !_audioOsc) {
+          _startNoSleep()
+        }
       }
 
-      // 5. WebSocket: reconectar si está caído
+      // 5. WebSocket: reconectar si está caído ← aplica en AMBOS modos
       //    En background, el timer de reconexión del WS también se throttlea.
       //    Forzamos la reconexión desde aquí para que el GPS no pierda updates.
       if (_wsStore && !_wsStore.connected) {
         _wsStore.reconnect?.()
       }
 
-      // 6. Vaciar buffer de posición pendiente si el WS ya está online
+      // 6. Vaciar buffer de posición pendiente si el WS ya está online ← AMBOS
       if (_pendingLocation && _wsStore?.connected) {
         _wsStore.send(_pendingLocation)
         _pendingLocation = null
         console.log('[GPS] Posición pendiente enviada ✓')
       }
 
-      // 7. GPS Silence Watchdog
-      if (_lastPositionAt > 0) {
-        const silenceMs = Date.now() - _lastPositionAt
-        if (silenceMs > GPS_SILENCE_MS) {
-          console.warn('[GPS] Watchdog: sin posición por ' + Math.round(silenceMs / 1000) + 's — reiniciando watchPosition')
-          _lastPositionAt = Date.now()  // evitar spam de reinicios
-          // Reiniciar solo el watchPosition (el resto del stack sigue igual)
-          if (watchId.value !== null) {
-            navigator.geolocation.clearWatch(watchId.value)
-            watchId.value = null
-          }
-          _startWatchPosition()
-        }
-      }
-
-      // 8. Fallback GPS directo cuando la página está en background
-      if (document.visibilityState !== 'visible' && navigator.geolocation && _wsStore) {
-        navigator.geolocation.getCurrentPosition(
-          ({ coords }) => {
-            if (coords.accuracy > 250) return
+      if (!isNative) {
+        // 7. GPS Silence Watchdog (solo web — en nativo el ForegroundService no muere)
+        if (_lastPositionAt > 0) {
+          const silenceMs = Date.now() - _lastPositionAt
+          if (silenceMs > GPS_SILENCE_MS) {
+            console.warn('[GPS] Watchdog: sin posición por ' + Math.round(silenceMs / 1000) + 's — reiniciando watchPosition')
             _lastPositionAt = Date.now()
-            _sendGpsUpdate(coords.latitude, coords.longitude, coords.accuracy)
-          },
-          () => {},
-          { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
-        )
+            if (watchId.value !== null) {
+              navigator.geolocation.clearWatch(watchId.value)
+              watchId.value = null
+            }
+            _startWatchPosition()
+          }
+        }
+
+        // 8. Fallback GPS directo cuando la página está en background (solo web)
+        if (document.visibilityState !== 'visible' && navigator.geolocation && _wsStore) {
+          navigator.geolocation.getCurrentPosition(
+            ({ coords }) => {
+              if (coords.accuracy > 250) return
+              _lastPositionAt = Date.now()
+              _sendGpsUpdate(coords.latitude, coords.longitude, coords.accuracy)
+            },
+            () => {},
+            { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
+          )
+        }
       }
     }, 15_000)
   }
@@ -489,60 +548,55 @@ export const useGpsStore = defineStore('gps', () => {
   /**
    * Inicia (o reinicia) el GPS del conductor.
    * Seguro llamarlo varias veces: cancela el watch anterior.
+   *
+   * Rama NATIVA (APK Capacitor):
+   *   → ForegroundService vía @capacitor-community/background-geolocation
+   *   → Sin hacks de AudioContext, WakeLock, SW, visibilitychange
+   *
+   * Rama WEB (PWA / navegador):
+   *   → Stack completo de 10 capas para máxima compatibilidad
    */
   function startTracking(wsStoreInstance, pedidoId = null) {
     _wsStore  = wsStoreInstance
     _pedidoId = pedidoId
 
-    if (!navigator.geolocation) {
-      console.warn('[GPS] Geolocalización no soportada')
-      return false
-    }
-
     if (_retryTimeout) { clearTimeout(_retryTimeout); _retryTimeout = null }
 
-    // Cancelar watch anterior
-    if (watchId.value !== null) {
-      navigator.geolocation.clearWatch(watchId.value)
-      watchId.value = null
-    }
-
-    // ── Activar todas las capas de background ──────────────────────────────
-
-    // NoSleep Audio: si hay gesto → activa inmediatamente;
-    //                si no hay gesto → crea el context y espera al próximo gesto
-    _startNoSleep()
-
-    // Wake Lock
-    _requestWakeLock()
-
-    // Web Lock
+    // ── Partes comunes a ambos modos ───────────────────────────────────────
     _acquireWebLock()
-
-    // SW listener (solo una vez por sesión)
     _registerSwListener()
-
-    // Avisar al SW que el GPS está activo
     _swSend({ type: 'GPS_START' })
-
-    // Background Sync
-    _registerBackgroundSync()
-
-    // Periodic Background Sync
-    _registerPeriodicSync()
-
-    // Visibilitychange
-    document.removeEventListener('visibilitychange', _handleVisibilityChange)
-    document.addEventListener('visibilitychange', _handleVisibilityChange)
-
-    // Iniciar watchPosition
-    _startWatchPosition()
-
     trackingActive.value = true
-
-    // Persistir estado + keepalive
     _saveTrackingState(true, pedidoId)
     _startKeepAlive()
+
+    if (Capacitor.isNativePlatform()) {
+      // ── Rama NATIVA: ForegroundService, sin hacks web ─────────────────
+      console.log('[GPS] Iniciando modo nativo (Capacitor)')
+      _startNativeGps()
+    } else {
+      // ── Rama WEB: stack completo de background ────────────────────────
+      if (!navigator.geolocation) {
+        console.warn('[GPS] Geolocalización no soportada')
+        return false
+      }
+
+      // Cancelar watch anterior
+      if (watchId.value !== null) {
+        navigator.geolocation.clearWatch(watchId.value)
+        watchId.value = null
+      }
+
+      _startNoSleep()
+      _requestWakeLock()
+      _registerBackgroundSync()
+      _registerPeriodicSync()
+
+      document.removeEventListener('visibilitychange', _handleVisibilityChange)
+      document.addEventListener('visibilitychange', _handleVisibilityChange)
+
+      _startWatchPosition()
+    }
 
     return true
   }
@@ -560,19 +614,25 @@ export const useGpsStore = defineStore('gps', () => {
    */
   function stopTracking() {
     if (_retryTimeout) { clearTimeout(_retryTimeout); _retryTimeout = null }
-    if (watchId.value !== null) {
-      navigator.geolocation.clearWatch(watchId.value)
-      watchId.value = null
-    }
 
     _wsStore?.send({ type: 'stop_tracking' })
-
-    _stopNoSleep()
-    _releaseWakeLock()
     _releaseWebLock()
     _swSend({ type: 'GPS_STOP' })
     _stopKeepAlive()
-    document.removeEventListener('visibilitychange', _handleVisibilityChange)
+
+    if (Capacitor.isNativePlatform()) {
+      // ── Rama NATIVA: detener ForegroundService ─────────────────────────
+      _stopNativeGps()
+    } else {
+      // ── Rama WEB: limpiar watchPosition + hacks ────────────────────────
+      if (watchId.value !== null) {
+        navigator.geolocation.clearWatch(watchId.value)
+        watchId.value = null
+      }
+      _stopNoSleep()
+      _releaseWakeLock()
+      document.removeEventListener('visibilitychange', _handleVisibilityChange)
+    }
 
     _saveTrackingState(false)
 

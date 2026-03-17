@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { Capacitor } from '@capacitor/core'
 
 export const useWebSocketStore = defineStore('websocket', () => {
   const ws        = ref(null)
@@ -10,8 +11,13 @@ export const useWebSocketStore = defineStore('websocket', () => {
   let _reconnectTid = null
   let _intentional  = false   // ¿cierre deliberado? → no reconectar
 
-  // ── Construir URL compatible dev (proxy Vite) y prod ──────────────────────
+  // ── Construir URL compatible dev (proxy Vite), prod y APK nativa ──────────
+  //    En APK (Capacitor), location.host es "localhost" (webview) → usar URL
+  //    absoluta del backend en producción.
   function buildUrl(token) {
+    if (Capacitor.isNativePlatform()) {
+      return `wss://backend-sigep-gc1.onrender.com/ws?token=${token}`
+    }
     const isSecure = location.protocol === 'https:'
     const base     = `${isSecure ? 'wss' : 'ws'}://${location.host}/ws`
     return `${base}?token=${token}`

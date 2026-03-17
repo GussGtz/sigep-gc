@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Glass Caribe</string>
+    <string name="title_activity_main">Glass Caribe</string>
+    <string name="package_name">com.glasscaribe.conductor</string>
+    <string name="custom_url_scheme">com.glasscaribe.conductor</string>
+</resources>
