@@ -12,9 +12,6 @@ import './assets/main.css'
 //    funciona igual que siempre.
 if (Capacitor.isNativePlatform()) {
   axios.defaults.baseURL = 'https://backend-sigep-gc1.onrender.com'
-  // Pre-calentar el backend: Render free tier duerme tras inactividad.
-  // Este ping lo despierta ANTES de que el usuario toque "Iniciar sesión".
-  axios.get('/api/health').catch(() => {})
 }
 
 const app = createApp(App)
