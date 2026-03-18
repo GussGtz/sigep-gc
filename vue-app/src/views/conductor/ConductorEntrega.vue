@@ -10,6 +10,12 @@
         </svg>
       </button>
       <span class="font-serif font-bold text-gray-900 flex-1">Registrar Entrega</span>
+      <!-- GPS status pill -->
+      <div v-if="gpsStore.isTracking"
+        class="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1.5 rounded-full border border-emerald-200 flex-shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+        GPS
+      </div>
       <!-- Chat — solo desktop; en mobile lo maneja el bottom nav -->
       <router-link to="/chat"
         class="hidden md:flex relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
@@ -180,7 +186,7 @@
 </template>
 
 <script setup>
-import { MapPin, X } from 'lucide-vue-next'
+import { MapPin, X, AlertTriangle } from 'lucide-vue-next'
 import { ref, onMounted, inject } from 'vue'
 import { useRoute, useRouter }    from 'vue-router'
 import { useAuthStore }           from '../../stores/auth.js'

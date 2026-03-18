@@ -5,6 +5,7 @@ import { Home, ClipboardList, Truck, MessageCircle, User, Users, Archive, Chevro
 import { useAuthStore }          from '../../stores/auth.js'
 import { useChatStore }          from '../../stores/chat.js'
 import { usePwaStore }           from '../../stores/pwa.js'
+import { useNotificationsStore } from '../../stores/notifications.js'
 import axios                     from 'axios'
 import PasswordStrengthBar       from './PasswordStrengthBar.vue'
 
@@ -13,6 +14,7 @@ const route  = useRoute()
 const auth   = useAuthStore()
 const chat   = useChatStore()
 const pwa    = usePwaStore()
+const notifs = useNotificationsStore()
 const toast  = inject('toast', { add: () => {} })
 
 // ── Profile sheet ────────────────────────────────────────────────────────────
@@ -104,9 +106,9 @@ const navItems = computed(() => {
     ? '/conductor'
     : (deptHome[auth.user?.departamento] ?? '/ventas')
   return [
-    { key: 'inicio', label: 'Inicio', to: homeRoute,      icon: 'home'              },
-    { key: 'chat',   label: 'Chat',   to: '/chat',         icon: 'chat', badge: true },
-    { key: 'perfil', label: 'Perfil', action: 'profile',   icon: 'user'              },
+    { key: 'inicio', label: 'Inicio', to: homeRoute,      icon: 'home', notifBadge: auth.isConductor },
+    { key: 'chat',   label: 'Chat',   to: '/chat',         icon: 'chat', badge: true                  },
+    { key: 'perfil', label: 'Perfil', action: 'profile',   icon: 'user'                               },
   ]
 })
 
@@ -184,6 +186,13 @@ function navTo (path) {
             class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-[3px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none"
           >
             {{ chat.unreadTotal > 9 ? '9+' : chat.unreadTotal }}
+          </span>
+          <!-- Unread badge (notificaciones — solo conductor en Inicio) -->
+          <span
+            v-if="item.notifBadge && notifs.unreadCount > 0"
+            class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-[3px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none"
+          >
+            {{ notifs.unreadCount > 9 ? '9+' : notifs.unreadCount }}
           </span>
         </div>
 

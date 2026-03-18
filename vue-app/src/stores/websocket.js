@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core'
 export const useWebSocketStore = defineStore('websocket', () => {
   const ws        = ref(null)
   const connected = ref(false)
-  const handlers  = {}
+  const handlers  = {}   // { type: [fn, fn, ...] }
 
   let _token        = null
   let _reconnectTid = null
@@ -60,7 +60,8 @@ export const useWebSocketStore = defineStore('websocket', () => {
     socket.onmessage = (event) => {
       let msg
       try { msg = JSON.parse(event.data) } catch { return }
-      handlers[msg.type]?.(msg)
+      const fns = handlers[msg.type]
+      if (fns) fns.forEach(fn => fn(msg))
     }
 
     ws.value = socket
@@ -74,12 +75,20 @@ export const useWebSocketStore = defineStore('websocket', () => {
   }
 
   // ── Registrar handler para tipo de mensaje ─────────────────────────────────
+  // Soporta múltiples handlers por tipo; llama a todos cuando llega el mensaje.
   function on(type, fn) {
-    handlers[type] = fn
+    if (!handlers[type]) handlers[type] = []
+    if (!handlers[type].includes(fn)) handlers[type].push(fn)
   }
 
-  function off(type) {
-    delete handlers[type]
+  // off(type)     → elimina TODOS los handlers de ese tipo
+  // off(type, fn) → elimina solo el handler específico (para onUnmounted granular)
+  function off(type, fn) {
+    if (fn === undefined) {
+      delete handlers[type]
+    } else if (handlers[type]) {
+      handlers[type] = handlers[type].filter(h => h !== fn)
+    }
   }
 
   // ── Reconexión manual (forzada) ───────────────────────────────────────────

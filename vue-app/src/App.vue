@@ -86,6 +86,13 @@ const debouncedFetchInventario = debounce(() => {
     inventarioStore.fetchMovimientos()
   }
 }, 400)
+// Cuando el admin asigna/modifica una entrega, el conductor recibe data_entregas.
+// Si el conductor está en otra página (chat, entrega), el dashboard no está montado
+// y no tiene un handler activo. Este handler global actualiza las notificaciones
+// para que el badge alerte al conductor de que tiene nuevas asignaciones.
+const debouncedConductorEntregas = debounce(() => {
+  if (auth.user?.role_id === 3) notifs.fetchFromDB()
+}, 400)
 
 // Iniciar polling de notificaciones cuando el usuario esté autenticado
 onMounted(() => {
@@ -123,6 +130,7 @@ watch(() => auth.token, (token) => {
     //    emite un mensaje de invalidación → el frontend re-fetcha ──
     wsStore.on('data_pedidos',    debouncedFetchPedidos)
     wsStore.on('data_inventario', debouncedFetchInventario)
+    wsStore.on('data_entregas',   debouncedConductorEntregas)
     chat.fetchContactos()
     // Inicializar push notifications con un pequeño delay (esperar SW ready)
     setTimeout(() => initPushNotifications().catch(console.warn), 2000)

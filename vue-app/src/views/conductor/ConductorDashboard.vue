@@ -13,6 +13,54 @@
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
         GPS
       </div>
+
+      <!-- ── Notification bell ── -->
+      <div class="relative" ref="notifPanelRef">
+        <button @click="toggleNotifs"
+          class="relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
+          <Bell class="w-5 h-5" :stroke-width="1.75" />
+          <span v-if="notifs.unreadCount > 0"
+            class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-[3px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+            {{ notifs.unreadCount > 9 ? '9+' : notifs.unreadCount }}
+          </span>
+        </button>
+
+        <!-- Notification dropdown panel -->
+        <Transition name="slide">
+          <div v-if="showNotifs"
+            class="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-100 rounded-2xl shadow-float overflow-hidden z-50">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <span class="font-semibold text-sm text-gray-900">Notificaciones</span>
+              <button v-if="notifs.unreadCount > 0"
+                @click="notifs.markAllAsRead()"
+                class="flex items-center gap-1 text-xs font-medium text-[#0D89CB] hover:text-[#00659C] transition-colors">
+                <CheckCheck class="w-3.5 h-3.5" :stroke-width="2" />
+                Marcar todo
+              </button>
+            </div>
+            <!-- List -->
+            <div class="max-h-72 overflow-y-auto">
+              <p v-if="notifs.notifications.length === 0"
+                class="text-center text-sm text-gray-400 py-8">Sin notificaciones</p>
+              <button
+                v-for="n in notifs.notifications.slice(0, 8)"
+                :key="n.id"
+                @click="notifs.markAsRead(n.id)"
+                class="w-full flex items-start gap-3 px-4 py-3 text-left border-b border-gray-50 last:border-0 transition-colors"
+                :class="n._read ? 'hover:bg-gray-50' : 'bg-blue-50/60 hover:bg-blue-50'">
+                <span class="text-base mt-0.5 flex-shrink-0">{{ notifIcon(n.type) }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-gray-800 leading-snug">{{ n.message }}</p>
+                  <p class="text-[10px] text-gray-400 mt-0.5">{{ timeAgo(n.createdAt) }} · {{ n.creadoPor }}</p>
+                </div>
+                <span v-if="!n._read" class="w-2 h-2 bg-[#0D89CB] rounded-full flex-shrink-0 mt-1.5"></span>
+              </button>
+            </div>
+          </div>
+        </Transition>
+      </div>
+
       <!-- Chat — solo desktop; en mobile lo maneja el bottom nav -->
       <router-link to="/chat"
         class="hidden md:flex relative p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0">
@@ -283,18 +331,19 @@
 </template>
 
 <script setup>
-import { MessageCircle, Lock, Smartphone, LogOut, Download, X } from 'lucide-vue-next'
+import { MessageCircle, Lock, Smartphone, LogOut, Download, X, Bell, AlertTriangle, CheckCheck } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { Capacitor } from '@capacitor/core'
 import { useRouter } from 'vue-router'
 import StatusBadge          from '../../components/shared/StatusBadge.vue'
 import PasswordStrengthBar  from '../../components/shared/PasswordStrengthBar.vue'
 import BottomNav            from '../../components/shared/BottomNav.vue'
-import { useAuthStore }      from '../../stores/auth.js'
-import { useWebSocketStore } from '../../stores/websocket.js'
-import { useGpsStore }       from '../../stores/gps.js'
-import { useChatStore }     from '../../stores/chat.js'
-import { usePwaStore }     from '../../stores/pwa.js'
+import { useAuthStore }          from '../../stores/auth.js'
+import { useWebSocketStore }     from '../../stores/websocket.js'
+import { useGpsStore }           from '../../stores/gps.js'
+import { useChatStore }          from '../../stores/chat.js'
+import { usePwaStore }           from '../../stores/pwa.js'
+import { useNotificationsStore } from '../../stores/notifications.js'
 import axios from 'axios'
 
 const auth      = useAuthStore()
@@ -302,8 +351,34 @@ const wsStore   = useWebSocketStore()
 const gpsStore  = useGpsStore()
 const chatStore = useChatStore()
 const pwaStore  = usePwaStore()
+const notifs    = useNotificationsStore()
 const router   = useRouter()
 const toast    = inject('toast')
+
+// ── Panel de notificaciones ─────────────────────────────────────────────────
+const showNotifs    = ref(false)
+const notifPanelRef = ref(null)
+function toggleNotifs() { showNotifs.value = !showNotifs.value }
+function cerrarNotifs() { showNotifs.value = false }
+function onClickOutsideNotifs(e) {
+  if (notifPanelRef.value && !notifPanelRef.value.contains(e.target)) cerrarNotifs()
+}
+
+function notifIcon(type) {
+  if (type === 'delivery_done') return '✅'
+  if (type === 'nueva_entrega' || type === 'entrega_asignada') return '📦'
+  if (type === 'incidencia') return '⚠️'
+  return '🔔'
+}
+function timeAgo(date) {
+  const diff = Date.now() - new Date(date).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1)  return 'ahora'
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h`
+  return `${Math.floor(h / 24)}d`
+}
 
 // ── APK download banner ───────────────────────────────────────────────────
 // Solo visible si: dispositivo Android + navegando en web (no en APK nativa)
@@ -484,12 +559,14 @@ async function fetchEntregas() {
 // ── Montar: restaurar estado desde DB ────────────────────────────────────
 onUnmounted(() => {
   document.removeEventListener('mousedown', onClickOutside)
-  // Desregistrar handler de tiempo real al salir de la vista
-  wsStore.off('data_entregas')
+  document.removeEventListener('mousedown', onClickOutsideNotifs)
+  // Desregistrar solo ESTE handler (el handler global de App.vue permanece activo)
+  wsStore.off('data_entregas', fetchEntregas)
 })
 
 onMounted(async () => {
   document.addEventListener('mousedown', onClickOutside)
+  document.addEventListener('mousedown', onClickOutsideNotifs)
   // enRuta viene del perfil del usuario (auth.user.en_turno se llena desde /me en el router guard)
   enRuta.value = auth.user?.en_turno === true
 
