@@ -7,6 +7,11 @@ const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }, // Neon requiere SSL
+      // Neon cierra conexiones inactivas después de ~5 min;
+      // estos valores evitan el "Connection terminated unexpectedly"
+      max:                    5,      // pool pequeño para free-tier
+      idleTimeoutMillis:      10000,  // cerrar conexión inactiva antes de que Neon lo haga
+      connectionTimeoutMillis: 10000, // falla rápido si no puede conectar
     })
   : new Pool({
       host:     process.env.DB_HOST,
