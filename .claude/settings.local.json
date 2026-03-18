@@ -126,7 +126,10 @@
       "Bash(curl -s https://sigep-gc.onrender.com/api/health)",
       "Bash(curl -s -X POST https://sigep-gc.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"admin@glasscaribe.com\"\",\"\"password\"\":\"\"Admin123\"\",\"\"recaptchaToken\"\":\"\"NATIVE_APP\"\"}')",
       "Bash(curl -s -i --no-buffer \"https://sigep-gc.onrender.com/ws\" -H \"Upgrade: websocket\" -H \"Connection: Upgrade\" -H \"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\" -H \"Sec-WebSocket-Version: 13\")",
-      "Bash(node -e \"const webpush = require\\(''web-push''\\); const keys = webpush.generateVAPIDKeys\\(\\); console.log\\(''PUBLIC:'', keys.publicKey\\); console.log\\(''PRIVATE:'', keys.privateKey\\);\")"
+      "Bash(node -e \"const webpush = require\\(''web-push''\\); const keys = webpush.generateVAPIDKeys\\(\\); console.log\\(''PUBLIC:'', keys.publicKey\\); console.log\\(''PRIVATE:'', keys.privateKey\\);\")",
+      "Bash(gh release:*)",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\")",
+      "Bash(./gradlew assembleDebug --no-daemon)"
     ]
   }
 }

@@ -2,6 +2,7 @@
 import { ref, computed, inject } from 'vue'
 import { useRouter, useRoute }   from 'vue-router'
 import { Home, ClipboardList, Truck, MessageCircle, User, Users, Archive, ChevronRight, Lock, Smartphone, LogOut, X, Bell } from 'lucide-vue-next'
+import { Capacitor }             from '@capacitor/core'
 import { initPushNotifications } from '../../utils/pushNotifications.js'
 import { useAuthStore }          from '../../stores/auth.js'
 import { useChatStore }          from '../../stores/chat.js'
@@ -9,6 +10,8 @@ import { usePwaStore }           from '../../stores/pwa.js'
 import { useNotificationsStore } from '../../stores/notifications.js'
 import axios                     from 'axios'
 import PasswordStrengthBar       from './PasswordStrengthBar.vue'
+
+const isNative = Capacitor.isNativePlatform()
 
 const router = useRouter()
 const route  = useRoute()
@@ -297,7 +300,7 @@ function navTo (path) {
             <span class="text-sm font-medium">Instalar app</span>
           </button>
           <button
-            v-if="notifPermission !== 'granted'"
+            v-if="!isNative && notifPermission !== 'granted'"
             @click="activarNotificaciones"
             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-gray-700"
           >

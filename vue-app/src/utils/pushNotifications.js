@@ -4,6 +4,7 @@
  * Llamar initPushNotifications() cuando el usuario hace login.
  */
 import axios from 'axios'
+import { Capacitor } from '@capacitor/core'
 
 /**
  * Convierte una VAPID public key en formato base64url a Uint8Array
@@ -22,7 +23,16 @@ function urlBase64ToUint8Array(base64String) {
  * Es seguro llamarlo múltiples veces — detecta si ya está suscrito.
  */
 export async function initPushNotifications() {
-  // Verificar soporte del navegador
+  // En el APK nativo (Capacitor), el WebView no tiene acceso a la
+  // infraestructura FCM del navegador → Web Push no funciona.
+  // Las notificaciones en el APK llegan por WebSocket mientras la app está abierta,
+  // y el ForegroundService GPS mantiene el proceso vivo en segundo plano.
+  if (Capacitor.isNativePlatform()) {
+    console.log('[push] APK nativo detectado — Web Push omitido (usar WS)')
+    return
+  }
+
+  // Verificar soporte del navegador (PWA)
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.log('[push] Push notifications no soportadas en este navegador')
     return
