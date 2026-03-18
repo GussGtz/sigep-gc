@@ -16,7 +16,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
   //    absoluta del backend en producción.
   function buildUrl(token) {
     if (Capacitor.isNativePlatform()) {
-      return `wss://backend-sigep-gc1.onrender.com/ws?token=${token}`
+      return `wss://sigep-gc.onrender.com/ws?token=${token}`
     }
     const isSecure = location.protocol === 'https:'
     const base     = `${isSecure ? 'wss' : 'ws'}://${location.host}/ws`

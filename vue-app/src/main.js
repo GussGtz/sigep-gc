@@ -11,7 +11,7 @@ import './assets/main.css'
 //    intercepta automáticamente todos los XHR/fetch y los redirige por el stack
 //    HTTP nativo de Android → sin CORS, sin preflight OPTIONS.
 if (Capacitor.isNativePlatform()) {
-  axios.defaults.baseURL = 'https://backend-sigep-gc1.onrender.com'
+  axios.defaults.baseURL = 'https://sigep-gc.onrender.com'
 }
 
 const app = createApp(App)
