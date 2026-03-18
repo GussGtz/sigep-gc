@@ -380,6 +380,52 @@
   transform: none;
 }
 
+/* ══════════════════════════════════════════════
+   SAFE AREA — Capacitor 8 edge-to-edge
+   Todos los headers fixed extienden detrás de la
+   barra de estado en Android. Compensar con estas
+   utilidades en lugar de pt-14 / pb-20 / pb-24.
+══════════════════════════════════════════════ */
+
+/* Headers fijos: crecer hacia arriba para cubrir la barra de estado */
+header.fixed {
+  padding-top: env(safe-area-inset-top);
+  height: calc(3.5rem + env(safe-area-inset-top));
+}
+/* Contenido principal: compensar header + safe area */
+.pt-header {
+  padding-top: calc(3.5rem + env(safe-area-inset-top));
+}
+/* Contenido principal: compensar bottom nav + safe area */
+.pb-nav {
+  padding-bottom: calc(58px + env(safe-area-inset-bottom) + 1rem);
+}
+/* Solo el safe area de la parte inferior (para el propio nav) */
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+/* Barras de input fijas en la parte inferior (chat) */
+.pb-input-bar {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+/* Admin: header móvil visible hasta lg (1024px) */
+.pt-header-lg {
+  padding-top: calc(3.5rem + env(safe-area-inset-top));
+}
+
+/* En desktop nunca hay safe area — resetear a valores fijos */
+@media (min-width: 768px) {
+  header.fixed    { padding-top: 0; height: 3.5rem; }
+  .pt-header      { padding-top: 0; }
+  .pb-nav         { padding-bottom: 2rem; }
+  .pb-safe-bottom { padding-bottom: 0; }
+  .pb-input-bar   { padding-bottom: 0.75rem; }
+}
+@media (min-width: 1024px) {
+  .pt-header-lg { padding-top: 0; }
+}
+
 /* ── Leaflet light theme override ── */
 .leaflet-container { background: #f0f0ee !important; }
 .leaflet-control-zoom a {

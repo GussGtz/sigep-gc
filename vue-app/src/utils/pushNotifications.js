@@ -32,20 +32,22 @@ export async function initPushNotifications() {
     // 1. Registrar Service Worker
     const reg = await navigator.serviceWorker.register('/sw.js')
 
-    // 2. Obtener VAPID public key del servidor
-    const { data } = await axios.get('/api/push/vapid-public-key')
-    if (!data.publicKey) {
-      console.log('[push] VAPID keys no configuradas en el servidor')
-      return
-    }
-
-    // 3. Pedir permiso de notificaciones (si no está determinado)
+    // 2. Pedir permiso de notificaciones PRIMERO (antes de cualquier check)
+    //    Así el navegador siempre muestra el diálogo, aunque el backend
+    //    no tenga VAPID configurado todavía.
     let permission = Notification.permission
     if (permission === 'default') {
       permission = await Notification.requestPermission()
     }
     if (permission !== 'granted') {
       console.log('[push] Permiso de notificaciones denegado')
+      return
+    }
+
+    // 3. Obtener VAPID public key del servidor
+    const { data } = await axios.get('/api/push/vapid-public-key')
+    if (!data.publicKey) {
+      console.log('[push] VAPID keys no configuradas en el servidor — permiso obtenido, push pendiente')
       return
     }
 

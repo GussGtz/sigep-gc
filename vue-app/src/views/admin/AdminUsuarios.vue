@@ -3,7 +3,7 @@
 
     <AdminNavBar />
 
-    <main class="pt-14 lg:pt-0 lg:ml-60 pb-20 lg:pb-0 page-enter">
+    <main class="pt-header-lg lg:pt-0 lg:ml-60 pb-nav lg:pb-0 page-enter">
       <div class="max-w-7xl mx-auto px-5 py-8 space-y-6">
 
         <!-- ── Encabezado ── -->

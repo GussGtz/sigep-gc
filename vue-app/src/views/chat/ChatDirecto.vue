@@ -36,7 +36,7 @@
       </button>
     </header>
 
-    <div class="flex-1 pt-14 flex flex-col overflow-hidden">
+    <div class="flex-1 pt-header flex flex-col overflow-hidden">
 
       <!-- ── Vista: Lista de contactos ── -->
       <template v-if="!contactoActivo">
@@ -51,7 +51,7 @@
           </div>
         </div>
         <!-- Contacts list -->
-        <div class="flex-1 overflow-y-auto pb-[58px]">
+        <div class="flex-1 overflow-y-auto pb-nav">
           <div v-if="contactosFiltrados.length === 0"
             class="py-10 text-center text-gray-400 text-sm">Sin resultados</div>
           <button
@@ -122,7 +122,7 @@
           </template>
         </div>
         <!-- Input -->
-        <div class="px-4 py-3 bg-white border-t border-gray-200">
+        <div class="px-4 pt-3 pb-input-bar bg-white border-t border-gray-200">
           <div class="flex items-end gap-2">
             <textarea
               v-model="texto"

@@ -51,7 +51,7 @@
       </div>
     </header>
 
-    <main class="pt-14 pb-20 page-enter">
+    <main class="pt-header pb-nav page-enter">
 
       <!-- ── Banner de bienvenida ── -->
       <div class="bg-white border-b border-gray-100 px-5 py-5 lg:px-8">
@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <div class="max-w-5xl mx-auto px-4 py-5 lg:px-8 space-y-5 pb-24 sm:pb-8">
+      <div class="max-w-5xl mx-auto px-4 py-5 lg:px-8 space-y-5">
 
         <!-- ── KPIs ── -->
         <div class="grid grid-cols-3 sm:grid-cols-5 gap-2.5">

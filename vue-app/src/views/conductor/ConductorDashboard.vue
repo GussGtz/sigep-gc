@@ -105,7 +105,7 @@
       </div>
     </header>
 
-    <main class="pt-14 pb-24">
+    <main class="pt-header pb-nav">
       <div class="max-lg mx-auto px-4 py-6 space-y-5">
 
         <!-- ── Turno card ── -->

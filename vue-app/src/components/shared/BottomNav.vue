@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, inject } from 'vue'
 import { useRouter, useRoute }   from 'vue-router'
-import { Home, ClipboardList, Truck, MessageCircle, User, Users, Archive, ChevronRight, Lock, Smartphone, LogOut, X } from 'lucide-vue-next'
+import { Home, ClipboardList, Truck, MessageCircle, User, Users, Archive, ChevronRight, Lock, Smartphone, LogOut, X, Bell } from 'lucide-vue-next'
+import { initPushNotifications } from '../../utils/pushNotifications.js'
 import { useAuthStore }          from '../../stores/auth.js'
 import { useChatStore }          from '../../stores/chat.js'
 import { usePwaStore }           from '../../stores/pwa.js'
@@ -74,6 +75,20 @@ async function handleLogout () {
 async function instalarApp () {
   profileOpen.value = false
   await pwa.install()
+}
+
+// ── Push notifications ────────────────────────────────────────────────────────
+const notifPermission = ref(typeof Notification !== 'undefined' ? Notification.permission : 'denied')
+async function activarNotificaciones () {
+  try {
+    await initPushNotifications()
+    notifPermission.value = typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+    if (notifPermission.value === 'granted') {
+      toast.add({ type: 'success', title: '¡Listo!', message: 'Notificaciones activadas.' })
+    }
+  } catch (e) {
+    console.warn('[push] Error al activar notificaciones:', e)
+  }
 }
 
 // ── User info ────────────────────────────────────────────────────────────────
@@ -280,6 +295,14 @@ function navTo (path) {
           >
             <Smartphone class="w-5 h-5 text-gray-400 flex-shrink-0" :stroke-width="1.75" />
             <span class="text-sm font-medium">Instalar app</span>
+          </button>
+          <button
+            v-if="notifPermission !== 'granted'"
+            @click="activarNotificaciones"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-gray-700"
+          >
+            <Bell class="w-5 h-5 text-gray-400 flex-shrink-0" :stroke-width="1.75" />
+            <span class="text-sm font-medium">Activar notificaciones</span>
           </button>
         </div>
 

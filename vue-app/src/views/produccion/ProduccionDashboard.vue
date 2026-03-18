@@ -51,7 +51,7 @@
       </div>
     </header>
 
-    <main class="pt-14 pb-20 page-enter">
+    <main class="pt-header pb-nav page-enter">
 
       <!-- ── Banner de bienvenida ── -->
       <div class="bg-white border-b border-gray-100 px-5 py-5 lg:px-8">

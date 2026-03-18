@@ -421,6 +421,14 @@ wss.on('connection', (ws, req) => {
           mensaje:         mensaje.trim(),
           created_at:      row.created_at
         });
+
+        // Push notification al receptor (llega aunque la app esté en background/cerrada)
+        sendPushToUser(para_usuario_id, {
+          title: `${user.nombre}`,
+          body:  mensaje.trim().length > 80 ? mensaje.trim().slice(0, 80) + '…' : mensaje.trim(),
+          url:   '/chat',
+          tag:   `chat-${user.id}`   // agrupa mensajes del mismo remitente
+        });
       } catch (err) {
         console.error('[WS Chat]', err.message);
       }
