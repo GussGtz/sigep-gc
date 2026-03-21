@@ -51,16 +51,52 @@
             </div>
 
             <!-- Info card -->
-            <div v-if="pedido?.prioridad === 'urgente' || pedido?.cliente_nombre || pedido?.metros_cuadrados || pedido?.especificaciones || pedido?.direccion_entrega || pedido?.merma_m2 != null"
+            <div v-if="pedido?.prioridad || pedido?.cliente_nombre || pedido?.metros_cuadrados || pedido?.especificaciones || pedido?.direccion_entrega || pedido?.merma_m2 != null"
               class="bg-gray-50 rounded-2xl p-4 space-y-3 border border-gray-100">
               <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Información del pedido</h3>
 
-              <div v-if="pedido?.prioridad === 'urgente'" class="flex items-center gap-3">
+              <div v-if="pedido?.prioridad" class="flex items-center gap-3">
                 <span class="label w-24">Prioridad</span>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/></svg>
-                  Urgente
+                <!-- Display badge -->
+                <span v-if="!editandoPrioridad"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+                  :class="{
+                    'bg-red-100 text-red-700':    pedido.prioridad === 'alto',
+                    'bg-amber-100 text-amber-700': pedido.prioridad === 'medio',
+                    'bg-emerald-100 text-emerald-700': pedido.prioridad === 'bajo'
+                  }">
+                  <span class="w-2 h-2 rounded-full"
+                    :class="{
+                      'bg-red-500':    pedido.prioridad === 'alto',
+                      'bg-amber-400':  pedido.prioridad === 'medio',
+                      'bg-emerald-500': pedido.prioridad === 'bajo'
+                    }"></span>
+                  {{ pedido.prioridad === 'alto' ? 'Alto' : pedido.prioridad === 'medio' ? 'Medio' : 'Bajo' }}
+                  <button v-if="isAdmin" @click="editandoPrioridad = true"
+                    class="ml-1 text-gray-400 hover:text-gray-700 transition-colors">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  </button>
                 </span>
+                <!-- Edit control (admin only) -->
+                <div v-if="editandoPrioridad" class="flex items-center gap-2">
+                  <div class="flex gap-1.5">
+                    <button v-for="opt in prioridadOpciones" :key="opt.value"
+                      @click="localPrioridad = opt.value"
+                      class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all"
+                      :class="localPrioridad === opt.value ? opt.activeClass : 'border-gray-200 text-gray-500 hover:border-gray-300'">
+                      <span class="w-2 h-2 rounded-full" :class="opt.dot"></span>
+                      {{ opt.label }}
+                    </button>
+                  </div>
+                  <button @click="guardarPrioridad" :disabled="savingPrioridad"
+                    class="btn-primary text-xs px-3 py-1.5">
+                    {{ savingPrioridad ? '...' : 'OK' }}
+                  </button>
+                  <button @click="editandoPrioridad = false; localPrioridad = pedido?.prioridad"
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
               </div>
               <div v-if="pedido?.cliente_nombre" class="flex items-start gap-3">
                 <span class="label w-24 pt-0.5">Cliente</span>
@@ -195,10 +231,35 @@ const pedidos = usePedidosStore()
 const notifs  = useNotificationsStore()
 const toast   = inject('toast', { add: () => {} })
 
-const activeTab    = ref('detalles')
-const localEstatus = ref({})
-const localNota    = ref({})
-const updating     = ref({})
+const activeTab      = ref('detalles')
+const localEstatus   = ref({})
+const localNota      = ref({})
+const updating       = ref({})
+const editandoPrioridad = ref(false)
+const savingPrioridad   = ref(false)
+const localPrioridad    = ref(null)
+
+const prioridadOpciones = [
+  { value: 'bajo',  label: 'Bajo',  dot: 'bg-emerald-500', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
+  { value: 'medio', label: 'Medio', dot: 'bg-amber-400',   activeClass: 'border-amber-500 bg-amber-50 text-amber-700'       },
+  { value: 'alto',  label: 'Alto',  dot: 'bg-red-500',     activeClass: 'border-red-500 bg-red-50 text-red-700'             }
+]
+
+async function guardarPrioridad() {
+  if (!localPrioridad.value || !props.pedido?.id) return
+  savingPrioridad.value = true
+  try {
+    await pedidos.actualizarPrioridad(props.pedido.id, localPrioridad.value)
+    props.pedido.prioridad = localPrioridad.value
+    editandoPrioridad.value = false
+    toast.add({ type: 'success', title: 'Prioridad actualizada' })
+    emit('updated')
+  } catch (e) {
+    toast.add({ type: 'error', title: 'Error al actualizar prioridad' })
+  } finally {
+    savingPrioridad.value = false
+  }
+}
 
 const tabs = [
   { id: 'detalles',    label: 'Detalles'  },
@@ -224,6 +285,8 @@ watch(() => props.pedido, (p) => {
   if (!p) return
   localEstatus.value = {}
   localNota.value    = {}
+  localPrioridad.value = p.prioridad || 'bajo'
+  editandoPrioridad.value = false
   p.areas?.forEach(a => {
     localEstatus.value[a.area] = a.estatus
     localNota.value[a.area]    = a.comentarios || ''

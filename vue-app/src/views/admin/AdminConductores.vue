@@ -365,11 +365,11 @@
                           <!-- Priority badge -->
                           <span class="flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase"
                             :class="{
-                              'bg-red-100 text-red-700':    p.prioridad === 'urgente',
-                              'bg-amber-100 text-amber-700': p.prioridad === 'alta',
-                              'bg-gray-100 text-gray-500':   !['urgente','alta'].includes(p.prioridad)
+                              'bg-red-100 text-red-700':     p.prioridad === 'alto',
+                              'bg-amber-100 text-amber-700': p.prioridad === 'medio',
+                              'bg-emerald-100 text-emerald-700': p.prioridad === 'bajo' || !p.prioridad
                             }">
-                            {{ p.prioridad === 'urgente' ? '🔴 Urgente' : p.prioridad === 'alta' ? '🟡 Alta' : '⚪ Normal' }}
+                            {{ p.prioridad === 'alto' ? '🔴 Alto' : p.prioridad === 'medio' ? '🟡 Medio' : '🟢 Bajo' }}
                           </span>
                           <!-- Info -->
                           <div class="flex-1 min-w-0">
@@ -405,11 +405,11 @@
                       <span class="font-bold text-[#0D89CB] text-sm">#{{ pedidoSeleccionado.numero_pedido }}</span>
                       <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase"
                         :class="{
-                          'bg-red-100 text-red-700': pedidoSeleccionado.prioridad === 'urgente',
-                          'bg-amber-100 text-amber-700': pedidoSeleccionado.prioridad === 'alta',
-                          'bg-gray-100 text-gray-500': !['urgente','alta'].includes(pedidoSeleccionado.prioridad)
+                          'bg-red-100 text-red-700':     pedidoSeleccionado.prioridad === 'alto',
+                          'bg-amber-100 text-amber-700': pedidoSeleccionado.prioridad === 'medio',
+                          'bg-emerald-100 text-emerald-700': pedidoSeleccionado.prioridad === 'bajo' || !pedidoSeleccionado.prioridad
                         }">
-                        {{ pedidoSeleccionado.prioridad || 'normal' }}
+                        {{ pedidoSeleccionado.prioridad === 'alto' ? '🔴 Alto' : pedidoSeleccionado.prioridad === 'medio' ? '🟡 Medio' : '🟢 Bajo' }}
                       </span>
                     </div>
                     <p v-if="pedidoSeleccionado.cliente_nombre" class="text-sm text-gray-800 font-medium">

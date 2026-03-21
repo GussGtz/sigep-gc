@@ -99,7 +99,7 @@
               <svg class="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
             <p class="text-xl font-black text-orange-500">{{ pedidosStore.kpis.urgentes }}</p>
-            <p class="text-[10px] text-gray-400 mt-0.5 leading-tight">Urgentes</p>
+            <p class="text-[10px] text-gray-400 mt-0.5 leading-tight">Alto</p>
           </div>
         </div>
 
@@ -156,7 +156,7 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
                     <p class="font-black text-gray-900 text-base">#{{ p.numero_pedido }}</p>
-                    <span v-if="p.prioridad === 'urgente'"
+                    <span v-if="p.prioridad === 'alto'"
                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 leading-none">
                       <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                       Urgente

@@ -111,7 +111,7 @@
             class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
           >
             <!-- Franja superior de urgencia -->
-            <div v-if="p.prioridad === 'urgente'" class="h-1 bg-gradient-to-r from-orange-400 to-red-500"></div>
+            <div v-if="p.prioridad === 'alto'" class="h-1 bg-gradient-to-r from-orange-400 to-red-500"></div>
 
             <div class="p-4">
               <!-- Cabecera: número + badges + chat -->
@@ -119,10 +119,10 @@
                 <div>
                   <div class="flex items-center gap-2 flex-wrap">
                     <p class="font-black text-gray-900 text-base">#{{ p.numero_pedido }}</p>
-                    <span v-if="p.prioridad === 'urgente'"
+                    <span v-if="p.prioridad === 'alto'"
                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">
                       <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                      Urgente
+                      Alto
                     </span>
                   </div>
                   <p class="text-xs text-gray-400 mt-0.5">

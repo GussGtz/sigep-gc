@@ -41,7 +41,7 @@ const crearPedido = async (req, res) => {
     alto,
     ancho,
     cantidad      = 1,
-    prioridad     = 'normal',
+    prioridad     = 'bajo',
     especificaciones,
     cliente_nombre,
     direccion_entrega,
@@ -60,9 +60,9 @@ const crearPedido = async (req, res) => {
     ? parseFloat((parseFloat(alto) * parseFloat(ancho) * parseInt(cantidad || 1)).toFixed(4))
     : null;
 
-  const prioridadValida = ['normal', 'urgente'].includes((prioridad || 'normal').toLowerCase())
-    ? (prioridad || 'normal').toLowerCase()
-    : 'normal';
+  const prioridadValida = ['bajo', 'medio', 'alto'].includes((prioridad || 'bajo').toLowerCase())
+    ? (prioridad || 'bajo').toLowerCase()
+    : 'bajo';
 
   const inventarioId = _inventarioId ? parseInt(_inventarioId) : null;
 
@@ -147,7 +147,8 @@ const crearPedido = async (req, res) => {
 
     // Notificación (fuera de la transacción)
     let mensajeNotif = `Nuevo pedido #${numero_pedido} creado por ${userName}`;
-    if (prioridadValida === 'urgente') mensajeNotif += ' 🔴 URGENTE';
+    if (prioridadValida === 'alto') mensajeNotif += ' 🔴 ALTO';
+    else if (prioridadValida === 'medio') mensajeNotif += ' 🟡 MEDIO';
 
     await crearNotificacion({
       tipo: 'pedido_creado',
@@ -229,7 +230,7 @@ const obtenerPedidos = async (req, res) => {
           ancho:            row.ancho  ? parseFloat(row.ancho)  : null,
           cantidad:         row.cantidad || 1,
           metros_cuadrados: row.metros_cuadrados ? parseFloat(row.metros_cuadrados) : null,
-          prioridad:        row.prioridad || 'normal',
+          prioridad:        row.prioridad || 'bajo',
           especificaciones:  row.especificaciones  || null,
           cliente_nombre:    row.cliente_nombre    || null,
           direccion_entrega: row.direccion_entrega || null,
@@ -308,7 +309,7 @@ const obtenerResumen = async (req, res) => {
     const urgentesRes = await pool.query(`
       SELECT COUNT(*)::int AS total
       FROM pedidos p
-      WHERE p.prioridad = 'urgente'
+      WHERE p.prioridad = 'alto'
         AND EXISTS (
           SELECT 1 FROM pedido_estatus pe
           WHERE pe.pedido_id = p.id AND pe.estatus != 'completado'
@@ -498,11 +499,58 @@ const eliminarPedidosCompletados = async (req, res) => {
   }
 };
 
+/* ─────────────────────────────────────────────
+   PUT /api/pedidos/:id/prioridad — Solo admins
+───────────────────────────────────────────── */
+const actualizarPrioridad = async (req, res) => {
+  const { id } = req.params;
+  const { prioridad } = req.body;
+
+  const prioridadValida = ['bajo', 'medio', 'alto'].includes((prioridad || '').toLowerCase())
+    ? prioridad.toLowerCase()
+    : null;
+
+  if (!prioridadValida) {
+    return res.status(400).json({ message: "prioridad debe ser 'bajo', 'medio' o 'alto'" });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE pedidos SET prioridad = $1 WHERE id = $2 RETURNING id, numero_pedido`,
+      [prioridadValida, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
+
+    const { numero_pedido } = result.rows[0];
+    const userName = req.user?.nombre || 'Admin';
+    const emojiMap = { alto: '🔴', medio: '🟡', bajo: '🟢' };
+    await crearNotificacion({
+      tipo: 'pedido_actualizado',
+      mensaje: `Pedido #${numero_pedido} marcado como ${emojiMap[prioridadValida]} ${prioridadValida} por ${userName}`,
+      pedidoId: parseInt(id),
+      pedidoNumero: numero_pedido,
+      creadoPor: req.user?.id,
+      creadoPorNombre: userName,
+      paraRoles: [1, 2]
+    });
+
+    if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
+    res.json({ message: 'Prioridad actualizada', prioridad: prioridadValida });
+  } catch (err) {
+    console.error('[ERROR actualizarPrioridad]', err.message);
+    res.status(500).json({ message: 'Error al actualizar prioridad', error: err.message });
+  }
+};
+
 module.exports = {
   crearPedido,
   obtenerPedidos,
   obtenerResumen,
   actualizarEstatus,
+  actualizarPrioridad,
   eliminarPedido,
   eliminarPedidosCompletados,
   crearNotificacion,

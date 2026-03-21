@@ -7,6 +7,7 @@ const {
   obtenerPedidos,
   obtenerResumen,
   actualizarEstatus,
+  actualizarPrioridad,
   eliminarPedido,
   eliminarPedidosCompletados,
   registrarMerma
@@ -26,7 +27,8 @@ const pool = require('../config/db');
 router.get('/',              verifyToken,           obtenerPedidos);
 router.get('/resumen',      verifyToken, isAdmin,  obtenerResumen);
 router.post('/',             verifyToken,           crearPedido);          // admin o ventas
-router.put('/estatus/:id',   verifyToken,           actualizarEstatus);
+router.put('/estatus/:id',    verifyToken,           actualizarEstatus);
+router.put('/:id/prioridad', verifyToken, isAdmin,  actualizarPrioridad);
 router.put('/:id/merma',     verifyToken,           registrarMerma);
 router.delete('/completados',verifyToken, isAdmin,  eliminarPedidosCompletados);
 router.delete('/:id',        verifyToken, isAdmin,  eliminarPedido);
@@ -66,9 +68,9 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
       const metros_cuadrados = (alto && ancho)
         ? parseFloat((alto * ancho * cantidad).toFixed(4))
         : null;
-      const prioridad = ['normal', 'urgente'].includes((p.prioridad || 'normal').toLowerCase())
-        ? (p.prioridad || 'normal').toLowerCase()
-        : 'normal';
+      const prioridad = ['bajo', 'medio', 'alto'].includes((p.prioridad || 'bajo').toLowerCase())
+        ? (p.prioridad || 'bajo').toLowerCase()
+        : 'bajo';
 
       const pedidoResult = await pool.query(
         `INSERT INTO pedidos

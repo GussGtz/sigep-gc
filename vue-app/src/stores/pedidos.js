@@ -61,6 +61,9 @@ export const usePedidosStore = defineStore('pedidos', () => {
     if (f.fechaHasta) {
       list = list.filter(p => p.fecha_entrega <= f.fechaHasta)
     }
+    // Ordenar por prioridad: urgente → media → normal
+    const prioridadOrd = { alto: 0, medio: 1, bajo: 2 }
+    list.sort((a, b) => (prioridadOrd[a.prioridad] ?? 2) - (prioridadOrd[b.prioridad] ?? 2))
     return list
   })
 
@@ -81,11 +84,15 @@ export const usePedidosStore = defineStore('pedidos', () => {
       (p.fecha_entrega && new Date(p.fecha_entrega) < today && !p.areas?.every(a => a.estatus === 'completado'))
     ).length
     const urgentes    = pedidos.value.filter(p =>
-      p.prioridad === 'urgente' &&
+      p.prioridad === 'alto' &&
+      !p.areas?.every(a => a.estatus === 'completado')
+    ).length
+    const medias      = pedidos.value.filter(p =>
+      p.prioridad === 'medio' &&
       !p.areas?.every(a => a.estatus === 'completado')
     ).length
 
-    return { total, completados, enProceso, pendientes, atrasados, urgentes }
+    return { total, completados, enProceso, pendientes, atrasados, urgentes, medias }
   })
 
   async function fetchPedidos(params = {}) {
@@ -130,6 +137,13 @@ export const usePedidosStore = defineStore('pedidos', () => {
     pedidos.value = pedidos.value.filter(p => !p.areas?.every(a => a.estatus === 'completado'))
   }
 
+  async function actualizarPrioridad(id, prioridad) {
+    const { data } = await axios.put(`${API}/pedidos/${id}/prioridad`, { prioridad })
+    const idx = pedidos.value.findIndex(p => p.id === id)
+    if (idx !== -1) pedidos.value[idx].prioridad = prioridad
+    return data
+  }
+
   async function registrarMerma(id, merma_m2, merma_descripcion = '') {
     const { data } = await axios.put(`${API}/pedidos/${id}/merma`, { merma_m2, merma_descripcion })
     // Actualizar optimistamente en local
@@ -150,7 +164,7 @@ export const usePedidosStore = defineStore('pedidos', () => {
 
   return {
     pedidos, loading, error, filtros, pedidosFiltrados, kpis,
-    fetchPedidos, crearPedido, actualizarEstatus, eliminarPedido, eliminarCompletados,
-    registrarMerma, setFiltro, limpiarFiltros
+    fetchPedidos, crearPedido, actualizarEstatus, actualizarPrioridad,
+    eliminarPedido, eliminarCompletados, registrarMerma, setFiltro, limpiarFiltros
   }
 })

@@ -144,7 +144,7 @@ async function initDB() {
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS ancho             DECIMAL(10,2) DEFAULT NULL`,
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS cantidad          INTEGER       DEFAULT 1`,
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS metros_cuadrados  DECIMAL(10,4) DEFAULT NULL`,
-      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS prioridad         VARCHAR(20)   DEFAULT 'normal'`,
+      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS prioridad         VARCHAR(20)   DEFAULT 'bajo'`,
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS especificaciones  TEXT          DEFAULT NULL`,
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS cliente_nombre    VARCHAR(200)  DEFAULT NULL`,
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS direccion_entrega TEXT          DEFAULT NULL`,

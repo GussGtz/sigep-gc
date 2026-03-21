@@ -129,7 +129,24 @@
       "Bash(node -e \"const webpush = require\\(''web-push''\\); const keys = webpush.generateVAPIDKeys\\(\\); console.log\\(''PUBLIC:'', keys.publicKey\\); console.log\\(''PRIVATE:'', keys.privateKey\\);\")",
       "Bash(gh release:*)",
       "Bash(export JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\")",
-      "Bash(./gradlew assembleDebug --no-daemon)"
+      "Bash(./gradlew assembleDebug --no-daemon)",
+      "WebSearch",
+      "WebFetch(domain:my-portfolio-murex-one-79.vercel.app)",
+      "Bash(cp ~/Downloads/Partner-_NDG_Linux_Essentials_certificate_22393138-utcancun-edu-mx_970bead6-fea6-41d0-948f-56d183be2d3a.pdf ~/Desktop/GussGtz.github.io/assets/cert-linux.pdf)",
+      "Bash(cp ~/Downloads/Partner-_JavaScript_Essentials_1_-JSE-_certificate_22393138-utcancun-edu-mx_ebeda6de-3f93-4ae2-8e77-a7fa2088854e.pdf ~/Desktop/GussGtz.github.io/assets/cert-javascript.pdf)",
+      "Bash(dir \"C:\\\\Users\\\\Gustavo\\\\Desktop\\\\GussGtz.github.io\\\\assets\")",
+      "Bash(dir \"C:\\\\Users\\\\Gustavo\\\\Desktop\\\\GussGtz.github.io\\\\assets\" /OD)",
+      "Bash(curl -s -X POST \"https://guss-gtz-github-io.vercel.app/api/send\" -H \"Content-Type: application/json\" -d '{\"\"name\"\":\"\"Test Claude\"\",\"\"email\"\":\"\"test@test.com\"\",\"\"company\"\":\"\"Prueba\"\",\"\"budget\"\":\"\"Menos de $10,000\"\",\"\"message\"\":\"\"Este es un mensaje de prueba desde el portafolio.\"\"}' -w \"\\\\nHTTP_STATUS:%{http_code}\")",
+      "Bash(python -m pip install PyPDF2 --quiet)",
+      "Bash(python -c \":*)",
+      "Bash(powershell -Command \"\\(Get-Content index.html -Raw\\) -replace ''Gutiérrez'',''Gutierrez'' | Set-Content index.html -NoNewline\")",
+      "Bash(powershell -Command \"Select-String -Path ''*.html'',''api/*.js'' -Pattern ''Gutiérrez'' | Select-Object Filename,LineNumber,Line\")",
+      "Bash(powershell -Command \"\\(Get-Content index.html -Raw -Encoding UTF8\\) -replace ''Guti[eé]rrez'',''Gutierrez'' | Set-Content index.html -Encoding UTF8 -NoNewline\")",
+      "Bash(powershell -Command \"Select-String -Path ''index.html'' -Pattern ''Gutierrez'' | Measure-Object | Select-Object -ExpandProperty Count\")",
+      "Bash(findstr -i logo)",
+      "Bash(dir \"C:\\\\Users\\\\Gustavo\\\\Desktop\\\\GussGtz.github.io\\\\assets\" /b)",
+      "Bash(findstr /i logo)",
+      "Bash(grep -r 'CREATE TABLE.*pedidos' 'C:\\\\Users\\\\Gustavo\\\\Desktop\\\\Proyecto glass-caribe' --include=*.js --include=*.sql)"
     ]
   }
 }

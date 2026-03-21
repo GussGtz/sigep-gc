@@ -31,10 +31,15 @@
                 <AlertTriangle class="w-3 h-3 text-red-500" :stroke-width="2.5" />
                 <span class="text-xs font-bold text-red-700">{{ kpis.atrasados }} atrasado{{ kpis.atrasados > 1 ? 's' : '' }}</span>
               </div>
+              <div v-if="kpis.medias > 0"
+                class="inline-flex items-center gap-1.5 bg-amber-50 rounded-full border border-amber-200 px-3.5 py-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span class="text-xs font-bold text-amber-700">{{ kpis.medias }} media{{ kpis.medias > 1 ? 's' : '' }}</span>
+              </div>
               <div v-if="kpis.urgentes > 0"
-                class="inline-flex items-center gap-1.5 bg-orange-50 rounded-full border border-orange-200 px-3.5 py-1.5">
-                <Flame class="w-3 h-3 text-orange-500" :stroke-width="2.5" />
-                <span class="text-xs font-bold text-orange-700">{{ kpis.urgentes }} urgente{{ kpis.urgentes > 1 ? 's' : '' }}</span>
+                class="inline-flex items-center gap-1.5 bg-red-50 rounded-full border border-red-200 px-3.5 py-1.5">
+                <Flame class="w-3 h-3 text-red-500" :stroke-width="2.5" />
+                <span class="text-xs font-bold text-red-700">{{ kpis.urgentes }} alto{{ kpis.urgentes > 1 ? 's' : '' }}</span>
               </div>
             </div>
           </div>
@@ -238,8 +243,8 @@
                        cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
                 <div class="flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full flex-shrink-0"
-                    :class="p.areas?.every(a => a.estatus === 'completado') ? 'bg-emerald-400' :
-                            p.areas?.some(a => a.estatus === 'en proceso')  ? 'bg-[#0D89CB]'   : 'bg-amber-400'">
+                    :class="p.prioridad === 'alto' ? 'bg-red-500' :
+                            p.prioridad === 'medio'   ? 'bg-amber-400' : 'bg-emerald-400'">
                   </div>
                   <span class="text-sm font-semibold text-gray-700">#{{ p.numero_pedido }}</span>
                 </div>
@@ -314,7 +319,7 @@
                   <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
                       <span class="text-sm font-semibold text-gray-900 truncate">#{{ p.numero_pedido }}</span>
-                      <span v-if="p.prioridad === 'urgente'"
+                      <span v-if="p.prioridad === 'alto'"
                         class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 leading-none flex-shrink-0">URG</span>
                     </div>
                     <p v-if="p.retrasado" class="text-[11px] text-red-500 font-medium leading-none mt-0.5">Atrasado</p>
@@ -529,8 +534,8 @@ const alertas = computed(() => {
     bg: 'bg-orange-50 border border-orange-100',
     iconBg: 'bg-orange-100', iconColor: 'text-orange-600',
     textColor: 'text-orange-800', subColor: 'text-orange-500', linkColor: 'text-orange-600',
-    title: `${kpis.value.urgentes} pedido${kpis.value.urgentes > 1 ? 's' : ''} urgente${kpis.value.urgentes > 1 ? 's' : ''}`,
-    sub: 'Prioridad alta en cola'
+    title: `${kpis.value.urgentes} pedido${kpis.value.urgentes > 1 ? 's' : ''} de prioridad alta`,
+    sub: 'Requieren atención prioritaria'
   })
   if (incidenciasActivas.value > 0) list.push({
     key: 'incidencias', icon: XCircle,
@@ -580,11 +585,11 @@ const bigKpis = computed(() => [
     icon: TrendingDown
   },
   {
-    label: 'Urgentes',
+    label: 'Alto',
     value: kpis.value.urgentes,
-    color: kpis.value.urgentes > 0 ? 'text-orange-600' : 'text-gray-400',
-    iconBg: kpis.value.urgentes > 0 ? 'bg-orange-50' : 'bg-gray-100',
-    iconColor: kpis.value.urgentes > 0 ? 'text-orange-500' : 'text-gray-400',
+    color: kpis.value.urgentes > 0 ? 'text-red-600' : 'text-gray-400',
+    iconBg: kpis.value.urgentes > 0 ? 'bg-red-50' : 'bg-gray-100',
+    iconColor: kpis.value.urgentes > 0 ? 'text-red-500' : 'text-gray-400',
     icon: Flame
   },
   {

@@ -113,8 +113,9 @@
             <select v-model="filtroPrioridad" @change="pedidosStore.setFiltro('prioridad', filtroPrioridad)"
               class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
               <option value="">Todas</option>
-              <option value="urgente">Urgente</option>
-              <option value="normal">Normal</option>
+              <option value="alto">🔴 Alto</option>
+              <option value="medio">🟡 Medio</option>
+              <option value="bajo">🟢 Bajo</option>
             </select>
           </div>
 
@@ -144,10 +145,13 @@
               <div>
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-bold text-gray-900">#{{ p.numero_pedido }}</span>
-                  <span v-if="p.prioridad === 'urgente'"
-                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700">Urgente</span>
+                  <span v-if="p.prioridad !== 'bajo'"
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                    :class="p.prioridad === 'alto' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'">
+                    {{ p.prioridad === 'alto' ? '🔴 Alto' : '🟡 Medio' }}
+                  </span>
                   <span v-if="p.retrasado"
-                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-red-100 text-red-700">Atrasado</span>
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-800 text-white">Atrasado</span>
                 </div>
                 <p v-if="p.cliente_nombre" class="text-xs text-gray-500 mt-0.5">{{ p.cliente_nombre }}</p>
               </div>
@@ -217,12 +221,13 @@
                 <div>
                   <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="text-sm font-bold text-gray-900">#{{ p.numero_pedido }}</span>
-                    <span v-if="p.prioridad === 'urgente'"
-                      class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-700 leading-none">
-                      Urgente
+                    <span v-if="p.prioridad !== 'bajo'"
+                      class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold leading-none"
+                      :class="p.prioridad === 'alto' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'">
+                      {{ p.prioridad === 'alto' ? '🔴 Alto' : '🟡 Medio' }}
                     </span>
                     <span v-if="p.retrasado"
-                      class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-red-100 text-red-700 leading-none">
+                      class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-800 text-white leading-none">
                       Atrasado
                     </span>
                   </div>
@@ -316,19 +321,27 @@
                 </div>
               </div>
 
-              <!-- Prioridad -->
+              <!-- Prioridad — semáforo -->
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Prioridad</label>
-                <div class="flex gap-3">
-                  <label class="flex-1 flex items-center gap-2.5 border rounded-xl px-4 py-2.5 cursor-pointer transition-colors"
-                    :class="nuevoPedido.prioridad === 'normal' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:bg-gray-50'">
-                    <input type="radio" v-model="nuevoPedido.prioridad" value="normal" class="accent-gray-900"/>
-                    <span class="text-sm font-medium text-gray-700">Normal</span>
+                <div class="flex gap-2">
+                  <label class="flex-1 flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors"
+                    :class="nuevoPedido.prioridad === 'bajo' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:bg-gray-50'">
+                    <input type="radio" v-model="nuevoPedido.prioridad" value="bajo" class="accent-emerald-600"/>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                    <span class="text-sm font-medium text-gray-700">Bajo</span>
                   </label>
-                  <label class="flex-1 flex items-center gap-2.5 border rounded-xl px-4 py-2.5 cursor-pointer transition-colors"
-                    :class="nuevoPedido.prioridad === 'urgente' ? 'border-orange-500 bg-orange-50' : 'border-orange-200 hover:bg-orange-50/50'">
-                    <input type="radio" v-model="nuevoPedido.prioridad" value="urgente" class="accent-orange-500"/>
-                    <span class="text-sm font-medium text-orange-700">Urgente</span>
+                  <label class="flex-1 flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors"
+                    :class="nuevoPedido.prioridad === 'medio' ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:bg-amber-50/50'">
+                    <input type="radio" v-model="nuevoPedido.prioridad" value="medio" class="accent-amber-500"/>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 flex-shrink-0"></span>
+                    <span class="text-sm font-medium text-amber-700">Medio</span>
+                  </label>
+                  <label class="flex-1 flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors"
+                    :class="nuevoPedido.prioridad === 'alto' ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-red-50/50'">
+                    <input type="radio" v-model="nuevoPedido.prioridad" value="alto" class="accent-red-500"/>
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                    <span class="text-sm font-medium text-red-700">Alto</span>
                   </label>
                 </div>
               </div>
@@ -634,8 +647,8 @@
                       </td>
                       <td class="px-3 py-2">
                         <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
-                          :class="row.prioridad === 'urgente' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'">
-                          {{ row.prioridad || 'normal' }}
+                          :class="row.prioridad === 'alto' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'">
+                          {{ row.prioridad || 'bajo' }}
                         </span>
                       </td>
                     </tr>
@@ -728,7 +741,7 @@ const nuevoPedido        = ref({
   numero_pedido: '', fecha_entrega: '',
   cliente_nombre: '', direccion_entrega: '',
   alto: '', ancho: '', cantidad: 1,
-  prioridad: 'normal', especificaciones: '',
+  prioridad: 'bajo', especificaciones: '',
   inventario_id: null
 })
 const page               = ref(1)
@@ -743,7 +756,7 @@ const miniStats = computed(() => [
   { label:'Completados',   value: kpis.value.completados, iconBg:'bg-emerald-100', iconColor:'text-emerald-600', iconPath:'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' },
   { label:'Pendientes',    value: kpis.value.pendientes,  iconBg:'bg-amber-100',   iconColor:'text-amber-600',   iconPath:'M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z' },
   { label:'Atrasados',     value: kpis.value.atrasados,   iconBg:'bg-red-100',     iconColor:'text-red-600',     iconPath:'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' },
-  { label:'Urgentes',      value: kpis.value.urgentes,    iconBg:'bg-orange-100',  iconColor:'text-orange-600',  iconPath:'M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z' },
+  { label:'Alto',          value: kpis.value.urgentes,    iconBg:'bg-red-100',     iconColor:'text-red-600',     iconPath:'M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z' },
 ])
 
 // Preview m² reactivo en el modal
@@ -862,7 +875,7 @@ function aplicarMapeo() {
     }
     if (obj.prioridad) {
       const p = obj.prioridad.toLowerCase()
-      obj.prioridad = (p.includes('urgente') || p.includes('urgent')) ? 'urgente' : 'normal'
+      obj.prioridad = (p.includes('alto') || p.includes('urgent')) ? 'alto' : 'bajo'
     }
     return obj
   }).filter(p => p.numero_pedido)
@@ -930,7 +943,7 @@ function resetNuevoPedido() {
     numero_pedido: '', fecha_entrega: '',
     cliente_nombre: '', direccion_entrega: '',
     alto: '', ancho: '', cantidad: 1,
-    prioridad: 'normal', especificaciones: '',
+    prioridad: 'bajo', especificaciones: '',
     inventario_id: null
   }
   formErrors.value = {}
@@ -1014,7 +1027,7 @@ function exportarCSV() {
     p.cliente_nombre || '',
     p.fecha_creacion || '',
     p.fecha_entrega  || '',
-    p.prioridad      || 'normal',
+    p.prioridad      || 'bajo',
     getArea(p, 'ventas'),
     getArea(p, 'contabilidad'),
     getArea(p, 'produccion'),
