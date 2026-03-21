@@ -45,7 +45,9 @@ const crearPedido = async (req, res) => {
     especificaciones,
     cliente_nombre,
     direccion_entrega,
-    inventario_id: _inventarioId
+    inventario_id: _inventarioId,
+    precio,
+    total_piezas,
   } = req.body;
 
   const userId   = req.user.id;
@@ -107,15 +109,18 @@ const crearPedido = async (req, res) => {
       `INSERT INTO pedidos
          (numero_pedido, fecha_entrega, creado_por,
           alto, ancho, cantidad, metros_cuadrados, prioridad,
-          especificaciones, cliente_nombre, direccion_entrega, inventario_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          especificaciones, cliente_nombre, direccion_entrega, inventario_id,
+          precio, total_piezas)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING id`,
       [
         numero_pedido, fecha_entrega, userId,
         alto || null, ancho || null, parseInt(cantidad || 1), metros_cuadrados,
         prioridadValida,
         especificaciones || null, cliente_nombre || null, direccion_entrega || null,
-        inventarioId
+        inventarioId,
+        precio ? parseFloat(precio) : null,
+        total_piezas ? parseInt(total_piezas) : null,
       ]
     );
 
@@ -195,6 +200,8 @@ const obtenerPedidos = async (req, res) => {
         p.merma_m2,
         p.merma_descripcion,
         p.inventario_id,
+        p.precio,
+        p.total_piezas,
         iv.tipo        AS inventario_tipo,
         iv.color       AS inventario_color,
         iv.espesor_mm  AS inventario_espesor,

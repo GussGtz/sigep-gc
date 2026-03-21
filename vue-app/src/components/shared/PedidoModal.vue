@@ -113,9 +113,23 @@
                     {{ parseFloat(pedido.alto).toFixed(2) }} m × {{ parseFloat(pedido.ancho).toFixed(2) }} m
                   </span>
                   <span v-if="pedido?.cantidad > 1" class="text-gray-500 text-xs">× {{ pedido.cantidad }} pzs</span>
+                  <span v-if="pedido?.total_piezas" class="text-gray-500 text-xs">· {{ pedido.total_piezas }} piezas totales</span>
                   <span v-if="pedido?.metros_cuadrados"
                     class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
                     {{ parseFloat(pedido.metros_cuadrados).toFixed(2) }} m²
+                  </span>
+                </div>
+              </div>
+              <!-- Precio -->
+              <div v-if="pedido?.precio != null" class="flex items-center gap-3">
+                <span class="label w-24">Precio</span>
+                <div class="flex items-center gap-3 flex-wrap">
+                  <span class="text-gray-800 text-sm font-semibold">
+                    {{ new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN' }).format(pedido.precio) }}
+                    <span class="text-xs font-normal text-gray-400">subtotal</span>
+                  </span>
+                  <span class="text-gray-500 text-xs">
+                    + IVA = {{ new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN' }).format(pedido.precio * 1.16) }}
                   </span>
                 </div>
               </div>

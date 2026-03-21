@@ -76,13 +76,16 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
         `INSERT INTO pedidos
            (numero_pedido, fecha_entrega, creado_por,
             alto, ancho, cantidad, metros_cuadrados, prioridad,
-            especificaciones, cliente_nombre, direccion_entrega)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            especificaciones, cliente_nombre, direccion_entrega,
+            precio, total_piezas)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING id`,
         [
           p.numero_pedido, p.fecha_entrega, userId,
           alto, ancho, cantidad, metros_cuadrados, prioridad,
-          p.especificaciones || null, p.cliente_nombre || null, p.direccion_entrega || null
+          p.especificaciones || null, p.cliente_nombre || null, p.direccion_entrega || null,
+          p.precio ? parseFloat(p.precio) : null,
+          p.total_piezas ? parseInt(p.total_piezas) : null,
         ]
       );
 
