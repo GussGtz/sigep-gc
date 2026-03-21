@@ -7,7 +7,7 @@
 
 const express  = require('express');
 const multer   = require('multer');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 
 const router  = express.Router();
@@ -32,46 +32,67 @@ function extract(text, regex) {
 }
 
 /**
- * Parsea el texto extraído del PDF y devuelve:
+ * Parsea el texto extraído del PDF AW_PEDIDO y devuelve:
  *   { header: {...}, items: [{...}] }
+ *
+ * Estructura real del texto (extraído con pdfjs/PDFParse v2):
+ *  - Tabs separan los campos de cada línea
+ *  - Número de pedido aparece ANTES del label: "122863\tPEDIDO N°:"
+ *  - Cada ítem: "VI VIDRIO...\t<importe>\t100\t<seq>\t<precio>\t<cant>\t<ancho>\tx <alto>"
+ *  - Dimensiones confirmadas en línea FORMA: "FORMA 000 (0) W: 894 H: 2021"
+ *  - Materiales en línea slash-separada: "LAMINADO CLARO 4+4 MM / SEPARADOR NEGRO..."
  */
 function parsePDF(text) {
-  // Normalizar saltos de línea Windows
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
-  const full  = lines.join('\n');
+  const full = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
   // ── Header ────────────────────────────────────────────────────────────────
-  const numeroPedido   = extract(full, /PEDIDO\s+N[°º]?:?\s*(\d+)/i);
-  const fechaEntregaRaw = extract(full, /FECHA\s+ENTREGA:?\s*([\d]{2}\.[\d]{2}\.[\d]{4})/i);
-  const fechaPedidoRaw  = extract(full, /FECHA\s+PEDIDO:?\s*([\d]{2}\.[\d]{2}\.[\d]{4})/i);
-  const referencia     = extract(full, /REFERENCIA:?\s*(.+?)(?:\n|RUTA)/i);
-  const ruta           = extract(full, /RUTA:?\s*([A-Z\s]+?)(?:\n|Nr)/i);
-  const clienteNombre  = (() => {
-    // Después de "Nr de cliente: NNN" viene el nombre en la línea siguiente
-    const m = full.match(/Nr\s+de\s+cliente:?\s*\d+\s*\n(.+)/i);
-    return m ? m[1].trim() : extract(full, /Cliente:?\s*(.+)/i);
+  // El número de pedido aparece ANTES del label en el texto extraído
+  const numeroPedido    = extract(full, /(\d{5,})\s*[\t ]+PEDIDO\s+N[°º]?:/i)
+                       || extract(full, /PEDIDO\s+N[°º]?:?\s*[\t ]*(\d+)/i);
+
+  const fechaEntregaRaw = extract(full, /FECHA\s+ENTREGA:\s*[\t ]*(\d{2}\.\d{2}\.\d{4})/i);
+  const fechaPedidoRaw  = extract(full, /FECHA\s+PEDIDO:\s*[\t ]*(\d{2}\.\d{2}\.\d{4})/i)
+                       || extract(full, /(\d{2}\.\d{2}\.\d{4})/); // fallback al primer date
+
+  const referencia      = extract(full, /REFERENCIA:\s*[\t ]*(.+?)[\t\n]/i);
+  // RUTA aparece como "SUR\tRUTA:" en el texto extraído
+  const ruta            = extract(full, /([A-Z]{2,})\s*[\t ]+RUTA:/i)
+                       || extract(full, /RUTA:\s*[\t ]*([A-Z]{2,})/i);
+
+  // Cliente: después de "Nr de cliente: NNN\n<empresa_Glass>\t<cliente>", el cliente es la 2da columna
+  const clienteNombre   = (() => {
+    const m = full.match(/Nr\s+de\s+cliente:?\s*\d+[\t\n]+[^\t\n]+\t([^\n\t]+)/i);
+    if (m) return m[1].trim();
+    // fallback: 1ra columna
+    const m2 = full.match(/Nr\s+de\s+cliente:?\s*\d+[\t\n]+([^\n\t]+)/i);
+    return m2 ? m2[1].trim() : null;
   })();
+
+  // Dirección de entrega: preferir CARRETERA (dirección del cliente, no de Glass Caribe)
   const direccion = (() => {
-    // Dirección: línea(s) después del nombre del cliente hasta una línea vacía o keyword
-    const m = full.match(/Nr\s+de\s+cliente:?\s*\d+\s*\n.+?\n(.+?)(?:\n\n|\nZONA|\nCALLE|\nAV\b|$)/is);
-    return m ? m[1].trim() : null;
+    const m1 = full.match(/(CARRETERA[^\n\t]+)/i);
+    if (m1) return m1[1].trim();
+    const m2 = full.match(/((?:CALLE|BLVD|BOULEVARD|AV)[^\n]+)/i);
+    if (m2) return m2[1].trim();
+    return null;
   })();
 
   // ── Line Items ────────────────────────────────────────────────────────────
-  // Patrón: "100 001" o "100001" → POS, luego ancho x alto (puede ser mm), cantidad
-  // Ejemplo: "100 001 VI VIDRIO INSULADO GLASSCARIBE 600 x 2.700 1 ..."
-  // O:       "100 001  600  2700  1  ..."
-  // El PDF puede variar. Usamos dos estrategias:
+  // Estrategia: localizar cada bloque POS mediante "100\t\d{3}" o "100 \d{3}"
+  // Las dimensiones reales vienen de la línea FORMA: W: <ancho> H: <alto>
+  // La cantidad viene del campo tabular antes de las dimensiones.
 
   const items = [];
 
-  // Estrategia principal: buscar líneas con patrón POS (100 \d{3} o 100\d{3})
-  // seguidas de dimensiones ANCHO x ALTO y cantidad
-  const posRegex = /\b(100\s*\d{3})\b/g;
+  // Dividir el texto en chunks por cada POS
+  const posRegex = /\b100[\t ](\d{3})\b/g;
   let posMatch;
   const posPositions = [];
   while ((posMatch = posRegex.exec(full)) !== null) {
-    posPositions.push({ pos: posMatch[1].replace(/\s+/, ' '), index: posMatch.index });
+    posPositions.push({
+      pos:   `100 ${posMatch[1]}`,
+      index: posMatch.index,
+    });
   }
 
   for (let i = 0; i < posPositions.length; i++) {
@@ -79,71 +100,66 @@ function parsePDF(text) {
     const end   = posPositions[i + 1] ? posPositions[i + 1].index : full.length;
     const chunk = full.slice(start, end);
 
-    const posNum = posPositions[i].pos; // e.g. "100 001"
-
-    // Extraer dimensiones: números que representan mm (>100) o m (<10)
-    // Buscamos "ANCHO x ALTO" o dos números grandes separados por "x" o espacio
-    let ancho = null, alto = null, cantidad = null;
-
-    // Patrón 1: "600 x 2700" o "600x2700" o "0,600 x 2,700"
-    const dimMatch = chunk.match(/(\d[\d\s]*(?:[,\.]\d+)?)\s*[xX]\s*(\d[\d\s]*(?:[,\.]\d+)?)/);
-    if (dimMatch) {
-      const v1 = parseFloat(dimMatch[1].replace(/\s/g, '').replace(',', '.'));
-      const v2 = parseFloat(dimMatch[2].replace(/\s/g, '').replace(',', '.'));
-      // Si los valores son >100, están en mm → convertir a metros
-      ancho = v1 > 100 ? v1 / 1000 : v1;
-      alto  = v2 > 100 ? v2 / 1000 : v2;
+    // Dimensiones desde línea FORMA (más confiable): "FORMA 000 (0) W: 894 H: 2021"
+    let ancho = null, alto = null;
+    const formaMatch = chunk.match(/W:\s*(\d+)\s+H:\s*(\d+)/i);
+    if (formaMatch) {
+      ancho = parseInt(formaMatch[1], 10) / 1000; // mm → m
+      alto  = parseInt(formaMatch[2], 10) / 1000;
     }
 
-    // Cantidad: primer entero pequeño (1-999) que aparece después de las dimensiones
-    if (dimMatch) {
-      const afterDim = chunk.slice(chunk.indexOf(dimMatch[0]) + dimMatch[0].length);
-      const cantMatch = afterDim.match(/\b(\d{1,3})\b/);
+    // Fallback: patrón "(\d+)\tx\s*(\d+)" o "(\d+)\s+x\s+(\d+)" en la línea del POS
+    if (!ancho || !alto) {
+      const lineMatch = chunk.match(/\t(\d{3,4})\s*\n?\s*x\s+(\d{3,4})/);
+      if (lineMatch) {
+        ancho = parseInt(lineMatch[1], 10) / 1000;
+        alto  = parseInt(lineMatch[2], 10) / 1000;
+      }
+    }
+
+    // Cantidad: patrón "\t<cant>\t<ancho_mm>" — el entero antes de las dimensiones
+    let cantidad = 1;
+    if (ancho) {
+      const anchomm = Math.round(ancho * 1000);
+      const cantMatch = chunk.match(new RegExp(`\\t(\\d{1,3})\\t${anchomm}`));
       if (cantMatch) cantidad = parseInt(cantMatch[1], 10);
     }
-
-    // Especificaciones: líneas con materiales (LAMINADO, SEPARADOR, etc.)
-    const specLines = [];
-    const specPatterns = [
-      /LAMINADO\s+\S+.*/i,
-      /SEPARADOR\s+.*/i,
-      /CANTO\s+.*/i,
-      /FORMA\s+.*/i,
-      /VIDRIO\s+.*/i,
-      /MONOL.*/i,
-      /TEMPLADO.*/i,
-      /PVB\s+.*/i,
-    ];
-    for (const pat of specPatterns) {
-      const sm = chunk.match(pat);
-      if (sm) specLines.push(sm[0].trim());
-    }
-    // También incluir la línea "VI VIDRIO INSULADO..." si existe
-    const viMatch = chunk.match(/VI\s+VIDRIO\s+INSULADO\s+\S+/i);
-    if (viMatch && !specLines.includes(viMatch[0].trim())) {
-      specLines.unshift(viMatch[0].trim());
+    // Fallback: buscar "1.\\d{2}m2" y extraer la cantidad del contexto
+    if (cantidad === 1) {
+      const altMatch = chunk.match(/\t(\d{1,2})\t\d{3,4}\s*\nx/i);
+      if (altMatch) cantidad = parseInt(altMatch[1], 10);
     }
 
-    if (ancho && alto) {
+    // Especificaciones: línea con los materiales separados por " / "
+    let especificaciones = null;
+    const matLine = chunk.match(/([A-Z][^\n]*(?:LAMINADO|SEPARADOR|TEMPLADO|MONOL)[^\n]*)/i);
+    if (matLine) especificaciones = matLine[1].trim();
+    // También capturar la descripción completa de canto
+    const cantoLine = chunk.match(/([\d,.]+ m lin\s+\d+ Canto[^\n]*)/i);
+    if (cantoLine && especificaciones) {
+      especificaciones += ' | ' + cantoLine[1].trim();
+    }
+
+    if (ancho && alto && ancho > 0 && alto > 0) {
       items.push({
-        pos:       posNum,
-        ancho:     Math.round(ancho * 1000) / 1000,
-        alto:      Math.round(alto  * 1000) / 1000,
-        cantidad:  cantidad || 1,
-        metros_cuadrados: Math.round(ancho * alto * 1000) / 1000,
-        especificaciones: specLines.join(' | ') || null,
+        pos:              posPositions[i].pos,
+        ancho:            Math.round(ancho * 1000) / 1000,
+        alto:             Math.round(alto  * 1000) / 1000,
+        cantidad,
+        metros_cuadrados: Math.round(ancho * alto * cantidad * 1000) / 1000,
+        especificaciones: especificaciones || null,
       });
     }
   }
 
   return {
     header: {
-      numero_pedido:   numeroPedido,
-      fecha_entrega:   parseFecha(fechaEntregaRaw),
-      fecha_pedido:    parseFecha(fechaPedidoRaw),
-      referencia:      referencia ? referencia.trim() : null,
-      ruta:            ruta       ? ruta.trim()       : null,
-      cliente_nombre:  clienteNombre,
+      numero_pedido:     numeroPedido,
+      fecha_entrega:     parseFecha(fechaEntregaRaw),
+      fecha_pedido:      parseFecha(fechaPedidoRaw),
+      referencia:        referencia ? referencia.trim() : null,
+      ruta:              ruta       ? ruta.trim()       : null,
+      cliente_nombre:    clienteNombre,
       direccion_entrega: direccion,
     },
     items,
@@ -159,14 +175,16 @@ router.post('/', verifyToken, isAdmin, upload.single('pdf'), async (req, res) =>
       return res.status(400).json({ success: false, message: 'No se recibió ningún archivo PDF' });
     }
 
-    const data   = await pdfParse(req.file.buffer);
-    const parsed = parsePDF(data.text);
+    const parser = new PDFParse({ data: req.file.buffer });
+    const result = await parser.getText();
+    await parser.destroy();
+    const parsed = parsePDF(result.text);
 
     if (!parsed.items.length) {
       return res.status(422).json({
         success: false,
         message: 'No se encontraron líneas de pedido en el PDF. Verifica que sea un AW_PEDIDO válido.',
-        rawText: data.text.slice(0, 2000), // debug
+        rawText: result.text.slice(0, 2000), // debug
       });
     }
 
