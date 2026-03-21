@@ -172,7 +172,7 @@ router.post('/', verifyToken, isAdmin, upload.single('pdf'), async (req, res) =>
 
     res.json({ success: true, ...parsed });
   } catch (err) {
-    console.error('[ImportPDF]', err);
+    console.error('[ImportPDF] Error:', err.message, err.stack?.split('\n')[1]);
     res.status(500).json({ success: false, message: err.message });
   }
 });
