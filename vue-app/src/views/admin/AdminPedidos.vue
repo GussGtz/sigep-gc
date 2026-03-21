@@ -139,33 +139,51 @@
           </div>
           <div v-else v-for="p in pedidosPagina" :key="p.id"
             @click="abrirModal(p)"
-            class="bg-white rounded-2xl border shadow-soft p-4 cursor-pointer active:scale-[0.99] transition-all"
-            :class="p.retrasado ? 'border-red-200 bg-red-50/30' : 'border-gray-100'">
-            <div class="flex items-start justify-between mb-3">
-              <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-bold text-gray-900">#{{ p.numero_pedido }}</span>
-                  <span v-if="p.prioridad !== 'bajo'"
-                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
-                    :class="p.prioridad === 'alto' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'">
-                    {{ p.prioridad === 'alto' ? '🔴 Alto' : '🟡 Medio' }}
-                  </span>
-                  <span v-if="p.retrasado"
-                    class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-800 text-white">Atrasado</span>
+            class="bg-white rounded-2xl border shadow-soft overflow-hidden cursor-pointer active:scale-[0.99] transition-all"
+            :class="p.retrasado ? 'border-red-200' : 'border-gray-100'">
+            <!-- Franja de prioridad -->
+            <div class="h-1 w-full"
+              :class="{
+                'bg-red-500':     p.prioridad === 'alto',
+                'bg-amber-400':   p.prioridad === 'medio',
+                'bg-emerald-400': p.prioridad === 'bajo' || !p.prioridad
+              }"></div>
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-gray-900">#{{ p.numero_pedido }}</span>
+                    <span v-if="p.retrasado"
+                      class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-800 text-white">Atrasado</span>
+                  </div>
+                  <p v-if="p.cliente_nombre" class="text-xs text-gray-500 mt-0.5">{{ p.cliente_nombre }}</p>
                 </div>
-                <p v-if="p.cliente_nombre" class="text-xs text-gray-500 mt-0.5">{{ p.cliente_nombre }}</p>
+                <button @click.stop="onDeleteRequest(p.id)"
+                  class="p-1.5 rounded-lg text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors">
+                  <Trash2 class="w-4 h-4" :stroke-width="1.75" />
+                </button>
               </div>
-              <button @click.stop="onDeleteRequest(p.id)"
-                class="p-1.5 rounded-lg text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors">
-                <Trash2 class="w-4 h-4" :stroke-width="1.75" />
-              </button>
-            </div>
-            <div class="flex items-center justify-between text-xs text-gray-400 mb-3">
-              <span>Entrega: <strong class="text-gray-600">{{ formatDate(p.fecha_entrega) }}</strong></span>
-              <span v-if="p.metros_cuadrados" class="text-gray-500">{{ parseFloat(p.metros_cuadrados).toFixed(2) }} m²</span>
-            </div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <StatusBadge v-for="a in p.areas" :key="a.area" :status="a.estatus" />
+              <!-- Prioridad + fecha -->
+              <div class="flex items-center justify-between text-xs mb-3">
+                <span class="inline-flex items-center gap-1.5 font-semibold"
+                  :class="{
+                    'text-red-600':     p.prioridad === 'alto',
+                    'text-amber-600':   p.prioridad === 'medio',
+                    'text-emerald-600': p.prioridad === 'bajo' || !p.prioridad
+                  }">
+                  <span class="w-2 h-2 rounded-full flex-shrink-0"
+                    :class="{
+                      'bg-red-500':     p.prioridad === 'alto',
+                      'bg-amber-400':   p.prioridad === 'medio',
+                      'bg-emerald-400': p.prioridad === 'bajo' || !p.prioridad
+                    }"></span>
+                  {{ p.prioridad === 'alto' ? 'Alto' : p.prioridad === 'medio' ? 'Medio' : 'Bajo' }}
+                </span>
+                <span class="text-gray-400">Entrega: <strong class="text-gray-600">{{ formatDate(p.fecha_entrega) }}</strong></span>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <StatusBadge v-for="a in p.areas" :key="a.area" :status="a.estatus" />
+              </div>
             </div>
           </div>
           <!-- Paginación mobile -->
@@ -191,8 +209,9 @@
 
           <div v-else>
             <!-- Header tabla -->
-            <div class="grid grid-cols-7 px-5 py-3 bg-gray-50 border-b border-gray-100">
+            <div class="grid grid-cols-8 px-5 py-3 bg-gray-50 border-b border-gray-100">
               <span class="col-span-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Pedido</span>
+              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Prioridad</span>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Creación</span>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Entrega</span>
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Ventas</span>
@@ -210,7 +229,7 @@
             <div
               v-for="p in pedidosPagina" :key="p.id"
               @click="abrirModal(p)"
-              class="grid grid-cols-7 items-center px-5 py-3.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors group"
+              class="grid grid-cols-8 items-center px-5 py-3.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors group"
               :class="{ 'bg-red-50/40 hover:bg-red-50/60': p.retrasado }">
 
               <!-- Pedido -->
@@ -221,11 +240,6 @@
                 <div>
                   <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="text-sm font-bold text-gray-900">#{{ p.numero_pedido }}</span>
-                    <span v-if="p.prioridad !== 'bajo'"
-                      class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold leading-none"
-                      :class="p.prioridad === 'alto' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'">
-                      {{ p.prioridad === 'alto' ? '🔴 Alto' : '🟡 Medio' }}
-                    </span>
                     <span v-if="p.retrasado"
                       class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-800 text-white leading-none">
                       Atrasado
@@ -234,6 +248,24 @@
                   <p v-if="p.cliente_nombre" class="text-xs text-gray-400 mt-0.5 truncate max-w-[140px]">{{ p.cliente_nombre }}</p>
                   <p v-if="p.metros_cuadrados" class="text-xs text-gray-400 leading-none">{{ parseFloat(p.metros_cuadrados).toFixed(2) }} m²</p>
                 </div>
+              </div>
+
+              <!-- Prioridad -->
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  :class="{
+                    'bg-red-500':     p.prioridad === 'alto',
+                    'bg-amber-400':   p.prioridad === 'medio',
+                    'bg-emerald-400': p.prioridad === 'bajo' || !p.prioridad
+                  }"></span>
+                <span class="text-xs font-semibold"
+                  :class="{
+                    'text-red-600':     p.prioridad === 'alto',
+                    'text-amber-600':   p.prioridad === 'medio',
+                    'text-emerald-600': p.prioridad === 'bajo' || !p.prioridad
+                  }">
+                  {{ p.prioridad === 'alto' ? 'Alto' : p.prioridad === 'medio' ? 'Medio' : 'Bajo' }}
+                </span>
               </div>
 
               <span class="text-xs text-gray-400">{{ formatDate(p.fecha_creacion) }}</span>
