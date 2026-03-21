@@ -45,6 +45,10 @@
               <Upload class="w-4 h-4" :stroke-width="1.75" />
               Importar Excel
             </button>
+            <button @click="showImportPDF = true" class="btn-secondary text-sm">
+              <FileText class="w-4 h-4" :stroke-width="1.75" />
+              Importar PDF
+            </button>
             <button @click="showCrear = true" class="btn-primary text-sm">
               <Plus class="w-4 h-4" :stroke-width="2" />
               Nuevo Pedido
@@ -725,6 +729,193 @@
       </Transition>
     </Teleport>
 
+    <!-- ══ MODAL IMPORTAR DESDE PDF ══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showImportPDF"
+          class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          @mousedown.self="cerrarImportPDF">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+              <div>
+                <h2 class="text-lg font-bold text-gray-900">Importar Pedido desde PDF (AW_PEDIDO)</h2>
+                <div class="flex items-center gap-2 mt-1">
+                  <span v-for="n in 3" :key="n"
+                    class="h-1.5 rounded-full transition-all"
+                    :class="[pdfStep >= n ? 'bg-[#0D89CB]' : 'bg-gray-200', n === 1 ? 'w-8' : 'w-6']"/>
+                  <span class="text-xs text-gray-400 ml-1">Paso {{ pdfStep }} de 3</span>
+                </div>
+              </div>
+              <button @click="cerrarImportPDF"
+                class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400">
+                <X class="w-4 h-4" :stroke-width="2" />
+              </button>
+            </div>
+
+            <!-- Paso 1: Subir PDF -->
+            <div v-if="pdfStep === 1" class="p-8 flex flex-col items-center gap-5">
+              <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center">
+                <FileText class="w-8 h-8 text-red-500" :stroke-width="1.5" />
+              </div>
+              <div class="text-center">
+                <p class="text-gray-800 font-semibold text-base">Selecciona el archivo PDF</p>
+                <p class="text-sm text-gray-400 mt-1">Formato AW_PEDIDO generado por el sistema de la empresa</p>
+              </div>
+
+              <!-- Drop zone -->
+              <label class="cursor-pointer w-full max-w-sm">
+                <input ref="fileInputPDF" type="file" accept=".pdf" class="hidden" @change="handlePDFUpload"/>
+                <div class="flex flex-col items-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl p-8 hover:border-[#0D89CB] hover:bg-blue-50/20 transition-all">
+                  <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                  </svg>
+                  <span v-if="pdfParsing" class="flex items-center gap-2 text-sm text-[#0D89CB] font-semibold">
+                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    Analizando PDF...
+                  </span>
+                  <template v-else>
+                    <span class="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl">Elegir PDF</span>
+                    <span class="text-xs text-gray-400">{{ pdfFileName || 'Ningún archivo seleccionado' }}</span>
+                  </template>
+                </div>
+              </label>
+
+              <div class="text-xs text-gray-400 bg-gray-50 rounded-xl px-5 py-4 w-full max-w-sm space-y-1">
+                <p class="font-semibold text-gray-600 mb-2">📄 Campos que se extraen automáticamente:</p>
+                <p>Número de pedido, fecha de entrega, cliente, dirección</p>
+                <p>Medidas (ancho × alto en mm → metros), cantidad por pieza</p>
+                <p>Especificaciones de material (tipo de vidrio, laminado, etc.)</p>
+              </div>
+            </div>
+
+            <!-- Paso 2: Revisión del header + prioridad global -->
+            <div v-if="pdfStep === 2" class="p-6 overflow-y-auto space-y-5">
+              <!-- Info del pedido detectado -->
+              <div class="bg-blue-50 border border-blue-100 rounded-xl px-5 py-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                <div>
+                  <span class="text-xs text-gray-400 block">Número de pedido</span>
+                  <span class="font-bold text-gray-900">#{{ pdfHeader.numero_pedido || '—' }}</span>
+                </div>
+                <div>
+                  <span class="text-xs text-gray-400 block">Fecha de entrega</span>
+                  <span class="font-semibold text-gray-800">{{ pdfHeader.fecha_entrega || '—' }}</span>
+                </div>
+                <div>
+                  <span class="text-xs text-gray-400 block">Cliente</span>
+                  <span class="font-semibold text-gray-800">{{ pdfHeader.cliente_nombre || '—' }}</span>
+                </div>
+                <div>
+                  <span class="text-xs text-gray-400 block">Ruta / Referencia</span>
+                  <span class="font-semibold text-gray-800">{{ [pdfHeader.ruta, pdfHeader.referencia].filter(Boolean).join(' · ') || '—' }}</span>
+                </div>
+                <div class="col-span-2">
+                  <span class="text-xs text-gray-400 block">Dirección</span>
+                  <span class="text-gray-700">{{ pdfHeader.direccion_entrega || '—' }}</span>
+                </div>
+              </div>
+
+              <!-- Prioridad global -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Prioridad para todos los ítems</label>
+                <div class="flex gap-2">
+                  <label v-for="opt in prioridadOpciones" :key="opt.value"
+                    class="flex-1 flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors"
+                    :class="pdfPrioridad === opt.value ? opt.activeClass : 'border-gray-200 hover:bg-gray-50'">
+                    <input type="radio" v-model="pdfPrioridad" :value="opt.value" class="sr-only"/>
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="opt.dot"></span>
+                    <span class="text-sm font-medium">{{ opt.label }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Resumen de ítems -->
+              <p class="text-sm text-gray-600">
+                Se encontraron <strong class="text-gray-900">{{ pdfItems.length }}</strong> ítems en el PDF.
+                Cada ítem se importará como un pedido independiente con el número <span class="font-mono bg-gray-100 px-1 rounded">{{ pdfHeader.numero_pedido }}-001</span>, <span class="font-mono bg-gray-100 px-1 rounded">{{ pdfHeader.numero_pedido }}-002</span>, …
+              </p>
+
+              <div class="flex gap-3">
+                <button @click="pdfStep = 1" class="btn-secondary flex-1 justify-center">← Volver</button>
+                <button @click="pdfStep = 3"
+                  class="flex-1 py-2.5 rounded-xl bg-gray-900 text-white font-semibold text-sm transition-opacity">
+                  Ver Vista Previa →
+                </button>
+              </div>
+            </div>
+
+            <!-- Paso 3: Vista previa + confirmar -->
+            <div v-if="pdfStep === 3" class="p-6 overflow-y-auto flex flex-col gap-4">
+              <p class="text-sm text-gray-600">
+                Se importarán <strong class="text-gray-900">{{ pdfItems.length }}</strong> pedido(s) desde
+                <strong>#{{ pdfHeader.numero_pedido }}</strong>.
+              </p>
+
+              <div class="overflow-x-auto rounded-xl border border-gray-100 max-h-72">
+                <table class="w-full text-xs min-w-[560px]">
+                  <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">POS</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">#Pedido</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">Ancho × Alto (m)</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">m²</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">Cant.</th>
+                      <th class="px-3 py-2.5 text-left text-gray-500 font-semibold">Especificaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(item, idx) in pdfPreview" :key="idx"
+                      class="border-t border-gray-50 hover:bg-gray-50/80">
+                      <td class="px-3 py-2 font-mono text-gray-500">{{ item.pos }}</td>
+                      <td class="px-3 py-2 font-medium text-gray-900">{{ item.numero_pedido }}</td>
+                      <td class="px-3 py-2 text-gray-700">{{ item.ancho }} × {{ item.alto }}</td>
+                      <td class="px-3 py-2 text-gray-600">{{ item.metros_cuadrados }}</td>
+                      <td class="px-3 py-2 text-gray-600">{{ item.cantidad }}</td>
+                      <td class="px-3 py-2 text-gray-400 max-w-[200px] truncate" :title="item.especificaciones">{{ item.especificaciones || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Resultado -->
+              <div v-if="pdfImportResult" class="rounded-xl px-4 py-3 text-sm"
+                :class="pdfImportResult.errores?.length ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'">
+                <p class="font-semibold text-gray-800">✅ {{ pdfImportResult.creados }} pedido(s) importados correctamente</p>
+                <div v-if="pdfImportResult.errores?.length" class="mt-2 space-y-0.5">
+                  <p class="text-xs font-semibold text-amber-700">Errores ({{ pdfImportResult.errores.length }}):</p>
+                  <p v-for="e in pdfImportResult.errores" :key="e.numero_pedido" class="text-xs text-amber-600">
+                    • {{ e.numero_pedido }}: {{ e.error }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex gap-3">
+                <button @click="pdfStep = 2" :disabled="pdfImportando || !!pdfImportResult"
+                  class="btn-secondary flex-1 justify-center disabled:opacity-40">← Ajustar</button>
+                <button v-if="!pdfImportResult" @click="ejecutarImportPDF" :disabled="pdfImportando"
+                  class="flex-1 py-2.5 rounded-xl bg-[#0D89CB] hover:bg-[#00659C] text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+                  <svg v-if="pdfImportando" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  {{ pdfImportando ? 'Importando...' : `Importar ${pdfItems.length} pedido(s)` }}
+                </button>
+                <button v-else @click="cerrarImportPDF"
+                  class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors">
+                  Listo ✓
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
   </div>
 </template>
 
@@ -1084,6 +1275,96 @@ function exportarCSV() {
 /* ── Exportar PDF (imprimir) ── */
 function exportarPDF() {
   window.print()
+}
+
+// ── PDF Import state ──────────────────────────────────────────────────────
+const showImportPDF    = ref(false)
+const pdfStep          = ref(1)
+const pdfFileName      = ref('')
+const pdfParsing       = ref(false)
+const pdfHeader        = ref({})
+const pdfItems         = ref([])
+const pdfPrioridad     = ref('bajo')
+const pdfImportando    = ref(false)
+const pdfImportResult  = ref(null)
+const fileInputPDF     = ref(null)
+
+const prioridadOpciones = [
+  { value: 'bajo',  label: 'Bajo',  dot: 'bg-emerald-500', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
+  { value: 'medio', label: 'Medio', dot: 'bg-amber-400',   activeClass: 'border-amber-500 bg-amber-50 text-amber-700' },
+  { value: 'alto',  label: 'Alto',  dot: 'bg-red-500',     activeClass: 'border-red-500 bg-red-50 text-red-700' },
+]
+
+const pdfPreview = computed(() => {
+  const num = pdfHeader.value.numero_pedido || 'XXXX'
+  return pdfItems.value.map((item, i) => ({
+    ...item,
+    numero_pedido: `${num}-${String(i + 1).padStart(3, '0')}`,
+  }))
+})
+
+async function handlePDFUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  pdfFileName.value = file.name
+  pdfParsing.value  = true
+  try {
+    const formData = new FormData()
+    formData.append('pdf', file)
+    const { data } = await axios.post('/api/pedidos/importar-pdf', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    if (!data.success) throw new Error(data.message || 'Error al parsear')
+    pdfHeader.value = data.header || {}
+    pdfItems.value  = data.items  || []
+    pdfStep.value   = 2
+  } catch (err) {
+    toast.add({ type: 'error', message: err.response?.data?.message || err.message || 'Error al leer el PDF' })
+    if (fileInputPDF.value) fileInputPDF.value.value = ''
+    pdfFileName.value = ''
+  } finally {
+    pdfParsing.value = false
+  }
+}
+
+async function ejecutarImportPDF() {
+  pdfImportando.value = true
+  try {
+    const pedidos = pdfPreview.value.map(item => ({
+      numero_pedido:    item.numero_pedido,
+      fecha_entrega:    pdfHeader.value.fecha_entrega,
+      cliente_nombre:   pdfHeader.value.cliente_nombre,
+      direccion_entrega: pdfHeader.value.direccion_entrega,
+      ancho:            item.ancho,
+      alto:             item.alto,
+      cantidad:         item.cantidad,
+      metros_cuadrados: item.metros_cuadrados,
+      especificaciones: item.especificaciones,
+      prioridad:        pdfPrioridad.value,
+    }))
+    const { data } = await axios.post('/api/pedidos/importar', { pedidos })
+    pdfImportResult.value = data
+    if (data.creados > 0) {
+      await pedidosStore.fetchPedidos()
+      toast.add({ type: 'success', message: `${data.creados} pedido(s) importados desde PDF` })
+    }
+  } catch (e) {
+    toast.add({ type: 'error', message: e.response?.data?.message || 'Error al importar' })
+  } finally {
+    pdfImportando.value = false
+  }
+}
+
+function cerrarImportPDF() {
+  showImportPDF.value   = false
+  pdfStep.value         = 1
+  pdfFileName.value     = ''
+  pdfHeader.value       = {}
+  pdfItems.value        = []
+  pdfPrioridad.value    = 'bajo'
+  pdfImportResult.value = null
+  pdfImportando.value   = false
+  if (fileInputPDF.value) fileInputPDF.value.value = ''
 }
 
 onMounted(() => {

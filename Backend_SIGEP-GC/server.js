@@ -263,8 +263,9 @@ if (process.env.NODE_ENV !== 'production') {
 // ═══════════════════════════════════════
 // Rutas principales
 // ═══════════════════════════════════════
-app.use('/api/auth',           require('./routes/auth'));
-app.use('/api/pedidos',        require('./routes/pedidos'));
+app.use('/api/auth',                 require('./routes/auth'));
+app.use('/api/pedidos/importar-pdf', require('./routes/importPDF'));
+app.use('/api/pedidos',              require('./routes/pedidos'));
 app.use('/api/comentarios',    require('./routes/comentarios'));
 app.use('/api/notificaciones', require('./routes/notificaciones'));
 app.use('/api/entregas',       require('./routes/entregas'));
