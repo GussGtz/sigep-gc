@@ -320,7 +320,7 @@
     ══════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showModalNuevoTipo" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showModalNuevoTipo = false">
+        <div v-if="showModalNuevoTipo" class="fixed inset-0 bg-black/40 z-[70] flex items-center justify-center p-4 max-md:pb-[74px]" @click.self="showModalNuevoTipo = false">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
             <div class="flex items-center justify-between">
               <h2 class="font-black text-gray-900 text-lg">Nuevo Tipo de Vidrio</h2>
@@ -381,7 +381,7 @@
     ══════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showModalMaterial" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showModalMaterial = false">
+        <div v-if="showModalMaterial" class="fixed inset-0 bg-black/40 z-[70] flex items-center justify-center p-4 max-md:pb-[74px]" @click.self="showModalMaterial = false">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div class="flex items-center justify-between">
               <h2 class="font-black text-gray-900 text-lg">{{ editando ? 'Editar Material' : 'Nuevo Material' }}</h2>
@@ -453,7 +453,7 @@
     ══════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showModalEntrada" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showModalEntrada = false">
+        <div v-if="showModalEntrada" class="fixed inset-0 bg-black/40 z-[70] flex items-center justify-center p-4 max-md:pb-[74px]" @click.self="showModalEntrada = false">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div class="flex items-center justify-between">
               <h2 class="font-black text-gray-900 text-lg">Registrar Movimiento</h2>

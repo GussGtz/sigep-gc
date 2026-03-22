@@ -282,7 +282,7 @@
       <Transition name="fade">
         <div
           v-if="showModal"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 max-md:pb-[74px] bg-black/30 backdrop-blur-sm"
           @mousedown.self="cerrarModal"
         >
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
@@ -515,7 +515,7 @@
       <Transition name="fade">
         <div
           v-if="showDetalle && entregaSeleccionada"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 max-md:pb-[74px] bg-black/30 backdrop-blur-sm"
           @mousedown.self="showDetalle = false"
         >
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
@@ -631,7 +631,7 @@
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="fotoAmpliada"
-          class="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+          class="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4 max-md:pb-[74px]"
           @click="fotoAmpliada = null">
           <img :src="fotoAmpliada"
             class="max-w-full max-h-full rounded-2xl object-contain shadow-2xl"

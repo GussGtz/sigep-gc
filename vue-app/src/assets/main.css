@@ -142,7 +142,7 @@
 
   /* ── Modal ── */
   .modal-overlay {
-    @apply fixed inset-0 bg-black/40 backdrop-blur-[4px] z-50 flex items-center justify-center p-4;
+    @apply fixed inset-0 bg-black/40 backdrop-blur-[4px] z-[70] flex items-center justify-center p-4;
   }
   .modal-content {
     @apply bg-white rounded-2xl shadow-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto
@@ -412,6 +412,13 @@ header.fixed {
 /* Admin: header móvil visible hasta lg (1024px) */
 .pt-header-lg {
   padding-top: calc(3.5rem + env(safe-area-inset-top));
+}
+
+/* Móvil: dejar espacio al bottom nav en overlays inline */
+@media (max-width: 767px) {
+  .modal-overlay {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom) + 1rem);
+  }
 }
 
 /* En desktop nunca hay safe area — resetear a valores fijos */

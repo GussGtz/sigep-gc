@@ -422,7 +422,7 @@
       <Transition name="fade">
         <div
           v-if="showModal"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 max-md:pb-[74px] bg-black/30 backdrop-blur-sm"
           @mousedown.self="showModal = false"
         >
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
@@ -584,7 +584,7 @@
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showConfirmEliminar"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 max-md:pb-[74px] bg-black/30 backdrop-blur-sm"
           @mousedown.self="showConfirmEliminar = false">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center" @click.stop>
             <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
