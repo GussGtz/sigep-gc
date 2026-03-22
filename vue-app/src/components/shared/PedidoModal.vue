@@ -2,8 +2,10 @@
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="modelValue" class="modal-overlay" @mousedown.self="$emit('update:modelValue', false)">
-        <div class="modal-content w-full max-w-3xl"
-          :class="activeTab === 'documento' ? '!overflow-hidden flex flex-col' : ''"
+        <div class="modal-content w-full"
+          :class="activeTab === 'documento'
+            ? '!max-w-[95vw] !h-[92vh] !max-h-[92vh] !overflow-hidden flex flex-col'
+            : 'max-w-3xl'"
           @click.stop>
 
           <!-- ── Header ── -->
