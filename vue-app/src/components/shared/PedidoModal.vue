@@ -253,7 +253,7 @@
           </div>
 
           <!-- ══ Tab: Documento ══ -->
-          <div v-if="activeTab === 'documento'" class="p-6 overflow-y-auto max-h-[60vh] flex flex-col gap-4">
+          <div v-if="activeTab === 'documento'" class="flex flex-col" style="max-height: 60vh;">
             <!-- Loading -->
             <div v-if="docLoading" class="flex items-center justify-center py-12 text-gray-400 gap-2 text-sm">
               <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -268,27 +268,27 @@
             </div>
             <!-- Documento cargado -->
             <template v-else-if="docData">
-              <!-- Nombre + botón descarga -->
-              <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3">
-                <div class="flex items-center gap-3 min-w-0">
-                  <FileText class="w-5 h-5 text-[#0D89CB] flex-shrink-0" :stroke-width="1.75"/>
-                  <span class="text-sm font-medium text-gray-800 truncate">{{ docData.nombre }}</span>
+              <!-- Barra superior compacta -->
+              <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 flex-shrink-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <FileText class="w-4 h-4 text-[#0D89CB] flex-shrink-0" :stroke-width="1.75"/>
+                  <span class="text-xs font-medium text-gray-600 truncate">{{ docData.nombre }}</span>
                 </div>
                 <button @click="descargarDoc"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0D89CB] text-white text-xs font-semibold hover:bg-[#0b75ad] transition-colors flex-shrink-0 ml-3">
-                  <Download class="w-3.5 h-3.5" :stroke-width="2"/>
+                  class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0D89CB] text-white text-xs font-semibold hover:bg-[#0b75ad] transition-colors flex-shrink-0 ml-2">
+                  <Download class="w-3 h-3" :stroke-width="2"/>
                   Descargar
                 </button>
               </div>
-              <!-- Visor PDF inline -->
+              <!-- Visor PDF sin toolbar -->
               <iframe v-if="esPDF && docSrcPDF"
                 :src="docSrcPDF"
-                class="w-full rounded-2xl border border-gray-100"
-                style="height: 420px;"
+                class="w-full flex-1 border-0"
+                style="min-height: 0; height: calc(60vh - 44px);"
                 title="Vista previa del documento"
               />
               <!-- Excel / CSV: solo descarga -->
-              <div v-else class="text-center py-6 text-gray-400 text-sm">
+              <div v-else class="text-center py-10 text-gray-400 text-sm">
                 Vista previa no disponible para este tipo de archivo. Usa el botón de descarga.
               </div>
             </template>
@@ -411,7 +411,7 @@ const esPDF = computed(() => {
 
 const docSrcPDF = computed(() => {
   if (!docData.value?.base64) return null
-  return `data:application/pdf;base64,${docData.value.base64}`
+  return `data:application/pdf;base64,${docData.value.base64}#toolbar=0&navpanes=0&scrollbar=0`
 })
 
 function descargarDoc() {
