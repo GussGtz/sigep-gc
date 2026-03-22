@@ -1154,16 +1154,17 @@ const alertasStock = computed(() =>
 )
 
 // ── Excel Import state ────────────────────────────────────────────────────
-const showImport      = ref(false)
-const importStep      = ref(1)        // 1=upload, 2=mapping, 3=preview
-const importFileName  = ref('')
-const importHeaders   = ref([])
-const importRows      = ref([])
-const importMapping   = ref({})       // systemField → excelColumn
-const importPreview   = ref([])
-const importando      = ref(false)
-const importResult    = ref(null)
-const fileInputImport = ref(null)
+const showImport       = ref(false)
+const importStep       = ref(1)        // 1=upload, 2=mapping, 3=preview
+const importFileName   = ref('')
+const importHeaders    = ref([])
+const importRows       = ref([])
+const importMapping    = ref({})       // systemField → excelColumn
+const importPreview    = ref([])
+const importando       = ref(false)
+const importResult     = ref(null)
+const fileInputImport  = ref(null)
+const importFileBase64 = ref(null)     // base64 del Excel para adjuntar
 
 const importFields = [
   { key: 'numero_pedido',    label: 'Nº Pedido',        required: true  },
@@ -1211,6 +1212,11 @@ function handleFileUpload(event) {
   const file = event.target.files?.[0]
   if (!file) return
   importFileName.value = file.name
+  // Leer como base64 para adjuntar al pedido
+  const b64Reader = new FileReader()
+  b64Reader.onload = e2 => { importFileBase64.value = e2.target.result.split(',')[1] }
+  b64Reader.readAsDataURL(file)
+
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
@@ -1268,7 +1274,13 @@ function aplicarMapeo() {
 async function ejecutarImport() {
   importando.value = true
   try {
-    const { data } = await axios.post('/api/pedidos/importar', { pedidos: importPreview.value })
+    // Adjuntar documento a cada pedido del batch (todos comparten el mismo archivo)
+    const pedidosConDoc = importPreview.value.map(p => ({
+      ...p,
+      documento_nombre: importFileName.value || null,
+      documento_base64: importFileBase64.value || null,
+    }))
+    const { data } = await axios.post('/api/pedidos/importar', { pedidos: pedidosConDoc })
     importResult.value = data
     if (data.creados > 0) {
       await pedidosStore.fetchPedidos()
@@ -1480,6 +1492,7 @@ const pdfImportando    = ref(false)
 const pdfImportResult  = ref(null)
 const fileInputPDF     = ref(null)
 const pdfMaterialMapping = ref({})     // { 'LAMINADO / TEMPLADO': inventario_id | null }
+const pdfFileBase64      = ref(null)   // base64 del PDF para adjuntar al pedido
 
 // Agrupa posiciones del PDF por material y suma m²
 const pdfMaterialesUnicos = computed(() => {
@@ -1568,6 +1581,12 @@ async function handlePDFUpload(event) {
   if (!file) return
   pdfFileName.value = file.name
   pdfParsing.value  = true
+  // Leer como base64 para adjuntar al pedido
+  pdfFileBase64.value = await new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = e => resolve(e.target.result.split(',')[1]) // solo el base64 sin el prefijo
+    reader.readAsDataURL(file)
+  })
   try {
     const formData = new FormData()
     formData.append('pdf', file)
@@ -1623,8 +1642,10 @@ async function ejecutarImportPDF() {
 
     const pedido = {
       ...pdfPedido.value,
-      prioridad:            pdfPrioridad.value,
+      prioridad:             pdfPrioridad.value,
       posiciones_materiales: posMat.length > 0 ? posMat : legacyPosMat,
+      documento_nombre:      pdfFileName.value   || null,
+      documento_base64:      pdfFileBase64.value  || null,
     }
     const { data } = await axios.post('/api/pedidos/importar', { pedidos: [pedido] })
     pdfImportResult.value = data
@@ -1650,6 +1671,7 @@ function cerrarImportPDF() {
   pdfPrioridad.value       = 'bajo'
   pdfInventarioId.value    = null
   pdfMaterialMapping.value = {}
+  pdfFileBase64.value      = null
   pdfImportResult.value    = null
   pdfImportando.value      = false
   if (fileInputPDF.value) fileInputPDF.value.value = ''

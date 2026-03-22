@@ -156,8 +156,10 @@ async function initDB() {
       `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS en_turno BOOLEAN DEFAULT false`,
       // Referencia al material de inventario usado en el pedido
       `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS inventario_id INTEGER REFERENCES inventario_vidrio(id) ON DELETE SET NULL`,
-      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS precio         DECIMAL(12,2) DEFAULT NULL`,
-      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS total_piezas   INTEGER       DEFAULT NULL`,
+      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS precio            DECIMAL(12,2) DEFAULT NULL`,
+      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS total_piezas     INTEGER       DEFAULT NULL`,
+      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS documento_nombre VARCHAR(255)  DEFAULT NULL`,
+      `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS documento_base64 TEXT          DEFAULT NULL`,
     ];
     for (const sql of alteraciones) {
       await pool.query(sql);

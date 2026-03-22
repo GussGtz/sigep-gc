@@ -34,6 +34,25 @@ router.delete('/completados',verifyToken, isAdmin,  eliminarPedidosCompletados);
 router.delete('/:id',        verifyToken, isAdmin,  eliminarPedido);
 
 /* ─────────────────────────────────────────────
+   GET /api/pedidos/:id/documento
+   Devuelve el documento original (PDF/Excel) almacenado en el pedido.
+   El base64 NO se incluye en el listado general para no saturar la carga.
+───────────────────────────────────────────── */
+router.get('/:id/documento', verifyToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT documento_nombre, documento_base64 FROM pedidos WHERE id = $1',
+      [parseInt(req.params.id)]
+    );
+    if (!rows.length) return res.status(404).json({ message: 'Pedido no encontrado' });
+    if (!rows[0].documento_base64) return res.status(404).json({ message: 'Este pedido no tiene documento adjunto' });
+    res.json({ nombre: rows[0].documento_nombre, base64: rows[0].documento_base64 });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* ─────────────────────────────────────────────
    POST /api/pedidos/importar
    Importación masiva desde Excel (array de pedidos)
    Solo admin.
@@ -110,8 +129,9 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
            (numero_pedido, fecha_entrega, creado_por,
             alto, ancho, cantidad, metros_cuadrados, prioridad,
             especificaciones, cliente_nombre, direccion_entrega,
-            precio, total_piezas, inventario_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            precio, total_piezas, inventario_id,
+            documento_nombre, documento_base64)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          RETURNING id`,
         [
           p.numero_pedido, p.fecha_entrega, userId,
@@ -120,6 +140,8 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
           p.precio ? parseFloat(p.precio) : null,
           p.total_piezas ? parseInt(p.total_piezas) : null,
           invIdPrincipal,
+          p.documento_nombre || null,
+          p.documento_base64 || null,
         ]
       );
 

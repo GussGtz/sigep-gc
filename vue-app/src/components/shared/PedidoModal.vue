@@ -23,7 +23,7 @@
           <div class="flex border-b border-gray-100 px-2">
             <button
               v-for="tab in tabs" :key="tab.id"
-              @click="activeTab = tab.id"
+              @click="activeTab = tab.id; if (tab.id === 'documento') cargarDocumento()"
               class="px-4 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px"
               :class="activeTab === tab.id
                 ? 'border-[#0D89CB] text-[#0D89CB]'
@@ -252,6 +252,48 @@
             </div>
           </div>
 
+          <!-- ══ Tab: Documento ══ -->
+          <div v-if="activeTab === 'documento'" class="p-6 overflow-y-auto max-h-[60vh] flex flex-col gap-4">
+            <!-- Loading -->
+            <div v-if="docLoading" class="flex items-center justify-center py-12 text-gray-400 gap-2 text-sm">
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"/>
+              </svg>
+              Cargando documento…
+            </div>
+            <!-- Error -->
+            <div v-else-if="docError" class="text-center py-8 text-red-500 text-sm">
+              {{ docError }}
+            </div>
+            <!-- Documento cargado -->
+            <template v-else-if="docData">
+              <!-- Nombre + botón descarga -->
+              <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <FileText class="w-5 h-5 text-[#0D89CB] flex-shrink-0" :stroke-width="1.75"/>
+                  <span class="text-sm font-medium text-gray-800 truncate">{{ docData.nombre }}</span>
+                </div>
+                <button @click="descargarDoc"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0D89CB] text-white text-xs font-semibold hover:bg-[#0b75ad] transition-colors flex-shrink-0 ml-3">
+                  <Download class="w-3.5 h-3.5" :stroke-width="2"/>
+                  Descargar
+                </button>
+              </div>
+              <!-- Visor PDF inline -->
+              <iframe v-if="esPDF && docSrcPDF"
+                :src="docSrcPDF"
+                class="w-full rounded-2xl border border-gray-100"
+                style="height: 420px;"
+                title="Vista previa del documento"
+              />
+              <!-- Excel / CSV: solo descarga -->
+              <div v-else class="text-center py-6 text-gray-400 text-sm">
+                Vista previa no disponible para este tipo de archivo. Usa el botón de descarga.
+              </div>
+            </template>
+          </div>
+
           <!-- ── Footer (admin) ── -->
           <div v-if="isAdmin" class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
             <button @click="$emit('delete', pedido?.id)" class="btn-danger text-sm">
@@ -267,8 +309,9 @@
 </template>
 
 <script setup>
-import { X, Trash2 } from 'lucide-vue-next'
+import { X, Trash2, FileText, Download } from 'lucide-vue-next'
 import { ref, computed, watch, inject } from 'vue'
+import axios from 'axios'
 import { useAuthStore }          from '../../stores/auth.js'
 import { usePedidosStore }       from '../../stores/pedidos.js'
 import { useNotificationsStore } from '../../stores/notifications.js'
@@ -330,11 +373,57 @@ async function guardarPrioridad() {
   }
 }
 
-const tabs = [
-  { id: 'detalles',    label: 'Detalles'  },
-  { id: 'comentarios', label: 'Chat'      },
-  { id: 'timeline',    label: 'Historial' }
-]
+const tabs = computed(() => {
+  const base = [
+    { id: 'detalles',    label: 'Detalles'  },
+    { id: 'comentarios', label: 'Chat'      },
+    { id: 'timeline',    label: 'Historial' }
+  ]
+  if (props.pedido?.documento_nombre) {
+    base.push({ id: 'documento', label: 'Documento' })
+  }
+  return base
+})
+
+// ── Documento adjunto (lazy load) ──
+const docData      = ref(null)   // { nombre, base64 }
+const docLoading   = ref(false)
+const docError     = ref(null)
+
+async function cargarDocumento() {
+  if (docData.value || docLoading.value) return
+  docLoading.value = true
+  docError.value   = null
+  try {
+    const { data } = await axios.get(`/api/pedidos/${props.pedido.id}/documento`)
+    docData.value = data
+  } catch (e) {
+    docError.value = e.response?.data?.message || 'Error al cargar el documento'
+  } finally {
+    docLoading.value = false
+  }
+}
+
+const esPDF = computed(() => {
+  const nombre = props.pedido?.documento_nombre || ''
+  return nombre.toLowerCase().endsWith('.pdf')
+})
+
+const docSrcPDF = computed(() => {
+  if (!docData.value?.base64) return null
+  return `data:application/pdf;base64,${docData.value.base64}`
+})
+
+function descargarDoc() {
+  if (!docData.value) return
+  const nombre = docData.value.nombre || 'documento'
+  const isPdf  = nombre.toLowerCase().endsWith('.pdf')
+  const mime   = isPdf ? 'application/pdf' : 'application/octet-stream'
+  const link   = document.createElement('a')
+  link.href     = `data:${mime};base64,${docData.value.base64}`
+  link.download = nombre
+  link.click()
+}
 
 const isAdmin = computed(() => auth.isAdmin)
 
@@ -364,7 +453,17 @@ watch(() => props.pedido, (p) => {
 
 /* ── Reset de tab al cerrar ── */
 watch(() => props.modelValue, (v) => {
-  if (!v) setTimeout(() => { activeTab.value = 'detalles' }, 300)
+  if (!v) setTimeout(() => {
+    activeTab.value = 'detalles'
+    docData.value   = null
+    docError.value  = null
+  }, 300)
+})
+
+/* ── Reset documento al cambiar de pedido ── */
+watch(() => props.pedido?.id, () => {
+  docData.value  = null
+  docError.value = null
 })
 
 /* ── Timeline desde los datos del pedido ── */
