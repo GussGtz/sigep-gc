@@ -226,8 +226,36 @@
             <div class="space-y-3">
               <div>
                 <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo *</label>
-                <input v-model="form.tipo" type="text" placeholder="Ej: Templado, Laminado, Reflectivo..."
+                <input v-model="form.tipo" type="text" list="tipos-vidrio"
+                  placeholder="Selecciona o escribe el tipo..."
                   class="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+                <datalist id="tipos-vidrio">
+                  <option value="Float Claro"/>
+                  <option value="Float Bronce"/>
+                  <option value="Float Gris"/>
+                  <option value="Float Verde"/>
+                  <option value="Float Azul"/>
+                  <option value="Templado"/>
+                  <option value="Templado Satinado"/>
+                  <option value="Laminado"/>
+                  <option value="Laminado Satinado"/>
+                  <option value="Monolítico"/>
+                  <option value="Reflectivo Bronce"/>
+                  <option value="Reflectivo Azul"/>
+                  <option value="Reflectivo Gris"/>
+                  <option value="Reflectivo Verde"/>
+                  <option value="Low-E"/>
+                  <option value="Insulado (Doble Panel)"/>
+                  <option value="Insulado Low-E"/>
+                  <option value="Satinado / Sandblast"/>
+                  <option value="Espejo Claro"/>
+                  <option value="Espejo Bronce"/>
+                  <option value="Espejo Gris"/>
+                  <option value="Vitrolite"/>
+                  <option value="Curvo / Doblado"/>
+                  <option value="Serigrafía"/>
+                  <option value="Armado"/>
+                </datalist>
               </div>
               <div class="grid grid-cols-2 gap-3">
                 <div>

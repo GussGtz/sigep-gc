@@ -402,82 +402,108 @@
                   placeholder="Calle, colonia, ciudad..."/>
               </div>
 
-              <!-- Medidas -->
+              <!-- ── Posiciones (multi-fila) ── -->
               <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Medidas <span class="text-gray-400 font-normal text-xs">(metros — opcional)</span>
-                </label>
-                <div class="grid grid-cols-3 gap-3">
-                  <div>
-                    <input v-model="nuevoPedido.alto" type="number" min="0" step="0.01"
-                      @input="formErrors.alto = ''"
-                      class="w-full border rounded-xl px-3 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400 text-sm transition-colors"
-                      :class="formErrors.alto ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"
-                      placeholder="Alto (m)"/>
-                    <p v-if="formErrors.alto" class="text-xs text-red-500 mt-0.5">{{ formErrors.alto }}</p>
-                  </div>
-                  <div>
-                    <input v-model="nuevoPedido.ancho" type="number" min="0" step="0.01"
-                      @input="formErrors.ancho = ''"
-                      class="w-full border rounded-xl px-3 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400 text-sm transition-colors"
-                      :class="formErrors.ancho ? 'border-red-400 ring-1 ring-red-400 bg-red-50' : 'border-gray-300'"
-                      placeholder="Ancho (m)"/>
-                    <p v-if="formErrors.ancho" class="text-xs text-red-500 mt-0.5">{{ formErrors.ancho }}</p>
-                  </div>
-                  <div>
-                    <input v-model="nuevoPedido.cantidad" type="number" min="1" step="1"
-                      class="w-full border border-gray-300 rounded-xl px-3 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
-                      placeholder="Piezas"/>
-                  </div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-sm font-semibold text-gray-700">
+                    Posiciones de vidrio
+                    <span class="text-gray-400 font-normal text-xs ml-1">(opcional)</span>
+                  </label>
+                  <button type="button" @click="agregarPosicion"
+                    class="flex items-center gap-1 text-xs font-semibold text-[#0D89CB] hover:text-[#00659C] transition-colors">
+                    <Plus class="w-3.5 h-3.5" :stroke-width="2.5" />
+                    Agregar fila
+                  </button>
                 </div>
-                <!-- Preview m² -->
-                <div v-if="m2Preview" class="mt-2 flex items-center gap-1.5 text-sm text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-3 py-2">
-                  <CheckCircle2 class="w-4 h-4" :stroke-width="2" />
-                  {{ m2Preview }} m² totales
-                </div>
-              </div>
 
-              <!-- Material de Inventario -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Material de vidrio
-                  <span class="text-gray-400 font-normal text-xs">(opcional — descuenta stock automáticamente)</span>
-                </label>
-                <select v-model="nuevoPedido.inventario_id"
-                  class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
-                  <option :value="null">— Sin material vinculado —</option>
-                  <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
-                    {{ m.tipo }}{{ m.color ? ` (${m.color})` : '' }}{{ m.espesor_mm ? ` · ${m.espesor_mm}mm` : '' }} — stock: {{ parseFloat(m.stock_m2).toFixed(2) }} m²
-                  </option>
-                </select>
-                <!-- Info de stock del material seleccionado -->
-                <div v-if="materialSeleccionado" class="mt-2 flex items-start gap-2 text-xs px-3 py-2.5 rounded-xl"
-                  :class="stockSuficiente ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'">
-                  <CheckCircle2 v-if="stockSuficiente" class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" :stroke-width="2" />
+                <div class="rounded-xl border border-gray-200 overflow-hidden">
+                  <!-- Encabezados -->
+                  <div class="grid bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 py-1.5"
+                    style="grid-template-columns: 1fr 1fr 60px 1fr 80px 28px">
+                    <span class="px-1">Alto (m)</span>
+                    <span class="px-1">Ancho (m)</span>
+                    <span class="px-1">Cant.</span>
+                    <span class="px-1">Material</span>
+                    <span class="px-1">P. Unit</span>
+                    <span></span>
+                  </div>
+
+                  <!-- Filas -->
+                  <div v-for="(pos, idx) in nuevasPosiciones" :key="idx"
+                    class="grid items-center gap-px bg-gray-100 border-b border-gray-100 last:border-b-0"
+                    style="grid-template-columns: 1fr 1fr 60px 1fr 80px 28px">
+                    <input v-model="pos.alto" type="number" min="0" step="0.001"
+                      class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB] placeholder-gray-300"
+                      placeholder="0.000"/>
+                    <input v-model="pos.ancho" type="number" min="0" step="0.001"
+                      class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB] placeholder-gray-300"
+                      placeholder="0.000"/>
+                    <input v-model="pos.cantidad" type="number" min="1" step="1"
+                      class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB]"
+                      placeholder="1"/>
+                    <select v-model="pos.inventario_id"
+                      class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB]">
+                      <option :value="null">— Sin material —</option>
+                      <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
+                        {{ m.tipo }}{{ m.espesor_mm ? ` ${m.espesor_mm}mm` : '' }}{{ m.color ? ` ${m.color}` : '' }}
+                      </option>
+                    </select>
+                    <input v-model="pos.precio_unit" type="number" min="0" step="0.01"
+                      class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB] placeholder-gray-300"
+                      placeholder="0.00"/>
+                    <button type="button" @click="quitarPosicion(idx)"
+                      :disabled="nuevasPosiciones.length === 1"
+                      class="flex items-center justify-center h-full bg-white text-gray-300 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                      <X class="w-3.5 h-3.5" :stroke-width="2" />
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Totales calculados -->
+                <div v-if="totalM2Posiciones > 0"
+                  class="mt-2 flex items-center gap-4 text-xs px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 font-semibold">
+                  <span class="flex items-center gap-1">
+                    <CheckCircle2 class="w-3.5 h-3.5" :stroke-width="2" />
+                    {{ totalM2Posiciones.toFixed(4) }} m²
+                  </span>
+                  <span class="text-emerald-500">·</span>
+                  <span>{{ totalPiezasPosiciones }} pieza(s)</span>
+                  <template v-if="totalPrecioPosiciones > 0">
+                    <span class="text-emerald-500">·</span>
+                    <span>{{ formatMXN(totalPrecioPosiciones) }}</span>
+                  </template>
+                </div>
+
+                <!-- Error de validación de posiciones -->
+                <p v-if="formErrors.posiciones" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle class="w-3 h-3 flex-shrink-0" :stroke-width="2" />
+                  {{ formErrors.posiciones }}
+                </p>
+
+                <!-- Alertas de stock por material -->
+                <div v-for="alerta in alertasStock" :key="alerta.id"
+                  class="mt-1.5 flex items-start gap-2 text-xs px-3 py-2 rounded-xl"
+                  :class="alerta.ok ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'">
+                  <CheckCircle2 v-if="alerta.ok" class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" :stroke-width="2" />
                   <AlertCircle v-else class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" :stroke-width="2" />
-                  <span v-if="stockSuficiente">
-                    Stock disponible: <strong>{{ parseFloat(materialSeleccionado.stock_m2).toFixed(4) }} m²</strong>
-                    <template v-if="m2Preview"> — quedará
-                      <strong>{{ (parseFloat(materialSeleccionado.stock_m2) - parseFloat(m2Preview)).toFixed(4) }} m²</strong>
-                      tras crear este pedido
-                    </template>
-                  </span>
-                  <span v-else>
-                    ⚠ Stock insuficiente: disponible
-                    <strong>{{ parseFloat(materialSeleccionado.stock_m2).toFixed(4) }} m²</strong>,
-                    este pedido requiere <strong>{{ m2Preview }} m²</strong>
+                  <span>
+                    <strong>{{ alerta.nombre }}:</strong>
+                    {{ alerta.ok
+                      ? `stock ${alerta.stock.toFixed(4)} m² — quedará ${(alerta.stock - alerta.requerido).toFixed(4)} m²`
+                      : `⚠ Stock insuficiente — disponible ${alerta.stock.toFixed(4)} m², requerido ${alerta.requerido.toFixed(4)} m²`
+                    }}
                   </span>
                 </div>
               </div>
 
-              <!-- Especificaciones -->
+              <!-- Especificaciones (texto libre) -->
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Especificaciones <span class="text-gray-400 font-normal text-xs">(opcional)</span>
+                  Notas adicionales <span class="text-gray-400 font-normal text-xs">(opcional)</span>
                 </label>
                 <textarea v-model="nuevoPedido.especificaciones" rows="2"
                   class="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400 text-sm resize-none"
-                  placeholder="Tipo de vidrio, color, acabado..."/>
+                  placeholder="Notas, color, acabado adicional..."/>
               </div>
 
               <div v-if="crearError" class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 flex items-center gap-2">
@@ -615,6 +641,8 @@
                 <p><span class="text-gray-500">Fecha, Entrega, Fecha Entrega</span> → <strong>Fecha de Entrega</strong></p>
                 <p><span class="text-gray-500">Cliente, Customer</span> → <strong>Cliente</strong></p>
                 <p><span class="text-gray-500">Alto, Ancho, Cantidad</span> → <strong>Medidas</strong></p>
+                <p><span class="text-gray-500">M2, Metros, Superficie</span> → <strong>Metros cuadrados</strong></p>
+                <p><span class="text-gray-500">Precio, Subtotal, Importe</span> → <strong>Precio</strong></p>
               </div>
             </div>
 
@@ -677,9 +705,11 @@
                       <td class="px-3 py-2 text-gray-600">{{ row.fecha_entrega || '—' }}</td>
                       <td class="px-3 py-2 text-gray-500 max-w-[120px] truncate">{{ row.cliente_nombre || '—' }}</td>
                       <td class="px-3 py-2 text-gray-600">
-                        {{ (row.alto && row.ancho)
-                            ? (parseFloat(row.alto) * parseFloat(row.ancho) * (parseInt(row.cantidad) || 1)).toFixed(2)
-                            : '—' }}
+                        {{ row.metros_cuadrados
+                            ? parseFloat(row.metros_cuadrados).toFixed(2)
+                            : (row.alto && row.ancho)
+                              ? (parseFloat(row.alto) * parseFloat(row.ancho) * (parseInt(row.cantidad) || 1)).toFixed(2)
+                              : '—' }}
                       </td>
                       <td class="px-3 py-2">
                         <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
@@ -1010,10 +1040,20 @@ const crearError         = ref('')
 const nuevoPedido        = ref({
   numero_pedido: '', fecha_entrega: '',
   cliente_nombre: '', direccion_entrega: '',
-  alto: '', ancho: '', cantidad: 1,
   prioridad: 'bajo', especificaciones: '',
-  inventario_id: null
 })
+
+// ── Estado multi-posición ──────────────────────────────────────────────────
+const nuevasPosiciones = ref([
+  { alto: '', ancho: '', cantidad: 1, inventario_id: null, precio_unit: '' }
+])
+
+function agregarPosicion() {
+  nuevasPosiciones.value.push({ alto: '', ancho: '', cantidad: 1, inventario_id: null, precio_unit: '' })
+}
+function quitarPosicion(idx) {
+  if (nuevasPosiciones.value.length > 1) nuevasPosiciones.value.splice(idx, 1)
+}
 const page               = ref(1)
 const perPage            = 15
 const formErrors         = ref({})
@@ -1029,24 +1069,54 @@ const miniStats = computed(() => [
   { label:'Alto',          value: kpis.value.urgentes,    iconBg:'bg-red-100',     iconColor:'text-red-600',     iconPath:'M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z' },
 ])
 
-// Preview m² reactivo en el modal
-const m2Preview = computed(() => {
-  const a = parseFloat(nuevoPedido.value.alto)
-  const b = parseFloat(nuevoPedido.value.ancho)
-  const c = parseInt(nuevoPedido.value.cantidad) || 1
-  if (a > 0 && b > 0) return (a * b * c).toFixed(4)
-  return null
+// ── Computeds para multi-posición ─────────────────────────────────────────
+const totalM2Posiciones = computed(() =>
+  nuevasPosiciones.value.reduce((sum, p) => {
+    const a = parseFloat(p.alto) || 0
+    const b = parseFloat(p.ancho) || 0
+    const c = parseInt(p.cantidad) || 1
+    return sum + (a > 0 && b > 0 ? a * b * c : 0)
+  }, 0)
+)
+const totalPiezasPosiciones = computed(() =>
+  nuevasPosiciones.value.reduce((sum, p) => sum + (parseInt(p.cantidad) || 1), 0)
+)
+const totalPrecioPosiciones = computed(() =>
+  nuevasPosiciones.value.reduce((sum, p) => {
+    const pu = parseFloat(p.precio_unit) || 0
+    const c  = parseInt(p.cantidad) || 1
+    return sum + pu * c
+  }, 0)
+)
+
+// Agrupa m² requeridos por inventario_id para validar stock
+const m2PorMaterial = computed(() => {
+  const mapa = {}
+  for (const p of nuevasPosiciones.value) {
+    if (!p.inventario_id) continue
+    const a = parseFloat(p.alto) || 0
+    const b = parseFloat(p.ancho) || 0
+    const c = parseInt(p.cantidad) || 1
+    const m2 = a > 0 && b > 0 ? a * b * c : 0
+    if (m2 > 0) mapa[p.inventario_id] = (mapa[p.inventario_id] || 0) + m2
+  }
+  return mapa
 })
 
-// Material de inventario seleccionado y validación de stock
-const materialSeleccionado = computed(() =>
-  inventarioStore.materiales.find(m => m.id === nuevoPedido.value.inventario_id) || null
+const alertasStock = computed(() =>
+  Object.entries(m2PorMaterial.value).map(([id, requerido]) => {
+    const mat  = inventarioStore.materiales.find(m => m.id === parseInt(id))
+    if (!mat) return null
+    const stock = parseFloat(mat.stock_m2)
+    return {
+      id,
+      nombre:    `${mat.tipo}${mat.espesor_mm ? ` ${mat.espesor_mm}mm` : ''}${mat.color ? ` ${mat.color}` : ''}`,
+      stock,
+      requerido,
+      ok: stock >= requerido
+    }
+  }).filter(Boolean)
 )
-const stockSuficiente = computed(() => {
-  if (!materialSeleccionado.value) return true
-  if (!m2Preview.value) return true
-  return parseFloat(materialSeleccionado.value.stock_m2) >= parseFloat(m2Preview.value)
-})
 
 // ── Excel Import state ────────────────────────────────────────────────────
 const showImport      = ref(false)
@@ -1068,6 +1138,9 @@ const importFields = [
   { key: 'alto',             label: 'Alto (m)',         required: false },
   { key: 'ancho',            label: 'Ancho (m)',        required: false },
   { key: 'cantidad',         label: 'Cantidad (pzas)',  required: false },
+  { key: 'metros_cuadrados', label: 'Metros cuadrados', required: false },
+  { key: 'precio',           label: 'Precio / Subtotal',required: false },
+  { key: 'total_piezas',     label: 'Total piezas',     required: false },
   { key: 'prioridad',        label: 'Prioridad',        required: false },
   { key: 'especificaciones', label: 'Especificaciones', required: false },
 ]
@@ -1082,6 +1155,9 @@ function autoMapHeaders(headers) {
     alto:             ['alto', 'height', 'h', 'altura'],
     ancho:            ['ancho', 'width', 'w', 'anchura'],
     cantidad:         ['cantidad', 'qty', 'piezas', 'pieces', 'cant'],
+    metros_cuadrados: ['metros cuadrados', 'm2', 'metros', 'm²', 'area', 'superficie'],
+    precio:           ['precio', 'price', 'subtotal', 'importe', 'monto'],
+    total_piezas:     ['total piezas', 'piezas totales', 'total pieces'],
     prioridad:        ['prioridad', 'priority'],
     especificaciones: ['especificaciones', 'specs', 'notas', 'descripcion', 'descripción', 'notes'],
   }
@@ -1212,10 +1288,11 @@ function resetNuevoPedido() {
   nuevoPedido.value = {
     numero_pedido: '', fecha_entrega: '',
     cliente_nombre: '', direccion_entrega: '',
-    alto: '', ancho: '', cantidad: 1,
     prioridad: 'bajo', especificaciones: '',
-    inventario_id: null
   }
+  nuevasPosiciones.value = [
+    { alto: '', ancho: '', cantidad: 1, inventario_id: null, precio_unit: '' }
+  ]
   formErrors.value = {}
   crearError.value  = ''
 }
@@ -1226,22 +1303,52 @@ function validarForm() {
     e.numero_pedido = 'El número de pedido es obligatorio'
   if (!nuevoPedido.value.fecha_entrega)
     e.fecha_entrega = 'Selecciona la fecha de entrega'
-  const a = parseFloat(nuevoPedido.value.alto)
-  const b = parseFloat(nuevoPedido.value.ancho)
-  if (!isNaN(a) && a > 0 && (isNaN(b) || b <= 0))
-    e.ancho = 'Ingresa el ancho si proporcionas el alto'
-  if (!isNaN(b) && b > 0 && (isNaN(a) || a <= 0))
-    e.alto = 'Ingresa el alto si proporcionas el ancho'
+  // Validar cada posición con medidas parciales
+  for (const pos of nuevasPosiciones.value) {
+    const a = parseFloat(pos.alto)
+    const b = parseFloat(pos.ancho)
+    if (!isNaN(a) && a > 0 && (isNaN(b) || b <= 0))
+      e.posiciones = 'Completa el ancho en todas las filas con alto'
+    if (!isNaN(b) && b > 0 && (isNaN(a) || a <= 0))
+      e.posiciones = 'Completa el alto en todas las filas con ancho'
+  }
   formErrors.value = e
   return Object.keys(e).length === 0
 }
 
 async function crearPedido() {
   if (!validarForm()) return
+  // Bloquear si hay stock insuficiente
+  if (alertasStock.value.some(a => !a.ok)) {
+    crearError.value = 'Stock insuficiente en uno o más materiales seleccionados'
+    return
+  }
   crearError.value = ''
   creando.value = true
   try {
-    await pedidosStore.crearPedido(nuevoPedido.value)
+    // Construir posiciones con nombre del material incluido
+    const posicionesPayload = nuevasPosiciones.value
+      .filter(p => (parseFloat(p.alto) > 0 && parseFloat(p.ancho) > 0) || p.inventario_id)
+      .map(p => {
+        const mat = p.inventario_id
+          ? inventarioStore.materiales.find(m => m.id === p.inventario_id)
+          : null
+        return {
+          alto:            parseFloat(p.alto)      || 0,
+          ancho:           parseFloat(p.ancho)     || 0,
+          cantidad:        parseInt(p.cantidad)    || 1,
+          inventario_id:   p.inventario_id         || null,
+          precio_unit:     parseFloat(p.precio_unit) || null,
+          materiales:      mat ? `${mat.tipo}${mat.espesor_mm ? ` ${mat.espesor_mm}mm` : ''}${mat.color ? ` ${mat.color}` : ''}` : null,
+        }
+      })
+
+    const payload = {
+      ...nuevoPedido.value,
+      posiciones: posicionesPayload.length > 0 ? posicionesPayload : undefined,
+    }
+
+    await pedidosStore.crearPedido(payload)
     showCrear.value = false
     toast.add({ type: 'success', message: `Pedido #${nuevoPedido.value.numero_pedido} creado` })
     resetNuevoPedido()

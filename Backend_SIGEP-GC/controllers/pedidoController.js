@@ -38,15 +38,18 @@ const crearPedido = async (req, res) => {
   const {
     numero_pedido,
     fecha_entrega,
-    alto,
-    ancho,
-    cantidad      = 1,
-    prioridad     = 'bajo',
+    prioridad         = 'bajo',
     especificaciones,
     cliente_nombre,
     direccion_entrega,
-    inventario_id: _inventarioId,
     precio,
+    // ── Multi-posición (nuevo) ──────────────────────────────────────────────
+    posiciones,       // array de { alto, ancho, cantidad, inventario_id, precio_unit, materiales }
+    // ── Legacy (single row) ─────────────────────────────────────────────────
+    alto,
+    ancho,
+    cantidad          = 1,
+    inventario_id:    _inventarioId,
     total_piezas,
   } = req.body;
 
@@ -57,16 +60,64 @@ const crearPedido = async (req, res) => {
     return res.status(400).json({ message: 'numero_pedido y fecha_entrega son obligatorios' });
   }
 
-  // Calcular m² si se proporcionaron medidas (alto × ancho en metros × cantidad)
-  const metros_cuadrados = (alto && ancho)
-    ? parseFloat((parseFloat(alto) * parseFloat(ancho) * parseInt(cantidad || 1)).toFixed(4))
-    : null;
-
   const prioridadValida = ['bajo', 'medio', 'alto'].includes((prioridad || 'bajo').toLowerCase())
     ? (prioridad || 'bajo').toLowerCase()
     : 'bajo';
 
-  const inventarioId = _inventarioId ? parseInt(_inventarioId) : null;
+  // ── Calcular totales según modo ────────────────────────────────────────
+  let metros_cuadrados_final = null;
+  let total_piezas_final     = null;
+  let especificaciones_final = especificaciones || null;
+  let deduccionesPorMaterial = {}; // { inventario_id: m2_total }
+
+  const tieneMultiPos = Array.isArray(posiciones) && posiciones.length > 0;
+
+  if (tieneMultiPos) {
+    // Calcular totales desde el array de posiciones
+    let m2Total = 0;
+    let pzTotal = 0;
+
+    const posJsonArray = posiciones.map((p, i) => {
+      const a   = parseFloat(p.alto)     || 0;
+      const b   = parseFloat(p.ancho)    || 0;
+      const c   = parseInt(p.cantidad)   || 1;
+      const m2  = a > 0 && b > 0 ? parseFloat((a * b * c).toFixed(4)) : 0;
+      const pu  = p.precio_unit ? parseFloat(p.precio_unit) : null;
+      m2Total  += m2;
+      pzTotal  += c;
+
+      // Agrupar m² por material para descontar stock
+      if (p.inventario_id && m2 > 0) {
+        const id = parseInt(p.inventario_id);
+        deduccionesPorMaterial[id] = (deduccionesPorMaterial[id] || 0) + m2;
+      }
+
+      return {
+        pos:         String(i + 1).padStart(3, '0'),
+        alto_mm:     Math.round(a * 1000),
+        ancho_mm:    Math.round(b * 1000),
+        cantidad:    c,
+        m2,
+        precio_unit: pu,
+        importe:     pu ? parseFloat((pu * c).toFixed(2)) : null,
+        materiales:  p.materiales || null,
+      };
+    });
+
+    metros_cuadrados_final = parseFloat(m2Total.toFixed(4));
+    total_piezas_final     = pzTotal;
+    especificaciones_final = 'posiciones:' + JSON.stringify(posJsonArray);
+  } else {
+    // Modo legacy: un solo juego de medidas
+    metros_cuadrados_final = (alto && ancho)
+      ? parseFloat((parseFloat(alto) * parseFloat(ancho) * parseInt(cantidad || 1)).toFixed(4))
+      : null;
+    total_piezas_final = total_piezas ? parseInt(total_piezas) : (cantidad ? parseInt(cantidad) : null);
+    const legacyId = _inventarioId ? parseInt(_inventarioId) : null;
+    if (legacyId && metros_cuadrados_final > 0) {
+      deduccionesPorMaterial[legacyId] = metros_cuadrados_final;
+    }
+  }
 
   const client = await pool.connect();
   try {
@@ -83,28 +134,38 @@ const crearPedido = async (req, res) => {
       return res.status(400).json({ message: 'Ese número de pedido ya existe' });
     }
 
-    // Verificar stock suficiente antes de crear el pedido
-    if (inventarioId && metros_cuadrados > 0) {
+    // Verificar stock suficiente para todos los materiales
+    for (const [invId, m2Requerido] of Object.entries(deduccionesPorMaterial)) {
       const matRow = await client.query(
         'SELECT stock_m2, tipo, color FROM inventario_vidrio WHERE id = $1',
-        [inventarioId]
+        [parseInt(invId)]
       );
       if (!matRow.rows.length) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(404).json({ message: 'Material de inventario no encontrado' });
+        return res.status(404).json({ message: `Material de inventario #${invId} no encontrado` });
       }
       const stockActual = parseFloat(matRow.rows[0].stock_m2);
-      if (stockActual < metros_cuadrados) {
+      if (stockActual < m2Requerido) {
         await client.query('ROLLBACK');
         client.release();
+        const nombre = `${matRow.rows[0].tipo}${matRow.rows[0].color ? ' ' + matRow.rows[0].color : ''}`;
         return res.status(400).json({
-          message: `Stock insuficiente: disponible ${stockActual.toFixed(4)} m², requerido ${metros_cuadrados.toFixed(4)} m²`
+          message: `Stock insuficiente en ${nombre}: disponible ${stockActual.toFixed(4)} m², requerido ${m2Requerido.toFixed(4)} m²`
         });
       }
     }
 
-    // Insertar pedido (con inventario_id si aplica)
+    // inventario_id principal (primer material con deducción, o null)
+    const inventarioIdPrincipal = Object.keys(deduccionesPorMaterial).length > 0
+      ? parseInt(Object.keys(deduccionesPorMaterial)[0])
+      : null;
+
+    // Insertar pedido
+    const legacyAlto  = tieneMultiPos ? null : (alto  || null);
+    const legacyAncho = tieneMultiPos ? null : (ancho || null);
+    const legacyCant  = tieneMultiPos ? null : parseInt(cantidad || 1);
+
     const pedido = await client.query(
       `INSERT INTO pedidos
          (numero_pedido, fecha_entrega, creado_por,
@@ -115,36 +176,36 @@ const crearPedido = async (req, res) => {
        RETURNING id`,
       [
         numero_pedido, fecha_entrega, userId,
-        alto || null, ancho || null, parseInt(cantidad || 1), metros_cuadrados,
+        legacyAlto, legacyAncho, legacyCant, metros_cuadrados_final,
         prioridadValida,
-        especificaciones || null, cliente_nombre || null, direccion_entrega || null,
-        inventarioId,
+        especificaciones_final, cliente_nombre || null, direccion_entrega || null,
+        inventarioIdPrincipal,
         precio ? parseFloat(precio) : null,
-        total_piezas ? parseInt(total_piezas) : null,
+        total_piezas_final,
       ]
     );
 
     const pedidoId = pedido.rows[0].id;
-    const areas = ['contabilidad', 'ventas', 'produccion'];
-
-    for (const area of areas) {
+    for (const area of ['contabilidad', 'ventas', 'produccion']) {
       await client.query(
         'INSERT INTO pedido_estatus (pedido_id, area) VALUES ($1, $2)',
         [pedidoId, area]
       );
     }
 
-    // Descontar stock del inventario si hay material vinculado
-    if (inventarioId && metros_cuadrados > 0) {
+    // Descontar stock por cada material
+    let huboCambioInventario = false;
+    for (const [invId, m2Usado] of Object.entries(deduccionesPorMaterial)) {
       await client.query(
         `UPDATE inventario_vidrio SET stock_m2 = stock_m2 - $1, updated_at = NOW() WHERE id = $2`,
-        [metros_cuadrados, inventarioId]
+        [m2Usado, parseInt(invId)]
       );
       await client.query(
         `INSERT INTO movimientos_inventario (inventario_id, tipo, m2, descripcion, creado_por, creado_por_nombre)
          VALUES ($1, 'uso', $2, $3, $4, $5)`,
-        [inventarioId, metros_cuadrados, `Pedido #${numero_pedido}`, userId, userName]
+        [parseInt(invId), m2Usado, `Pedido #${numero_pedido}`, userId, userName]
       );
+      huboCambioInventario = true;
     }
 
     await client.query('COMMIT');
@@ -166,8 +227,7 @@ const crearPedido = async (req, res) => {
     });
 
     if (global.broadcastToAll) global.broadcastToAll({ type: 'data_pedidos' });
-    // Si se descontó stock, notificar también al inventario
-    if (inventarioId && metros_cuadrados > 0 && global.broadcastToAdmins) {
+    if (huboCambioInventario && global.broadcastToAdmins) {
       global.broadcastToAdmins({ type: 'data_inventario' });
     }
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId });
