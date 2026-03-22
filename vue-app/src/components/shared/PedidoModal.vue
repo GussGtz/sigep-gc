@@ -133,9 +133,50 @@
                   </span>
                 </div>
               </div>
-              <div v-if="pedido?.especificaciones" class="flex items-start gap-3">
-                <span class="label w-24 pt-0.5">Specs</span>
-                <p class="text-gray-600 text-sm flex-1 italic">{{ pedido.especificaciones }}</p>
+              <!-- Especificaciones: tabla si viene de PDF, texto si es manual -->
+              <div v-if="pedido?.especificaciones">
+                <!-- Posiciones de PDF → tabla -->
+                <div v-if="posicionesJSON">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                      Posiciones ({{ posicionesJSON.length }})
+                    </span>
+                  </div>
+                  <div class="overflow-x-auto rounded-xl border border-gray-100">
+                    <table class="w-full text-xs min-w-[480px]">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th class="px-3 py-2 text-left text-gray-400 font-semibold">POS</th>
+                          <th class="px-3 py-2 text-left text-gray-400 font-semibold">Ancho × Alto</th>
+                          <th class="px-3 py-2 text-center text-gray-400 font-semibold">Cant.</th>
+                          <th class="px-3 py-2 text-center text-gray-400 font-semibold">m²</th>
+                          <th class="px-3 py-2 text-right text-gray-400 font-semibold">P. Unit.</th>
+                          <th class="px-3 py-2 text-right text-gray-400 font-semibold">Importe</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="(pos, i) in posicionesJSON" :key="i"
+                          class="border-t border-gray-50 hover:bg-gray-50/60 transition-colors">
+                          <td class="px-3 py-1.5 font-mono text-gray-500 text-[11px]">{{ pos.pos }}</td>
+                          <td class="px-3 py-1.5 text-gray-700 font-medium">{{ pos.ancho_mm }} × {{ pos.alto_mm }} mm</td>
+                          <td class="px-3 py-1.5 text-center text-gray-600">{{ pos.cantidad }}</td>
+                          <td class="px-3 py-1.5 text-center text-emerald-700 font-semibold">{{ pos.m2 }}</td>
+                          <td class="px-3 py-1.5 text-right text-gray-600">
+                            {{ pos.precio_unit ? fmtMXN(pos.precio_unit) : '—' }}
+                          </td>
+                          <td class="px-3 py-1.5 text-right font-bold text-gray-800">
+                            {{ pos.importe ? fmtMXN(pos.importe) : '—' }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <!-- Especificaciones manuales → texto -->
+                <div v-else class="flex items-start gap-3">
+                  <span class="label w-24 pt-0.5">Specs</span>
+                  <p class="text-gray-600 text-sm flex-1 italic">{{ pedido.especificaciones }}</p>
+                </div>
               </div>
               <div v-if="pedido?.merma_m2 != null" class="flex items-start gap-3">
                 <span class="label w-24 pt-0.5">Merma</span>
@@ -252,6 +293,20 @@ const updating       = ref({})
 const editandoPrioridad = ref(false)
 const savingPrioridad   = ref(false)
 const localPrioridad    = ref(null)
+
+// Detectar si especificaciones es JSON de posiciones (importado de PDF)
+const posicionesJSON = computed(() => {
+  const specs = props.pedido?.especificaciones
+  if (!specs || !specs.startsWith('posiciones:')) return null
+  try {
+    return JSON.parse(specs.slice('posiciones:'.length))
+  } catch { return null }
+})
+
+function fmtMXN(v) {
+  if (v == null) return '—'
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 }).format(v)
+}
 
 const prioridadOpciones = [
   { value: 'bajo',  label: 'Bajo',  dot: 'bg-emerald-500', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },

@@ -821,7 +821,7 @@
               </div>
 
               <!-- Totales -->
-              <div class="grid grid-cols-3 gap-3">
+              <div class="grid grid-cols-3 gap-2 sm:gap-3">
                 <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
                   <p class="text-xl font-black text-emerald-700">{{ pdfTotales.m2 }}</p>
                   <p class="text-xs text-gray-500 mt-0.5">m² total</p>
@@ -837,7 +837,7 @@
               </div>
 
               <!-- Precio / totales económicos -->
-              <div class="bg-gray-50 border border-gray-100 rounded-xl px-5 py-3 grid grid-cols-3 gap-4 text-sm">
+              <div class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
                 <div>
                   <p class="text-xs text-gray-400">Subtotal</p>
                   <p class="font-bold text-gray-900">{{ formatMXN(pdfTotales.subtotal) }}</p>
@@ -852,17 +852,50 @@
                 </div>
               </div>
 
-              <!-- Prioridad -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Prioridad del pedido</label>
-                <div class="flex gap-2">
-                  <label v-for="opt in prioridadOpciones" :key="opt.value"
-                    class="flex-1 flex items-center gap-2 border rounded-xl px-3 py-2.5 cursor-pointer transition-colors"
-                    :class="pdfPrioridad === opt.value ? opt.activeClass : 'border-gray-200 hover:bg-gray-50'">
-                    <input type="radio" v-model="pdfPrioridad" :value="opt.value" class="sr-only"/>
-                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="opt.dot"></span>
-                    <span class="text-sm font-medium">{{ opt.label }}</span>
+              <!-- Prioridad + Inventario -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Prioridad del pedido</label>
+                  <div class="flex gap-2">
+                    <label v-for="opt in prioridadOpciones" :key="opt.value"
+                      class="flex-1 flex items-center gap-2 border rounded-xl px-2.5 py-2 cursor-pointer transition-colors"
+                      :class="pdfPrioridad === opt.value ? opt.activeClass : 'border-gray-200 hover:bg-gray-50'">
+                      <input type="radio" v-model="pdfPrioridad" :value="opt.value" class="sr-only"/>
+                      <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="opt.dot"></span>
+                      <span class="text-xs font-semibold">{{ opt.label }}</span>
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Descontar de inventario
+                    <span class="text-gray-400 font-normal text-xs">(opcional)</span>
                   </label>
+                  <select v-model="pdfInventarioId"
+                    class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+                    <option :value="null">— Sin vincular —</option>
+                    <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
+                      {{ m.tipo }}{{ m.color ? ` (${m.color})` : '' }}{{ m.espesor_mm ? ` · ${m.espesor_mm}mm` : '' }}
+                      — stock: {{ parseFloat(m.stock_m2).toFixed(2) }} m²
+                    </option>
+                  </select>
+                  <!-- Alerta de stock insuficiente -->
+                  <div v-if="pdfInventarioId && pdfStockInfo"
+                    class="mt-1.5 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg"
+                    :class="pdfStockOk ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'">
+                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        :d="pdfStockOk ? 'M5 13l4 4L19 7' : 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'"/>
+                    </svg>
+                    <span v-if="pdfStockOk">
+                      Stock OK: {{ parseFloat(pdfStockInfo.stock_m2).toFixed(2) }} m² disponibles
+                      — quedarán {{ (parseFloat(pdfStockInfo.stock_m2) - parseFloat(pdfTotales.m2 || 0)).toFixed(2) }} m²
+                    </span>
+                    <span v-else>
+                      Stock insuficiente: {{ parseFloat(pdfStockInfo.stock_m2).toFixed(2) }} m² disponibles,
+                      se requieren {{ pdfTotales.m2 }} m²
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1300,9 +1333,20 @@ const pdfPedido        = ref({})        // pedido único resultante
 const pdfPosiciones    = ref([])        // posiciones para tabla
 const pdfTotales       = ref({})        // m², piezas, subtotal, iva, total
 const pdfPrioridad     = ref('bajo')
+const pdfInventarioId  = ref(null)
 const pdfImportando    = ref(false)
 const pdfImportResult  = ref(null)
 const fileInputPDF     = ref(null)
+
+const pdfStockInfo = computed(() =>
+  pdfInventarioId.value
+    ? inventarioStore.materiales.find(m => m.id === pdfInventarioId.value) || null
+    : null
+)
+const pdfStockOk = computed(() => {
+  if (!pdfStockInfo.value || !pdfTotales.value.m2) return true
+  return parseFloat(pdfStockInfo.value.stock_m2) >= parseFloat(pdfTotales.value.m2)
+})
 
 const prioridadOpciones = [
   { value: 'bajo',  label: 'Bajo',  dot: 'bg-emerald-500', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
@@ -1344,7 +1388,11 @@ async function handlePDFUpload(event) {
 async function ejecutarImportPDF() {
   pdfImportando.value = true
   try {
-    const pedido = { ...pdfPedido.value, prioridad: pdfPrioridad.value }
+    const pedido = {
+      ...pdfPedido.value,
+      prioridad:     pdfPrioridad.value,
+      inventario_id: pdfInventarioId.value || null,
+    }
     const { data } = await axios.post('/api/pedidos/importar', { pedidos: [pedido] })
     pdfImportResult.value = data
     if (data.creados > 0) {
@@ -1366,6 +1414,7 @@ function cerrarImportPDF() {
   pdfPosiciones.value   = []
   pdfTotales.value      = {}
   pdfPrioridad.value    = 'bajo'
+  pdfInventarioId.value = null
   pdfImportResult.value = null
   pdfImportando.value   = false
   if (fileInputPDF.value) fileInputPDF.value.value = ''

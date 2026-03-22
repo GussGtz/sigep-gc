@@ -146,16 +146,20 @@ function parsePDF(text) {
     }
   }
 
-  // ── Especificaciones: lista compacta de posiciones ───────────────────────
-  const especificaciones = posiciones
-    .map(p =>
-      `POS ${p.pos}: ${p.ancho_mm}×${p.alto_mm}mm` +
-      ` · ${p.cantidad}pza` +
-      ` · ${p.m2}m²` +
-      (p.precio_unit ? ` · $${p.precio_unit.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '') +
-      (p.materiales ? ` · ${p.materiales}` : '')
-    )
-    .join('\n');
+  // ── Especificaciones: JSON estructurado para renderizado como tabla ───────
+  // Prefijado con "posiciones:" para que el frontend lo detecte y muestre como tabla
+  const especificaciones = posiciones.length
+    ? 'posiciones:' + JSON.stringify(posiciones.map(p => ({
+        pos:        p.pos,
+        ancho_mm:   p.ancho_mm,
+        alto_mm:    p.alto_mm,
+        cantidad:   p.cantidad,
+        m2:         p.m2,
+        precio_unit: p.precio_unit,
+        importe:    p.importe,
+        materiales: p.materiales,
+      })))
+    : null;
 
   // ── Pedido único resultante ───────────────────────────────────────────────
   const pedido = {

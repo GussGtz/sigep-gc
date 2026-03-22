@@ -65,20 +65,37 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
       const alto     = p.alto     ? parseFloat(p.alto)     : null;
       const ancho    = p.ancho    ? parseFloat(p.ancho)    : null;
       const cantidad = p.cantidad ? parseInt(p.cantidad)   : 1;
+      // Usar metros_cuadrados directo (PDF) o calcularlo de alto×ancho (Excel)
       const metros_cuadrados = (alto && ancho)
         ? parseFloat((alto * ancho * cantidad).toFixed(4))
-        : null;
+        : (p.metros_cuadrados ? parseFloat(p.metros_cuadrados) : null);
       const prioridad = ['bajo', 'medio', 'alto'].includes((p.prioridad || 'bajo').toLowerCase())
         ? (p.prioridad || 'bajo').toLowerCase()
         : 'bajo';
+      const inventarioId = p.inventario_id ? parseInt(p.inventario_id) : null;
+
+      // Verificar stock si hay material vinculado
+      if (inventarioId && metros_cuadrados > 0) {
+        const matRow = await pool.query(
+          'SELECT stock_m2, tipo FROM inventario_vidrio WHERE id = $1',
+          [inventarioId]
+        );
+        if (matRow.rows.length && parseFloat(matRow.rows[0].stock_m2) < metros_cuadrados) {
+          resultado.errores.push({
+            numero_pedido: p.numero_pedido,
+            error: `Stock insuficiente en ${matRow.rows[0].tipo}: disponible ${parseFloat(matRow.rows[0].stock_m2).toFixed(4)} m², requerido ${metros_cuadrados} m²`
+          });
+          continue;
+        }
+      }
 
       const pedidoResult = await pool.query(
         `INSERT INTO pedidos
            (numero_pedido, fecha_entrega, creado_por,
             alto, ancho, cantidad, metros_cuadrados, prioridad,
             especificaciones, cliente_nombre, direccion_entrega,
-            precio, total_piezas)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            precio, total_piezas, inventario_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING id`,
         [
           p.numero_pedido, p.fecha_entrega, userId,
@@ -86,12 +103,27 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
           p.especificaciones || null, p.cliente_nombre || null, p.direccion_entrega || null,
           p.precio ? parseFloat(p.precio) : null,
           p.total_piezas ? parseInt(p.total_piezas) : null,
+          inventarioId,
         ]
       );
 
       const pedidoId = pedidoResult.rows[0].id;
       for (const area of ['contabilidad', 'ventas', 'produccion']) {
         await pool.query('INSERT INTO pedido_estatus (pedido_id, area) VALUES ($1, $2)', [pedidoId, area]);
+      }
+
+      // Descontar stock si hay material vinculado
+      if (inventarioId && metros_cuadrados > 0) {
+        await pool.query(
+          `UPDATE inventario_vidrio SET stock_m2 = stock_m2 - $1, updated_at = NOW() WHERE id = $2`,
+          [metros_cuadrados, inventarioId]
+        );
+        await pool.query(
+          `INSERT INTO movimientos_inventario (inventario_id, tipo, m2, descripcion, creado_por, creado_por_nombre)
+           VALUES ($1, 'uso', $2, $3, $4, $5)`,
+          [inventarioId, metros_cuadrados, `Importación PDF pedido #${p.numero_pedido}`, userId, userName]
+        );
+        if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
       }
 
       resultado.creados++;
