@@ -2,7 +2,9 @@
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="modelValue" class="modal-overlay" @mousedown.self="$emit('update:modelValue', false)">
-        <div class="modal-content w-full max-w-3xl" @click.stop>
+        <div class="modal-content w-full max-w-3xl"
+          :class="activeTab === 'documento' ? '!overflow-hidden flex flex-col' : ''"
+          @click.stop>
 
           <!-- ── Header ── -->
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -253,7 +255,7 @@
           </div>
 
           <!-- ══ Tab: Documento ══ -->
-          <div v-if="activeTab === 'documento'" class="flex flex-col" style="max-height: 60vh;">
+          <div v-if="activeTab === 'documento'" class="flex flex-col flex-1 min-h-0">
             <!-- Loading -->
             <div v-if="docLoading" class="flex items-center justify-center py-12 text-gray-400 gap-2 text-sm">
               <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -284,7 +286,7 @@
               <iframe v-if="esPDF && docSrcPDF"
                 :src="docSrcPDF"
                 class="w-full flex-1 border-0"
-                style="min-height: 0; height: calc(60vh - 44px);"
+                style="min-height: 0;"
                 title="Vista previa del documento"
               />
               <!-- Excel / CSV: solo descarga -->
