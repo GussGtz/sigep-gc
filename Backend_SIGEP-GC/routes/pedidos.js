@@ -74,20 +74,36 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
         : 'bajo';
       const inventarioId = p.inventario_id ? parseInt(p.inventario_id) : null;
 
-      // Verificar stock si hay material vinculado
-      if (inventarioId && metros_cuadrados > 0) {
+      // ── Desglose por material (PDF multi-vidrio) o legacy (único ID) ────
+      // posiciones_materiales: [{ inventario_id, m2 }]
+      const posicionesMat = Array.isArray(p.posiciones_materiales) && p.posiciones_materiales.length > 0
+        ? p.posiciones_materiales.filter(x => x.inventario_id && parseFloat(x.m2) > 0)
+        : (inventarioId && metros_cuadrados > 0
+            ? [{ inventario_id: inventarioId, m2: metros_cuadrados }]
+            : []);
+
+      // Verificar stock para cada material
+      let stockError = null;
+      for (const { inventario_id: invId, m2: m2req } of posicionesMat) {
         const matRow = await pool.query(
           'SELECT stock_m2, tipo FROM inventario_vidrio WHERE id = $1',
-          [inventarioId]
+          [parseInt(invId)]
         );
-        if (matRow.rows.length && parseFloat(matRow.rows[0].stock_m2) < metros_cuadrados) {
-          resultado.errores.push({
-            numero_pedido: p.numero_pedido,
-            error: `Stock insuficiente en ${matRow.rows[0].tipo}: disponible ${parseFloat(matRow.rows[0].stock_m2).toFixed(4)} m², requerido ${metros_cuadrados} m²`
-          });
-          continue;
+        if (!matRow.rows.length) { stockError = `Material #${invId} no encontrado`; break; }
+        const disponible = parseFloat(matRow.rows[0].stock_m2);
+        const requerido  = parseFloat(m2req);
+        if (disponible < requerido) {
+          stockError = `Stock insuficiente en ${matRow.rows[0].tipo}: disponible ${disponible.toFixed(4)} m², requerido ${requerido.toFixed(4)} m²`;
+          break;
         }
       }
+      if (stockError) {
+        resultado.errores.push({ numero_pedido: p.numero_pedido, error: stockError });
+        continue;
+      }
+
+      // inventario_id principal = primer material con deducción (para FK en pedidos)
+      const invIdPrincipal = posicionesMat.length > 0 ? parseInt(posicionesMat[0].inventario_id) : null;
 
       const pedidoResult = await pool.query(
         `INSERT INTO pedidos
@@ -103,7 +119,7 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
           p.especificaciones || null, p.cliente_nombre || null, p.direccion_entrega || null,
           p.precio ? parseFloat(p.precio) : null,
           p.total_piezas ? parseInt(p.total_piezas) : null,
-          inventarioId,
+          invIdPrincipal,
         ]
       );
 
@@ -112,19 +128,21 @@ router.post('/importar', verifyToken, isAdmin, async (req, res) => {
         await pool.query('INSERT INTO pedido_estatus (pedido_id, area) VALUES ($1, $2)', [pedidoId, area]);
       }
 
-      // Descontar stock si hay material vinculado
-      if (inventarioId && metros_cuadrados > 0) {
+      // Descontar stock por cada material vinculado
+      let huboCambioInv = false;
+      for (const { inventario_id: invId, m2: m2uso } of posicionesMat) {
         await pool.query(
           `UPDATE inventario_vidrio SET stock_m2 = stock_m2 - $1, updated_at = NOW() WHERE id = $2`,
-          [metros_cuadrados, inventarioId]
+          [parseFloat(m2uso), parseInt(invId)]
         );
         await pool.query(
           `INSERT INTO movimientos_inventario (inventario_id, tipo, m2, descripcion, creado_por, creado_por_nombre)
            VALUES ($1, 'uso', $2, $3, $4, $5)`,
-          [inventarioId, metros_cuadrados, `Importación PDF pedido #${p.numero_pedido}`, userId, userName]
+          [parseInt(invId), parseFloat(m2uso), `Importación pedido #${p.numero_pedido}`, userId, userName]
         );
-        if (global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
+        huboCambioInv = true;
       }
+      if (huboCambioInv && global.broadcastToAdmins) global.broadcastToAdmins({ type: 'data_inventario' });
 
       resultado.creados++;
     } catch (err) {

@@ -9,16 +9,40 @@
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 class="font-serif text-2xl font-bold text-gray-900">Inventario de Vidrio</h1>
-            <p class="text-gray-400 text-sm mt-0.5">Control de stock por material</p>
+            <p class="text-gray-400 text-sm mt-0.5">Control de stock y catálogo de tipos</p>
           </div>
-          <button
-            @click="abrirModalNuevo"
-            class="btn-primary text-sm"
-          >
+          <button v-if="activeTab === 'inventario'" @click="abrirModalNuevo" class="btn-primary text-sm">
             <Plus class="w-4 h-4" :stroke-width="2" />
             Nuevo Material
           </button>
+          <button v-else @click="abrirNuevoTipo" class="btn-primary text-sm">
+            <Plus class="w-4 h-4" :stroke-width="2" />
+            Nuevo Tipo
+          </button>
         </div>
+
+        <!-- ── Tabs ── -->
+        <div class="flex border-b border-gray-200">
+          <button @click="activeTab = 'inventario'"
+            class="px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors"
+            :class="activeTab === 'inventario' ? 'border-[#0D89CB] text-[#0D89CB]' : 'border-transparent text-gray-400 hover:text-gray-700'">
+            Stock de Vidrio
+          </button>
+          <button @click="activeTab = 'tipos'"
+            class="px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors"
+            :class="activeTab === 'tipos' ? 'border-[#0D89CB] text-[#0D89CB]' : 'border-transparent text-gray-400 hover:text-gray-700'">
+            Tipos de Vidrio
+            <span class="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+              :class="activeTab === 'tipos' ? 'bg-[#0D89CB]/10 text-[#0D89CB]' : 'bg-gray-100 text-gray-400'">
+              {{ tiposStore.tipos.length }}
+            </span>
+          </button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════
+             TAB: STOCK DE VIDRIO
+        ═══════════════════════════════════════════ -->
+        <template v-if="activeTab === 'inventario'">
 
         <!-- ── KPIs ── -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -208,8 +232,149 @@
           </div>
         </div>
 
+        </template>
+        <!-- end tab inventario -->
+
+        <!-- ═══════════════════════════════════════════
+             TAB: TIPOS DE VIDRIO
+        ═══════════════════════════════════════════ -->
+        <template v-if="activeTab === 'tipos'">
+
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                {{ tiposStore.tipos.length }} tipos registrados · {{ tiposStore.tiposActivos.length }} activos
+              </p>
+              <p class="text-xs text-gray-400">Los tipos activos aparecen en el selector al dar de alta o editar materiales de stock</p>
+            </div>
+
+            <div v-if="tiposStore.loading" class="py-10 text-center text-gray-400 text-sm">Cargando tipos...</div>
+
+            <table v-else class="w-full text-sm">
+              <thead class="border-b border-gray-100 bg-gray-50">
+                <tr>
+                  <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-8"></th>
+                  <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Nombre</th>
+                  <th class="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estado</th>
+                  <th class="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="tipo in tiposStore.tipos" :key="tipo.id"
+                  class="border-b border-gray-50 hover:bg-gray-50/60 transition-colors"
+                  :class="!tipo.activo ? 'opacity-50' : ''">
+                  <td class="px-5 py-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full inline-block"
+                      :class="tipo.activo ? 'bg-emerald-500' : 'bg-gray-300'"></span>
+                  </td>
+                  <td class="px-5 py-2.5">
+                    <span v-if="editandoTipoId !== tipo.id" class="font-medium text-gray-900">{{ tipo.nombre }}</span>
+                    <input v-else v-model="editandoTipoNombre"
+                      @keydown.enter="guardarRenombre(tipo.id)"
+                      @keydown.escape="editandoTipoId = null"
+                      class="border border-[#0D89CB] rounded-lg px-2 py-1 text-sm w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-[#0D89CB]" />
+                  </td>
+                  <td class="px-5 py-2.5 text-center">
+                    <!-- Toggle switch -->
+                    <button @click="tiposStore.toggleActivo(tipo.id, !tipo.activo)"
+                      class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
+                      :class="tipo.activo ? 'bg-emerald-500' : 'bg-gray-300'">
+                      <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                        :class="tipo.activo ? 'translate-x-[18px]' : 'translate-x-[2px]'"></span>
+                    </button>
+                  </td>
+                  <td class="px-5 py-2.5 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <button v-if="editandoTipoId !== tipo.id"
+                        @click="iniciarRenombre(tipo)"
+                        class="text-xs px-2 py-1 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                        Renombrar
+                      </button>
+                      <button v-else
+                        @click="guardarRenombre(tipo.id)"
+                        class="text-xs px-2 py-1 rounded-lg bg-[#0D89CB] text-white hover:bg-[#00659C] transition-colors font-semibold">
+                        Guardar
+                      </button>
+                      <button @click="confirmarEliminarTipo(tipo)"
+                        class="text-xs px-2 py-1 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="tiposStore.tipos.length === 0">
+                  <td colspan="4" class="text-center py-10 text-gray-400 text-sm">Sin tipos registrados</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </template>
+        <!-- end tab tipos -->
+
       </div>
     </main>
+
+    <!-- ══════════════════════════════════════════
+         Modal: Nuevo Tipo de Vidrio
+    ══════════════════════════════════════════ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showModalNuevoTipo" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showModalNuevoTipo = false">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="font-black text-gray-900 text-lg">Nuevo Tipo de Vidrio</h2>
+              <button @click="showModalNuevoTipo = false" class="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre *</label>
+              <input v-model="nuevoTipoNombre" @keydown.enter="guardarNuevoTipo"
+                placeholder="Ej: Float Azul, Templado Curvo..."
+                class="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+            <div v-if="nuevoTipoError" class="text-xs text-red-600 bg-red-50 rounded-xl px-3 py-2">{{ nuevoTipoError }}</div>
+            <div class="flex gap-3 pt-1">
+              <button @click="showModalNuevoTipo = false"
+                class="flex-1 border border-gray-200 rounded-xl py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button @click="guardarNuevoTipo" :disabled="guardandoTipo"
+                class="flex-1 bg-gray-900 text-white rounded-xl py-2 text-sm font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50">
+                {{ guardandoTipo ? 'Guardando...' : 'Crear' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ══════════════════════════════════════════
+         Modal: Confirmar eliminar tipo
+    ══════════════════════════════════════════ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showConfirmDeleteTipo" class="modal-overlay" @mousedown.self="showConfirmDeleteTipo = false">
+          <div class="bg-white rounded-2xl shadow-modal border border-black/[0.06] w-full max-w-sm p-6 text-center" @click.stop>
+            <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </div>
+            <h3 class="font-serif text-lg font-bold text-gray-900 mb-1">Eliminar tipo</h3>
+            <p class="text-sm text-gray-500 mb-6">
+              Se eliminará <strong class="text-gray-800">{{ tipoAEliminar?.nombre }}</strong>. Esta acción no puede deshacerse.
+            </p>
+            <div class="flex gap-3">
+              <button @click="showConfirmDeleteTipo = false" class="btn-secondary flex-1 justify-center">Cancelar</button>
+              <button @click="ejecutarEliminarTipo"
+                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm text-white bg-red-600 hover:bg-red-700 transition-all">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- ══════════════════════════════════════════
          Modal: Nuevo Material / Editar Material
@@ -226,35 +391,11 @@
             <div class="space-y-3">
               <div>
                 <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo *</label>
-                <input v-model="form.tipo" type="text" list="tipos-vidrio"
+                <input v-model="form.tipo" type="text" list="tipos-vidrio-activos"
                   placeholder="Selecciona o escribe el tipo..."
                   class="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
-                <datalist id="tipos-vidrio">
-                  <option value="Float Claro"/>
-                  <option value="Float Bronce"/>
-                  <option value="Float Gris"/>
-                  <option value="Float Verde"/>
-                  <option value="Float Azul"/>
-                  <option value="Templado"/>
-                  <option value="Templado Satinado"/>
-                  <option value="Laminado"/>
-                  <option value="Laminado Satinado"/>
-                  <option value="Monolítico"/>
-                  <option value="Reflectivo Bronce"/>
-                  <option value="Reflectivo Azul"/>
-                  <option value="Reflectivo Gris"/>
-                  <option value="Reflectivo Verde"/>
-                  <option value="Low-E"/>
-                  <option value="Insulado (Doble Panel)"/>
-                  <option value="Insulado Low-E"/>
-                  <option value="Satinado / Sandblast"/>
-                  <option value="Espejo Claro"/>
-                  <option value="Espejo Bronce"/>
-                  <option value="Espejo Gris"/>
-                  <option value="Vitrolite"/>
-                  <option value="Curvo / Doblado"/>
-                  <option value="Serigrafía"/>
-                  <option value="Armado"/>
+                <datalist id="tipos-vidrio-activos">
+                  <option v-for="t in tiposStore.tiposActivos" :key="t.id" :value="t.nombre"/>
                 </datalist>
               </div>
               <div class="grid grid-cols-2 gap-3">
@@ -432,9 +573,78 @@ import { Plus, AlertTriangle } from 'lucide-vue-next'
 import { ref, reactive, onMounted, inject } from 'vue'
 import AdminNavBar from '../../components/admin/AdminNavBar.vue'
 import { useInventarioStore } from '../../stores/inventario.js'
+import { useTiposVidrio }     from '../../stores/tiposVidrio.js'
 
-const store = useInventarioStore()
-const toast = inject('toast', { add: () => {} })
+const store      = useInventarioStore()
+const tiposStore = useTiposVidrio()
+const toast      = inject('toast', { add: () => {} })
+
+const activeTab = ref('inventario')
+
+// ── Gestión de Tipos de Vidrio ────────────────────────────────────────────
+const showModalNuevoTipo    = ref(false)
+const nuevoTipoNombre       = ref('')
+const nuevoTipoError        = ref('')
+const guardandoTipo         = ref(false)
+const editandoTipoId        = ref(null)
+const editandoTipoNombre    = ref('')
+const showConfirmDeleteTipo = ref(false)
+const tipoAEliminar         = ref(null)
+
+function abrirNuevoTipo() {
+  nuevoTipoNombre.value = ''
+  nuevoTipoError.value  = ''
+  showModalNuevoTipo.value = true
+}
+
+async function guardarNuevoTipo() {
+  if (!nuevoTipoNombre.value.trim()) { nuevoTipoError.value = 'El nombre es obligatorio'; return }
+  guardandoTipo.value  = true
+  nuevoTipoError.value = ''
+  try {
+    await tiposStore.crearTipo(nuevoTipoNombre.value.trim())
+    showModalNuevoTipo.value = false
+    toast.add({ type: 'success', message: 'Tipo creado correctamente' })
+  } catch (e) {
+    nuevoTipoError.value = e.response?.data?.message || 'Error al crear'
+  } finally {
+    guardandoTipo.value = false
+  }
+}
+
+function iniciarRenombre(tipo) {
+  editandoTipoId.value     = tipo.id
+  editandoTipoNombre.value = tipo.nombre
+}
+
+async function guardarRenombre(id) {
+  if (!editandoTipoNombre.value.trim()) return
+  try {
+    await tiposStore.renombrarTipo(id, editandoTipoNombre.value.trim())
+    editandoTipoId.value = null
+    toast.add({ type: 'success', message: 'Tipo renombrado' })
+  } catch (e) {
+    toast.add({ type: 'error', message: e.response?.data?.message || 'Error al renombrar' })
+  }
+}
+
+function confirmarEliminarTipo(tipo) {
+  tipoAEliminar.value         = tipo
+  showConfirmDeleteTipo.value = true
+}
+
+async function ejecutarEliminarTipo() {
+  if (!tipoAEliminar.value) return
+  try {
+    await tiposStore.eliminarTipo(tipoAEliminar.value.id)
+    showConfirmDeleteTipo.value = false
+    tipoAEliminar.value         = null
+    toast.add({ type: 'success', message: 'Tipo eliminado' })
+  } catch (e) {
+    showConfirmDeleteTipo.value = false
+    toast.add({ type: 'error', message: e.response?.data?.message || 'Error al eliminar' })
+  }
+}
 
 /* ── Modal Material ── */
 const showModalMaterial = ref(false)
@@ -558,6 +768,7 @@ async function guardarEntrada() {
 onMounted(() => {
   store.fetchMateriales()
   store.fetchMovimientos()
+  tiposStore.fetchTipos()
 })
 </script>
 

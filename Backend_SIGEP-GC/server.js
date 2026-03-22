@@ -236,6 +236,36 @@ async function initDB() {
       )
     `);
 
+    // ── Catálogo de tipos de vidrio (configurable desde el panel admin) ──
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tipos_vidrio (
+        id      SERIAL PRIMARY KEY,
+        nombre  VARCHAR(100) NOT NULL UNIQUE,
+        activo  BOOLEAN DEFAULT true,
+        orden   INTEGER DEFAULT 0
+      )
+    `);
+
+    // Seed inicial — solo si la tabla está vacía
+    const { rows: tvCount } = await pool.query('SELECT COUNT(*) FROM tipos_vidrio');
+    if (parseInt(tvCount[0].count) === 0) {
+      const tiposBase = [
+        'Float Claro','Float Bronce','Float Gris','Float Verde','Float Azul',
+        'Templado','Templado Satinado','Laminado','Laminado Satinado','Monolítico',
+        'Reflectivo Bronce','Reflectivo Azul','Reflectivo Gris','Reflectivo Verde',
+        'Low-E','Insulado (Doble Panel)','Insulado Low-E',
+        'Satinado / Sandblast','Espejo Claro','Espejo Bronce','Espejo Gris',
+        'Vitrolite','Curvo / Doblado','Serigrafía','Armado'
+      ];
+      for (let i = 0; i < tiposBase.length; i++) {
+        await pool.query(
+          'INSERT INTO tipos_vidrio (nombre, orden) VALUES ($1, $2) ON CONFLICT (nombre) DO NOTHING',
+          [tiposBase[i], i]
+        );
+      }
+      console.log('✅ Tipos de vidrio sembrados:', tiposBase.length);
+    }
+
     console.log('✅ Tablas verificadas / creadas correctamente');
   } catch (err) {
     console.error('⚠️  Error al inicializar tablas:', err.message);
@@ -276,6 +306,7 @@ app.use('/api/inventario',     require('./routes/inventario'));
 app.use('/api/chat',           require('./routes/chat'));
 app.use('/api/gps',            require('./routes/gps'));
 app.use('/api/push',           require('./routes/push'));
+app.use('/api/tipos-vidrio',   require('./routes/tiposVidrio'));
 
 // ═══════════════════════════════════════
 // Descarga del APK del conductor

@@ -882,50 +882,83 @@
                 </div>
               </div>
 
-              <!-- Prioridad + Inventario -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Prioridad del pedido</label>
-                  <div class="flex gap-2">
-                    <label v-for="opt in prioridadOpciones" :key="opt.value"
-                      class="flex-1 flex items-center gap-2 border rounded-xl px-2.5 py-2 cursor-pointer transition-colors"
-                      :class="pdfPrioridad === opt.value ? opt.activeClass : 'border-gray-200 hover:bg-gray-50'">
-                      <input type="radio" v-model="pdfPrioridad" :value="opt.value" class="sr-only"/>
-                      <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="opt.dot"></span>
-                      <span class="text-xs font-semibold">{{ opt.label }}</span>
-                    </label>
+              <!-- Prioridad -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Prioridad del pedido</label>
+                <div class="flex gap-2">
+                  <label v-for="opt in prioridadOpciones" :key="opt.value"
+                    class="flex-1 flex items-center gap-2 border rounded-xl px-2.5 py-2 cursor-pointer transition-colors"
+                    :class="pdfPrioridad === opt.value ? opt.activeClass : 'border-gray-200 hover:bg-gray-50'">
+                    <input type="radio" v-model="pdfPrioridad" :value="opt.value" class="sr-only"/>
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="opt.dot"></span>
+                    <span class="text-xs font-semibold">{{ opt.label }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Materiales detectados → mapping a inventario -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-sm font-semibold text-gray-700">
+                    Materiales detectados
+                    <span class="text-gray-400 font-normal text-xs ml-1">(descuenta stock automáticamente)</span>
+                  </label>
+                  <span class="text-xs text-gray-400">{{ pdfMaterialesUnicos.length }} tipo(s) en el PDF</span>
+                </div>
+
+                <div v-if="pdfMaterialesUnicos.length === 0"
+                  class="text-xs text-gray-400 italic px-3 py-2 bg-gray-50 rounded-xl border border-gray-100">
+                  No se detectaron tipos de material en el PDF. Puedes vincular manualmente:
+                  <div class="mt-2">
+                    <select v-model="pdfInventarioId"
+                      class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+                      <option :value="null">— Sin vincular —</option>
+                      <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
+                        {{ m.tipo }}{{ m.espesor_mm ? ` ${m.espesor_mm}mm` : '' }}{{ m.color ? ` ${m.color}` : '' }}
+                        — stock: {{ parseFloat(m.stock_m2).toFixed(2) }} m²
+                      </option>
+                    </select>
                   </div>
                 </div>
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Descontar de inventario
-                    <span class="text-gray-400 font-normal text-xs">(opcional)</span>
-                  </label>
-                  <select v-model="pdfInventarioId"
-                    class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
-                    <option :value="null">— Sin vincular —</option>
-                    <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
-                      {{ m.tipo }}{{ m.color ? ` (${m.color})` : '' }}{{ m.espesor_mm ? ` · ${m.espesor_mm}mm` : '' }}
-                      — stock: {{ parseFloat(m.stock_m2).toFixed(2) }} m²
-                    </option>
-                  </select>
-                  <!-- Alerta de stock insuficiente -->
-                  <div v-if="pdfInventarioId && pdfStockInfo"
-                    class="mt-1.5 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg"
-                    :class="pdfStockOk ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'">
-                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        :d="pdfStockOk ? 'M5 13l4 4L19 7' : 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'"/>
-                    </svg>
-                    <span v-if="pdfStockOk">
-                      Stock OK: {{ parseFloat(pdfStockInfo.stock_m2).toFixed(2) }} m² disponibles
-                      — quedarán {{ (parseFloat(pdfStockInfo.stock_m2) - parseFloat(pdfTotales.m2 || 0)).toFixed(2) }} m²
-                    </span>
-                    <span v-else>
-                      Stock insuficiente: {{ parseFloat(pdfStockInfo.stock_m2).toFixed(2) }} m² disponibles,
-                      se requieren {{ pdfTotales.m2 }} m²
-                    </span>
+
+                <div v-else class="rounded-xl border border-gray-200 overflow-hidden">
+                  <div class="grid bg-gray-50 border-b border-gray-200 px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+                    style="grid-template-columns: 1fr 60px 1fr">
+                    <span>Material (PDF)</span>
+                    <span class="text-center">m²</span>
+                    <span>Inventario a descontar</span>
                   </div>
+                  <div v-for="mat in pdfMaterialesUnicos" :key="mat.nombre"
+                    class="grid items-center gap-px bg-gray-100 border-b border-gray-100 last:border-b-0"
+                    style="grid-template-columns: 1fr 60px 1fr">
+                    <div class="bg-white px-3 py-2 text-xs text-gray-700 font-medium truncate" :title="mat.nombre">
+                      {{ mat.nombre || '(sin nombre)' }}
+                    </div>
+                    <div class="bg-white px-2 py-2 text-xs text-center text-emerald-700 font-bold">
+                      {{ mat.m2.toFixed(3) }}
+                    </div>
+                    <select v-model="pdfMaterialMapping[mat.nombre]"
+                      class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB]">
+                      <option :value="null">— No descontar —</option>
+                      <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
+                        {{ m.tipo }}{{ m.espesor_mm ? ` ${m.espesor_mm}mm` : '' }}
+                        ({{ parseFloat(m.stock_m2).toFixed(2) }} m²)
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Alertas de stock para cada material mapeado -->
+                <div v-for="alerta in pdfAlertasStock" :key="alerta.matNombre"
+                  class="mt-1.5 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg"
+                  :class="alerta.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'">
+                  <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      :d="alerta.ok ? 'M5 13l4 4L19 7' : 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'"/>
+                  </svg>
+                  <strong>{{ alerta.invNombre }}:</strong>
+                  <span v-if="alerta.ok"> stock {{ alerta.disponible.toFixed(3) }} m² — quedará {{ (alerta.disponible - alerta.requerido).toFixed(3) }} m²</span>
+                  <span v-else> Stock insuficiente — disponible {{ alerta.disponible.toFixed(3) }} m², requerido {{ alerta.requerido.toFixed(3) }} m²</span>
                 </div>
               </div>
 
@@ -1021,10 +1054,12 @@ import StatusBadge  from '../../components/shared/StatusBadge.vue'
 import PedidoModal  from '../../components/shared/PedidoModal.vue'
 import { usePedidosStore }     from '../../stores/pedidos.js'
 import { useInventarioStore }  from '../../stores/inventario.js'
+import { useTiposVidrio }      from '../../stores/tiposVidrio.js'
 import { Download, FileText, Trash2, Upload, Plus, Search, X, Loader2, Archive, ClipboardList, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-vue-next'
 
 const pedidosStore    = usePedidosStore()
 const inventarioStore = useInventarioStore()
+const tiposVidrio     = useTiposVidrio()
 const toast           = inject('toast')
 
 const busqueda           = ref('')
@@ -1440,11 +1475,45 @@ const pdfPedido        = ref({})        // pedido único resultante
 const pdfPosiciones    = ref([])        // posiciones para tabla
 const pdfTotales       = ref({})        // m², piezas, subtotal, iva, total
 const pdfPrioridad     = ref('bajo')
-const pdfInventarioId  = ref(null)
+const pdfInventarioId  = ref(null)      // fallback si no hay materiales detectados
 const pdfImportando    = ref(false)
 const pdfImportResult  = ref(null)
 const fileInputPDF     = ref(null)
+const pdfMaterialMapping = ref({})     // { 'LAMINADO / TEMPLADO': inventario_id | null }
 
+// Agrupa posiciones del PDF por material y suma m²
+const pdfMaterialesUnicos = computed(() => {
+  const mapa = {}
+  for (const pos of pdfPosiciones.value) {
+    const nombre = pos.materiales || ''
+    if (!mapa[nombre]) mapa[nombre] = { nombre, m2: 0 }
+    mapa[nombre].m2 += parseFloat(pos.m2) || 0
+  }
+  return Object.values(mapa)
+})
+
+// Alertas de stock para cada material mapeado
+const pdfAlertasStock = computed(() => {
+  const alertas = []
+  for (const mat of pdfMaterialesUnicos.value) {
+    const invId = pdfMaterialMapping.value[mat.nombre]
+    if (!invId) continue
+    const inv = inventarioStore.materiales.find(m => m.id === invId)
+    if (!inv) continue
+    const disponible = parseFloat(inv.stock_m2)
+    const requerido  = mat.m2
+    alertas.push({
+      matNombre:  mat.nombre,
+      invNombre:  `${inv.tipo}${inv.espesor_mm ? ` ${inv.espesor_mm}mm` : ''}`,
+      disponible,
+      requerido,
+      ok: disponible >= requerido
+    })
+  }
+  return alertas
+})
+
+// Legacy stock info (para el fallback sin materiales detectados)
 const pdfStockInfo = computed(() =>
   pdfInventarioId.value
     ? inventarioStore.materiales.find(m => m.id === pdfInventarioId.value) || null
@@ -1454,6 +1523,34 @@ const pdfStockOk = computed(() => {
   if (!pdfStockInfo.value || !pdfTotales.value.m2) return true
   return parseFloat(pdfStockInfo.value.stock_m2) >= parseFloat(pdfTotales.value.m2)
 })
+
+// Auto-match: busca en el inventario un material que haga match con el texto del PDF
+function autoMatchMaterial(matStr) {
+  if (!matStr) return null
+  const s = matStr.toLowerCase()
+  // Intentar match por tipo en inventario
+  for (const m of inventarioStore.materiales) {
+    if (s.includes(m.tipo.toLowerCase())) return m.id
+  }
+  // Fallback por palabras clave
+  const kw = [
+    ['laminado', 'laminado'],
+    ['templado', 'templado'],
+    ['monol',    'monolítico'],
+    ['reflectivo','reflectivo'],
+    ['low-e',    'low-e'],
+    ['float',    'float'],
+    ['insulado', 'insulado'],
+    ['espejo',   'espejo'],
+  ]
+  for (const [key] of kw) {
+    if (s.includes(key)) {
+      const match = inventarioStore.materiales.find(m => m.tipo.toLowerCase().includes(key))
+      if (match) return match.id
+    }
+  }
+  return null
+}
 
 const prioridadOpciones = [
   { value: 'bajo',  label: 'Bajo',  dot: 'bg-emerald-500', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
@@ -1482,6 +1579,16 @@ async function handlePDFUpload(event) {
     pdfPosiciones.value = data.posiciones || []
     pdfTotales.value    = data.totales    || {}
     pdfPrioridad.value  = 'bajo'
+    // Auto-match materiales detectados → inventario
+    const mapping = {}
+    const unicos = {}
+    for (const pos of data.posiciones || []) {
+      if (!(pos.materiales in unicos)) {
+        unicos[pos.materiales] = true
+        mapping[pos.materiales] = autoMatchMaterial(pos.materiales)
+      }
+    }
+    pdfMaterialMapping.value = mapping
     pdfStep.value       = 2
   } catch (err) {
     toast.add({ type: 'error', message: err.response?.data?.message || err.message || 'Error al leer el PDF' })
@@ -1493,17 +1600,37 @@ async function handlePDFUpload(event) {
 }
 
 async function ejecutarImportPDF() {
+  // Bloquear si algún material mapeado tiene stock insuficiente
+  if (pdfAlertasStock.value.some(a => !a.ok)) {
+    toast.add({ type: 'error', message: 'Stock insuficiente en uno o más materiales' })
+    return
+  }
   pdfImportando.value = true
   try {
+    // Construir posiciones_materiales a partir del mapping
+    const posMat = pdfMaterialesUnicos.value
+      .filter(mat => pdfMaterialMapping.value[mat.nombre])
+      .map(mat => ({
+        inventario_id: pdfMaterialMapping.value[mat.nombre],
+        m2:            parseFloat(mat.m2.toFixed(4))
+      }))
+
+    // Fallback: si no hubo materiales detectados pero se eligió uno manualmente
+    const invId = pdfInventarioId.value
+    const legacyPosMat = (posMat.length === 0 && invId && parseFloat(pdfTotales.value.m2) > 0)
+      ? [{ inventario_id: invId, m2: parseFloat(pdfTotales.value.m2) }]
+      : []
+
     const pedido = {
       ...pdfPedido.value,
-      prioridad:     pdfPrioridad.value,
-      inventario_id: pdfInventarioId.value || null,
+      prioridad:            pdfPrioridad.value,
+      posiciones_materiales: posMat.length > 0 ? posMat : legacyPosMat,
     }
     const { data } = await axios.post('/api/pedidos/importar', { pedidos: [pedido] })
     pdfImportResult.value = data
     if (data.creados > 0) {
       await pedidosStore.fetchPedidos()
+      await inventarioStore.fetchMateriales()
       toast.add({ type: 'success', message: `Pedido #${pdfPedido.value.numero_pedido} importado correctamente` })
     }
   } catch (e) {
@@ -1514,21 +1641,23 @@ async function ejecutarImportPDF() {
 }
 
 function cerrarImportPDF() {
-  showImportPDF.value   = false
-  pdfStep.value         = 1
-  pdfFileName.value     = ''
-  pdfPedido.value       = {}
-  pdfPosiciones.value   = []
-  pdfTotales.value      = {}
-  pdfPrioridad.value    = 'bajo'
-  pdfInventarioId.value = null
-  pdfImportResult.value = null
-  pdfImportando.value   = false
+  showImportPDF.value      = false
+  pdfStep.value            = 1
+  pdfFileName.value        = ''
+  pdfPedido.value          = {}
+  pdfPosiciones.value      = []
+  pdfTotales.value         = {}
+  pdfPrioridad.value       = 'bajo'
+  pdfInventarioId.value    = null
+  pdfMaterialMapping.value = {}
+  pdfImportResult.value    = null
+  pdfImportando.value      = false
   if (fileInputPDF.value) fileInputPDF.value.value = ''
 }
 
 onMounted(() => {
   pedidosStore.fetchPedidos()
   inventarioStore.fetchMateriales()
+  tiposVidrio.fetchTipos()
 })
 </script>
