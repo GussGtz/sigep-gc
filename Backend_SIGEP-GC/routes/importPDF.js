@@ -1,10 +1,10 @@
 /**
  * POST /api/pedidos/importar-pdf
- * Recibe un PDF en formato AW_PEDIDO y devuelve UN solo pedido
- * con los totales del documento (m², piezas, subtotal/precio)
- * y la lista de posiciones para previsualización.
+ * Recibe un PDF en formato AW_PEDIDO y devuelve UN solo pedido.
  *
- * El frontend llama luego a POST /api/pedidos/importar con { pedidos: [pedido] }
+ * Soporta dos variantes del formato Glass Caribe:
+ *  • Formato A (INSULADO, art. 100): dimensiones en línea FORMA W:X H:Y
+ *  • Formato B (TEMPLADO/CLARO/ESPEJO, art. 110/140/210+): dimensiones inline
  */
 
 const express  = require('express');
@@ -35,23 +35,20 @@ function extract(text, regex) {
 /** Parsea "1.234,56" o "1,234.56" o "1234.56" → float */
 function parseMoney(raw) {
   if (!raw) return null;
-  // Detectar si usa coma como separador de miles (europeo) o punto
   const s = raw.trim().replace(/\s/g, '');
-  // Si termina en ,XX (2 decimales con coma)
   const euro = s.match(/^[\d.]+,(\d{2})$/);
   if (euro) return parseFloat(s.replace(/\./g, '').replace(',', '.'));
-  // Si tiene punto decimal normal
   return parseFloat(s.replace(/,/g, ''));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Parseo principal del texto AW_PEDIDO
+// Soporta art. 100 (con FORMA) y art. 110/140/210+ (dimensiones inline)
 // ─────────────────────────────────────────────────────────────────────────────
 function parsePDF(text) {
   const full = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
   // ── Header ────────────────────────────────────────────────────────────────
-  // En el texto extraído el número aparece ANTES del label: "122863\tPEDIDO N°:"
   const numeroPedido    = extract(full, /(\d{5,})\s*[\t ]+PEDIDO\s+N[°º]?:/i)
                        || extract(full, /PEDIDO\s+N[°º]?:?\s*[\t ]*(\d+)/i);
 
@@ -59,109 +56,166 @@ function parsePDF(text) {
   const fechaPedidoRaw  = extract(full, /FECHA\s+PEDIDO:\s*[\t ]*(\d{2}\.\d{2}\.\d{4})/i)
                        || extract(full, /(\d{2}\.\d{2}\.\d{4})/);
 
-  const referencia      = extract(full, /REFERENCIA:\s*[\t ]*(.+?)[\t\n]/i);
-  const ruta            = extract(full, /([A-Z]{2,})\s*[\t ]+RUTA:/i)
-                       || extract(full, /RUTA:\s*[\t ]*([A-Z]{2,})/i);
+  const referencia = extract(full, /REFERENCIA:\s*[\t ]*(.+?)[\t\n]/i);
+  const ruta       = extract(full, /([A-Z]{2,})\s*[\t ]+RUTA:/i)
+                  || extract(full, /RUTA:\s*[\t ]*([A-Z]{2,})/i);
 
-  // Cliente: después de "Nr de cliente: NNN\n<Glass Caribe>\t<cliente>", el cliente es la 2da col
-  const clienteNombre   = (() => {
+  const clienteNombre = (() => {
     const m = full.match(/Nr\s+de\s+cliente:?\s*\d+[\t\n]+[^\t\n]+\t([^\n\t]+)/i);
     if (m) return m[1].trim();
     const m2 = full.match(/Nr\s+de\s+cliente:?\s*\d+[\t\n]+([^\n\t]+)/i);
     return m2 ? m2[1].trim() : null;
   })();
 
-  // Dirección: preferir CARRETERA (dirección del cliente), luego CALLE/BLVD/AV
   const direccion = (() => {
     const m1 = full.match(/(CARRETERA[^\n\t]+)/i);
     if (m1) return m1[1].trim();
-    const m2 = full.match(/((?:CALLE|BLVD|BOULEVARD|AV)[^\n]+)/i);
+    const m2 = full.match(/((?:CALLE|BLVD|BOULEVARD|AV|AVENIDA)[^\n]+)/i);
     return m2 ? m2[1].trim() : null;
   })();
 
-  // ── Totales del resumen (última página) ──────────────────────────────────
-  // "Total m2: 84.79\tTotal Piezas: 45\tTotal Kg.: 3390.94"
+  // ── Totales del resumen ───────────────────────────────────────────────────
   const totalM2Str     = extract(full, /Total\s+m2:\s*([\d.,]+)/i);
   const totalPiezasStr = extract(full, /Total\s+Piezas:\s*(\d+)/i);
   const subtotalStr    = extract(full, /(\d[\d.,]+)\s*[\t ]+\d+[\.,]\d{2}\s*[\t ]+\d[\d.,]+\s*[\t ]+\d{3}/);
 
-  const totalM2    = totalM2Str    ? parseMoney(totalM2Str)    : null;
+  const totalM2     = totalM2Str    ? parseMoney(totalM2Str)    : null;
   const totalPiezas = totalPiezasStr ? parseInt(totalPiezasStr, 10) : null;
-  // SUBTOTAL: primer número grande en la fila de totales
-  const precioBase  = subtotalStr  ? parseMoney(subtotalStr)   : null;
+  const precioBase  = subtotalStr   ? parseMoney(subtotalStr)   : null;
 
-  // ── Line Items (posiciones individuales) para previsualización ───────────
+  // ── Detección de posiciones (ambos formatos) ──────────────────────────────
+  // Estrategia: recorrer línea a línea buscando el patrón art_no\tseq_no
+  // (3 dígitos + tab + 3 dígitos) que identifica cada posición.
+  // Las dimensiones pueden estar:
+  //   • En la línea FORMA W:X H:Y (siguiente dentro de 3 líneas) — Formato A
+  //   • Inline como "{ancho}[ \t]+x[ \t]+{alto}" — Formato B
   const posiciones = [];
-  const posRegex   = /\b100[\t ](\d{3})\b/g;
-  let posMatch;
-  const posPositions = [];
-  while ((posMatch = posRegex.exec(full)) !== null) {
-    posPositions.push({ pos: `100 ${posMatch[1]}`, index: posMatch.index });
-  }
+  const foundSeqs  = new Set();
+  const lines      = full.split('\n');
 
-  for (let i = 0; i < posPositions.length; i++) {
-    const start = posPositions[i].index;
-    const end   = posPositions[i + 1] ? posPositions[i + 1].index : full.length;
-    const chunk = full.slice(start, end);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
 
-    // Dimensiones desde línea FORMA: "FORMA 000 (0) W: 894 H: 2021" (mm)
+    // Ignorar cabeceras de tabla
+    if (/DESC\s*%|POS\.|DESCRIPCI[ÓO]N/i.test(line)) continue;
+
+    // Buscar art_no\tseq_no precedido por tab (evita falsos positivos en decimales
+    // como "4,920.650\t100" donde ".650\t100" activaría un \b incorrecto).
+    // Usamos loop para saltar el "000" del separador "FORMA 000 (0)".
+    const artSeqRe = /\t(\d{3})\t(\d{3})[\t ]/g;
+    let artSeqMatch = null, mm;
+    while ((mm = artSeqRe.exec(line)) !== null) {
+      if (mm[1] !== '000') { artSeqMatch = mm; break; }
+    }
+    if (!artSeqMatch) continue;
+
+    const artNo = artSeqMatch[1];
+    const seqNo = artSeqMatch[2];
+    const key   = `${artNo}_${seqNo}`;
+    if (foundSeqs.has(key)) continue; // deduplicar en PDFs multipágina
+
+    // ── Dimensiones ──────────────────────────────────────────────────────
     let anchoMm = null, altoMm = null;
-    const formaMatch = chunk.match(/W:\s*(\d+)\s+H:\s*(\d+)/i);
-    if (formaMatch) {
-      anchoMm = parseInt(formaMatch[1], 10);
-      altoMm  = parseInt(formaMatch[2], 10);
+
+    // Formato A: FORMA ... W: X H: Y en las siguientes 3 líneas
+    for (let j = i + 1; j <= Math.min(i + 3, lines.length - 1); j++) {
+      const fm = lines[j].match(/W:\s*(\d+)\s+H:\s*(\d+)/i);
+      if (fm) {
+        anchoMm = parseInt(fm[1], 10);
+        altoMm  = parseInt(fm[2], 10);
+        break;
+      }
     }
 
-    // Cantidad: patrón "\t<cant>\t<ancho_mm>" en la línea del POS
+    // Formato B: dimensiones inline "{3-4 dígitos}[ \t]+x[ \t]+{3-4 dígitos}"
+    if (!anchoMm) {
+      const dm = line.match(/\b(\d{3,4})[ \t]+x[ \t]+(\d{3,4})\b/i);
+      if (dm) {
+        anchoMm = parseInt(dm[1], 10);
+        altoMm  = parseInt(dm[2], 10);
+      }
+    }
+
+    if (!anchoMm || !altoMm) continue;
+
+    // ── Cantidad ─────────────────────────────────────────────────────────
+    // afterArtSeq: todo lo que va DESPUÉS del match completo "\tART\tSEQ[\t ]"
+    // beforeArtSeq: todo lo que va ANTES del "\t" que precede al art_no
+    const afterArtSeq  = line.slice(artSeqMatch.index + artSeqMatch[0].length);
+    const beforeArtSeq = line.slice(0, artSeqMatch.index);
+
     let cantidad = 1;
-    if (anchoMm) {
-      const cantMatch = chunk.match(new RegExp(`\\t(\\d{1,2})\\t${anchoMm}`));
-      if (cantMatch) cantidad = parseInt(cantMatch[1], 10);
+    const anchoIdx = afterArtSeq.lastIndexOf(String(anchoMm));
+    if (anchoIdx > 0) {
+      const beforeAncho = afterArtSeq.slice(0, anchoIdx);
+      const qm = beforeAncho.match(/\t(\d{1,3})[\t ]*$/);
+      if (qm) cantidad = parseInt(qm[1], 10) || 1;
     }
 
-    // Precio unitario: está después del POS en tabs: "100\t001 \t4,920.65\t1\t..."
-    let precioUnit = null;
-    const precioMatch = chunk.match(/100[\t ]\d{3}\s*[\t ]([\d,]+\.?\d*)\t/);
-    if (precioMatch) precioUnit = parseMoney(precioMatch[1]);
+    // ── Precio / Importe ─────────────────────────────────────────────────
+    let importe = null;
+    const impMatch = afterArtSeq.match(/^\s*([\d,]+\.?\d*)\t/);
+    if (impMatch) importe = parseMoney(impMatch[1]);
+    const precioUnit = (importe && cantidad > 0)
+      ? parseFloat((importe / cantidad).toFixed(2))
+      : null;
 
-    // Materiales desde la línea con "/" separadores
-    const matMatch = chunk.match(/([A-Z][^\n]*(?:LAMINADO|SEPARADOR|TEMPLADO|MONOL)[^\n]*\/[^\n]*)/i)
-                  || chunk.match(/([A-Z][^\n]*(?:LAMINADO|SEPARADOR|TEMPLADO|MONOL)[^\n]*)/i);
-    const materiales = matMatch ? matMatch[1].trim() : null;
+    // ── Material ──────────────────────────────────────────────────────────
+    const matTokens = beforeArtSeq
+      .split('\t')
+      .map(s => s.trim())
+      .filter(s => s.length > 2 && /[A-Z]{2,}/i.test(s)
+                && !/^[\d.,]+$/.test(s)
+                && s.toLowerCase() !== 'm2'
+                && !/^[\d.]+m2/i.test(s));
+    let materiales = matTokens.join(' ').trim() || null;
 
-    if (anchoMm && altoMm) {
-      const m2 = parseFloat(((anchoMm / 1000) * (altoMm / 1000) * cantidad).toFixed(4));
-      posiciones.push({
-        pos:       posPositions[i].pos,
-        ancho_mm:  anchoMm,
-        alto_mm:   altoMm,
-        ancho:     anchoMm / 1000,
-        alto:      altoMm  / 1000,
-        cantidad,
-        m2,
-        precio_unit: precioUnit,
-        importe:     precioUnit ? parseFloat((precioUnit * cantidad).toFixed(2)) : null,
-        materiales,
-      });
+    // Si no hay material en esta línea, buscar en las siguientes líneas
+    if (!materiales) {
+      for (let j = i + 1; j <= Math.min(i + 3, lines.length - 1); j++) {
+        const ml = lines[j].match(
+          /([A-Z][^\n]*(?:LAMINADO|SEPARADOR|TEMPLADO|ESPEJO|INSULADO|CLARO|FLOTADO)[^\n]*)/i
+        );
+        if (ml) { materiales = ml[1].trim(); break; }
+      }
     }
+
+    const m2 = parseFloat(((anchoMm / 1000) * (altoMm / 1000) * cantidad).toFixed(4));
+
+    foundSeqs.add(key);
+    posiciones.push({
+      pos:         `${artNo} ${seqNo}`,
+      ancho_mm:    anchoMm,
+      alto_mm:     altoMm,
+      ancho:       anchoMm / 1000,
+      alto:        altoMm  / 1000,
+      cantidad,
+      m2,
+      precio_unit: precioUnit,
+      importe,
+      materiales,
+    });
   }
 
-  // ── Especificaciones: JSON estructurado para renderizado como tabla ───────
-  // Prefijado con "posiciones:" para que el frontend lo detecte y muestre como tabla
+  // ── Especificaciones JSON ──────────────────────────────────────────────────
   const especificaciones = posiciones.length
     ? 'posiciones:' + JSON.stringify(posiciones.map(p => ({
-        pos:        p.pos,
-        ancho_mm:   p.ancho_mm,
-        alto_mm:    p.alto_mm,
-        cantidad:   p.cantidad,
-        m2:         p.m2,
+        pos:         p.pos,
+        ancho_mm:    p.ancho_mm,
+        alto_mm:     p.alto_mm,
+        cantidad:    p.cantidad,
+        m2:          p.m2,
         precio_unit: p.precio_unit,
-        importe:    p.importe,
-        materiales: p.materiales,
+        importe:     p.importe,
+        materiales:  p.materiales,
       })))
     : null;
 
-  // ── Pedido único resultante ───────────────────────────────────────────────
+  // ── Pedido resultante ──────────────────────────────────────────────────────
+  const totalM2Calc    = parseFloat(posiciones.reduce((s, p) => s + p.m2, 0).toFixed(4));
+  const totalPiezCalc  = posiciones.reduce((s, p) => s + p.cantidad, 0);
+  const totalPrecCalc  = parseFloat(posiciones.reduce((s, p) => s + (p.importe || 0), 0).toFixed(2));
+
   const pedido = {
     numero_pedido:     numeroPedido,
     fecha_entrega:     parseFecha(fechaEntregaRaw),
@@ -170,11 +224,11 @@ function parsePDF(text) {
     ruta,
     cliente_nombre:    clienteNombre,
     direccion_entrega: direccion,
-    metros_cuadrados:  totalM2   ?? posiciones.reduce((s, p) => s + p.m2, 0).toFixed(4),
-    total_piezas:      totalPiezas ?? posiciones.reduce((s, p) => s + p.cantidad, 0),
-    precio:            precioBase ?? posiciones.reduce((s, p) => s + (p.importe || 0), 0).toFixed(2),
+    metros_cuadrados:  totalM2    ?? totalM2Calc,
+    total_piezas:      totalPiezas ?? totalPiezCalc,
+    precio:            precioBase  ?? totalPrecCalc,
     especificaciones:  especificaciones || null,
-    prioridad:         'bajo', // el admin puede cambiarla antes de importar
+    prioridad:         'bajo',
   };
 
   return {
@@ -208,8 +262,8 @@ router.post('/', verifyToken, isAdmin, upload.single('pdf'), async (req, res) =>
     if (!parsed.posiciones.length) {
       return res.status(422).json({
         success: false,
-        message: 'No se encontraron posiciones en el PDF. Verifica que sea un AW_PEDIDO válido.',
-        rawText: result.text.slice(0, 2000),
+        message: 'No se encontraron posiciones en el PDF. Verifica que sea un pedido Glass Caribe válido.',
+        rawText: result.text.slice(0, 3000),
       });
     }
 
