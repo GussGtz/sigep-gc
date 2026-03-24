@@ -775,7 +775,7 @@
                   <span v-for="n in 2" :key="n"
                     class="h-1.5 rounded-full transition-all"
                     :class="[pdfStep >= n ? 'bg-[#0D89CB]' : 'bg-gray-200', n === 1 ? 'w-8' : 'w-6']"/>
-                  <span class="text-xs text-gray-400 ml-1">{{ pdfStep === 1 ? 'Seleccionar archivos' : `Revisar e importar (${pdfBatch.filter(i => i.parseOk).length} pedido(s))` }}</span>
+                  <span class="text-xs text-gray-400 ml-1">{{ pdfStep === 1 ? 'Seleccionar archivos' : `Revisar e importar (${pdfBatch.filter(i => i.parseOk && !isDuplicado(i)).length} nuevo(s) de ${pdfBatch.filter(i => i.parseOk).length})` }}</span>
                 </div>
               </div>
               <button @click="cerrarImportPDF"
@@ -850,9 +850,12 @@
                     :class="pdfActiveIdx === idx ? 'bg-blue-50/40' : ''">
                     <!-- Badge de estado -->
                     <span class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                      :class="!item.parseOk ? 'bg-red-100' : (item.importStatus === 'ok' ? 'bg-emerald-100' : 'bg-blue-100')">
+                      :class="!item.parseOk ? 'bg-red-100' : isDuplicado(item) ? 'bg-amber-100' : (item.importStatus === 'ok' ? 'bg-emerald-100' : 'bg-blue-100')">
                       <svg v-if="!item.parseOk" class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                      <svg v-else-if="isDuplicado(item)" class="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                       </svg>
                       <svg v-else-if="item.importStatus === 'ok'" class="w-3 h-3 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
@@ -865,7 +868,11 @@
                         <span class="font-semibold text-sm text-gray-900">
                           {{ item.parseOk ? `#${item.pedido.numero_pedido || '?'}` : item.fileName }}
                         </span>
-                        <span v-if="item.parseOk" class="text-xs text-gray-400 truncate">{{ item.pedido.cliente_nombre }}</span>
+                        <span v-if="item.parseOk && isDuplicado(item)"
+                          class="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-md">
+                          Ya registrado
+                        </span>
+                        <span v-if="item.parseOk && !isDuplicado(item)" class="text-xs text-gray-400 truncate">{{ item.pedido.cliente_nombre }}</span>
                         <span v-if="!item.parseOk" class="text-xs text-red-500 truncate">{{ item.parseError }}</span>
                       </div>
                       <div v-if="item.parseOk" class="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
@@ -888,6 +895,18 @@
 
                   <!-- Detalle expandido — pedido OK -->
                   <div v-if="pdfActiveIdx === idx && item.parseOk" class="px-5 pb-5 pt-1 flex flex-col gap-4 bg-gray-50/40 border-t border-gray-100">
+
+                    <!-- Aviso de duplicado -->
+                    <div v-if="isDuplicado(item)"
+                      class="mt-2 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+                      <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                      </svg>
+                      <div>
+                        <p class="font-semibold">Pedido ya registrado</p>
+                        <p class="text-xs text-amber-700 mt-0.5">El pedido <strong>#{{ item.pedido.numero_pedido }}</strong> ya existe en el sistema y no será importado nuevamente.</p>
+                      </div>
+                    </div>
 
                     <!-- Info cabecera -->
                     <div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm mt-2">
@@ -1073,13 +1092,13 @@
                 <button @click="pdfStep = 1" :disabled="pdfImportando || !!pdfImportResult"
                   class="btn-secondary flex-1 justify-center disabled:opacity-40">← Volver</button>
                 <button v-if="!pdfImportResult" @click="ejecutarImportPDF"
-                  :disabled="pdfImportando || pdfBatch.filter(i => i.parseOk).length === 0"
+                  :disabled="pdfImportando || pdfBatch.filter(i => i.parseOk && !isDuplicado(i)).length === 0"
                   class="flex-1 py-2.5 rounded-xl bg-[#0D89CB] hover:bg-[#00659C] text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
                   <svg v-if="pdfImportando" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  {{ pdfImportando ? 'Importando...' : `Importar ${pdfBatch.filter(i => i.parseOk).length} pedido(s)` }}
+                  {{ pdfImportando ? 'Importando...' : `Importar ${pdfBatch.filter(i => i.parseOk && !isDuplicado(i)).length} pedido(s) nuevo(s)` }}
                 </button>
                 <button v-else @click="cerrarImportPDF"
                   class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors">
@@ -1558,6 +1577,11 @@ const pdfImportResult    = ref(null)
 const fileInputPDF       = ref(null)
 
 // Helpers que operan sobre un item del batch
+function isDuplicado(item) {
+  if (!item.parseOk || !item.pedido.numero_pedido) return false
+  return pedidosStore.pedidos.some(p => String(p.numero_pedido) === String(item.pedido.numero_pedido))
+}
+
 function getMateriasUnicas(item) {
   const mapa = {}
   for (const pos of item.posiciones || []) {
@@ -1696,9 +1720,13 @@ async function handlePDFUpload(event) {
 }
 
 async function ejecutarImportPDF() {
-  // Verificar stock en todos los items válidos
-  for (const item of pdfBatch.value) {
-    if (!item.parseOk) continue
+  // Verificar duplicados y stock en todos los items válidos
+  const itemsValidos = pdfBatch.value.filter(item => item.parseOk && !isDuplicado(item))
+  if (itemsValidos.length === 0) {
+    toast.add({ type: 'error', title: 'Sin pedidos nuevos', message: 'Todos los PDFs seleccionados ya están registrados en el sistema.' })
+    return
+  }
+  for (const item of itemsValidos) {
     if (getAlertasStock(item).some(a => !a.ok)) {
       toast.add({ type: 'error', message: 'Stock insuficiente en uno o más materiales' })
       return
@@ -1706,8 +1734,7 @@ async function ejecutarImportPDF() {
   }
   pdfImportando.value = true
   try {
-    const pedidos = pdfBatch.value
-      .filter(item => item.parseOk)
+    const pedidos = itemsValidos
       .map(item => {
         const mats   = getMateriasUnicas(item)
         const posMat = mats
