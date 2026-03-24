@@ -770,12 +770,12 @@
             <!-- Header -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <div>
-                <h2 class="text-lg font-bold text-gray-900">Importar Pedido desde PDF (AW_PEDIDO)</h2>
+                <h2 class="text-lg font-bold text-gray-900">Importar Pedido(s) desde PDF (AW_PEDIDO)</h2>
                 <div class="flex items-center gap-2 mt-1">
                   <span v-for="n in 2" :key="n"
                     class="h-1.5 rounded-full transition-all"
                     :class="[pdfStep >= n ? 'bg-[#0D89CB]' : 'bg-gray-200', n === 1 ? 'w-8' : 'w-6']"/>
-                  <span class="text-xs text-gray-400 ml-1">{{ pdfStep === 1 ? 'Seleccionar archivo' : 'Revisar e importar' }}</span>
+                  <span class="text-xs text-gray-400 ml-1">{{ pdfStep === 1 ? 'Seleccionar archivos' : `Revisar e importar (${pdfBatch.filter(i => i.parseOk).length} pedido(s))` }}</span>
                 </div>
               </div>
               <button @click="cerrarImportPDF"
@@ -784,33 +784,36 @@
               </button>
             </div>
 
-            <!-- Paso 1: Subir PDF -->
+            <!-- Paso 1: Subir PDF(s) -->
             <div v-if="pdfStep === 1" class="p-8 flex flex-col items-center gap-5">
               <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center">
                 <FileText class="w-8 h-8 text-red-500" :stroke-width="1.5" />
               </div>
               <div class="text-center">
-                <p class="text-gray-800 font-semibold text-base">Selecciona el archivo PDF</p>
-                <p class="text-sm text-gray-400 mt-1">Formato AW_PEDIDO generado por el sistema de la empresa</p>
+                <p class="text-gray-800 font-semibold text-base">Selecciona uno o más archivos PDF</p>
+                <p class="text-sm text-gray-400 mt-1">Formato AW_PEDIDO — puedes importar varios pedidos a la vez</p>
               </div>
 
               <!-- Drop zone -->
               <label class="cursor-pointer w-full max-w-sm">
-                <input ref="fileInputPDF" type="file" accept=".pdf" class="hidden" @change="handlePDFUpload"/>
+                <input ref="fileInputPDF" type="file" accept=".pdf" multiple class="hidden" @change="handlePDFUpload"/>
                 <div class="flex flex-col items-center gap-3 border-2 border-dashed border-gray-200 rounded-2xl p-8 hover:border-[#0D89CB] hover:bg-blue-50/20 transition-all">
                   <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                   </svg>
-                  <span v-if="pdfParsing" class="flex items-center gap-2 text-sm text-[#0D89CB] font-semibold">
-                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
-                    Analizando PDF...
+                  <span v-if="pdfParsing" class="flex flex-col items-center gap-2 text-sm text-[#0D89CB] font-semibold">
+                    <span class="flex items-center gap-2">
+                      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                      Analizando PDF {{ pdfParsingProgress.current }} de {{ pdfParsingProgress.total }}...
+                    </span>
+                    <span class="text-xs font-normal text-gray-400">Esto puede tomar unos segundos por archivo</span>
                   </span>
                   <template v-else>
-                    <span class="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl">Elegir PDF</span>
-                    <span class="text-xs text-gray-400">{{ pdfFileName || 'Ningún archivo seleccionado' }}</span>
+                    <span class="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl">Elegir PDF(s)</span>
+                    <span class="text-xs text-gray-400">Puedes seleccionar varios archivos a la vez</span>
                   </template>
                 </div>
               </label>
@@ -823,194 +826,260 @@
               </div>
             </div>
 
-            <!-- Paso 2: Previsualización + confirmación (todo en un paso) -->
-            <div v-if="pdfStep === 2" class="p-6 overflow-y-auto flex flex-col gap-5">
+            <!-- Paso 2: Acordeón de pedidos parseados -->
+            <div v-if="pdfStep === 2" class="overflow-y-auto flex flex-col flex-1 min-h-0">
 
-              <!-- Info header del pedido -->
-              <div class="bg-blue-50 border border-blue-100 rounded-xl px-5 py-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                <div>
-                  <span class="text-xs text-gray-400 block">Número de pedido</span>
-                  <span class="font-bold text-gray-900">#{{ pdfPedido.numero_pedido || '—' }}</span>
-                </div>
-                <div>
-                  <span class="text-xs text-gray-400 block">Fecha de entrega</span>
-                  <span class="font-semibold text-gray-800">{{ pdfPedido.fecha_entrega || '—' }}</span>
-                </div>
-                <div>
-                  <span class="text-xs text-gray-400 block">Cliente</span>
-                  <span class="font-semibold text-gray-800">{{ pdfPedido.cliente_nombre || '—' }}</span>
-                </div>
-                <div>
-                  <span class="text-xs text-gray-400 block">Ruta / Referencia</span>
-                  <span class="font-semibold text-gray-800">{{ [pdfPedido.ruta, pdfPedido.referencia].filter(Boolean).join(' · ') || '—' }}</span>
-                </div>
-                <div class="col-span-2">
-                  <span class="text-xs text-gray-400 block">Dirección</span>
-                  <span class="text-gray-700">{{ pdfPedido.direccion_entrega || '—' }}</span>
-                </div>
-              </div>
-
-              <!-- Totales -->
-              <div class="grid grid-cols-3 gap-2 sm:gap-3">
-                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
-                  <p class="text-xl font-black text-emerald-700">{{ pdfTotales.m2 }}</p>
-                  <p class="text-xs text-gray-500 mt-0.5">m² total</p>
-                </div>
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center">
-                  <p class="text-xl font-black text-blue-700">{{ pdfTotales.piezas }}</p>
-                  <p class="text-xs text-gray-500 mt-0.5">piezas</p>
-                </div>
-                <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center">
-                  <p class="text-xl font-black text-amber-700">{{ pdfPosiciones.length }}</p>
-                  <p class="text-xs text-gray-500 mt-0.5">posiciones</p>
-                </div>
-              </div>
-
-              <!-- Precio / totales económicos -->
-              <div class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
-                <div>
-                  <p class="text-xs text-gray-400">Subtotal</p>
-                  <p class="font-bold text-gray-900">{{ formatMXN(pdfTotales.subtotal) }}</p>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-400">IVA 16%</p>
-                  <p class="font-semibold text-gray-600">{{ formatMXN(pdfTotales.iva) }}</p>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-400">Total c/ IVA</p>
-                  <p class="font-bold text-[#0D89CB]">{{ formatMXN(pdfTotales.total) }}</p>
-                </div>
-              </div>
-
-              <!-- Prioridad -->
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Prioridad del pedido</label>
-                <div class="flex gap-2">
-                  <label v-for="opt in prioridadOpciones" :key="opt.value"
-                    class="flex-1 flex items-center gap-2 border rounded-xl px-2.5 py-2 cursor-pointer transition-colors"
-                    :class="pdfPrioridad === opt.value ? opt.activeClass : 'border-gray-200 hover:bg-gray-50'">
-                    <input type="radio" v-model="pdfPrioridad" :value="opt.value" class="sr-only"/>
-                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="opt.dot"></span>
-                    <span class="text-xs font-semibold">{{ opt.label }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Materiales detectados → mapping a inventario -->
-              <div>
-                <div class="flex items-center justify-between mb-2">
-                  <label class="block text-sm font-semibold text-gray-700">
-                    Materiales detectados
-                    <span class="text-gray-400 font-normal text-xs ml-1">(descuenta stock automáticamente)</span>
-                  </label>
-                  <span class="text-xs text-gray-400">{{ pdfMaterialesUnicos.length }} tipo(s) en el PDF</span>
-                </div>
-
-                <div v-if="pdfMaterialesUnicos.length === 0"
-                  class="text-xs text-gray-400 italic px-3 py-2 bg-gray-50 rounded-xl border border-gray-100">
-                  No se detectaron tipos de material en el PDF. Puedes vincular manualmente:
-                  <div class="mt-2">
-                    <select v-model="pdfInventarioId"
-                      class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
-                      <option :value="null">— Sin vincular —</option>
-                      <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
-                        {{ m.tipo }}{{ m.espesor_mm ? ` ${m.espesor_mm}mm` : '' }}{{ m.color ? ` ${m.color}` : '' }}
-                        — stock: {{ parseFloat(m.stock_m2).toFixed(2) }} m²
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div v-else class="rounded-xl border border-gray-200 overflow-hidden">
-                  <div class="grid bg-gray-50 border-b border-gray-200 px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider"
-                    style="grid-template-columns: 1fr 60px 1fr">
-                    <span>Material (PDF)</span>
-                    <span class="text-center">m²</span>
-                    <span>Inventario a descontar</span>
-                  </div>
-                  <div v-for="mat in pdfMaterialesUnicos" :key="mat.nombre"
-                    class="grid items-center gap-px bg-gray-100 border-b border-gray-100 last:border-b-0"
-                    style="grid-template-columns: 1fr 60px 1fr">
-                    <div class="bg-white px-3 py-2 text-xs text-gray-700 font-medium truncate" :title="mat.nombre">
-                      {{ mat.nombre || '(sin nombre)' }}
-                    </div>
-                    <div class="bg-white px-2 py-2 text-xs text-center text-emerald-700 font-bold">
-                      {{ mat.m2.toFixed(3) }}
-                    </div>
-                    <select v-model="pdfMaterialMapping[mat.nombre]"
-                      class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB]">
-                      <option :value="null">— No descontar —</option>
-                      <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
-                        {{ m.tipo }}{{ m.espesor_mm ? ` ${m.espesor_mm}mm` : '' }}
-                        ({{ parseFloat(m.stock_m2).toFixed(2) }} m²)
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Alertas de stock para cada material mapeado -->
-                <div v-for="alerta in pdfAlertasStock" :key="alerta.matNombre"
-                  class="mt-1.5 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg"
-                  :class="alerta.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'">
-                  <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      :d="alerta.ok ? 'M5 13l4 4L19 7' : 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'"/>
-                  </svg>
-                  <strong>{{ alerta.invNombre }}:</strong>
-                  <span v-if="alerta.ok"> stock {{ alerta.disponible.toFixed(3) }} m² — quedará {{ (alerta.disponible - alerta.requerido).toFixed(3) }} m²</span>
-                  <span v-else> Stock insuficiente — disponible {{ alerta.disponible.toFixed(3) }} m², requerido {{ alerta.requerido.toFixed(3) }} m²</span>
-                </div>
-              </div>
-
-              <!-- Tabla de posiciones -->
-              <div>
-                <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Posiciones detectadas ({{ pdfPosiciones.length }})</p>
-                <div class="overflow-x-auto rounded-xl border border-gray-100 max-h-56">
-                  <table class="w-full text-xs min-w-[520px]">
-                    <thead class="bg-gray-50 sticky top-0">
-                      <tr>
-                        <th class="px-3 py-2 text-left text-gray-500 font-semibold">POS</th>
-                        <th class="px-3 py-2 text-left text-gray-500 font-semibold">Ancho × Alto (mm)</th>
-                        <th class="px-3 py-2 text-left text-gray-500 font-semibold">Cant.</th>
-                        <th class="px-3 py-2 text-left text-gray-500 font-semibold">m²</th>
-                        <th class="px-3 py-2 text-right text-gray-500 font-semibold">Precio unit.</th>
-                        <th class="px-3 py-2 text-right text-gray-500 font-semibold">Importe</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="(pos, idx) in pdfPosiciones" :key="idx"
-                        class="border-t border-gray-50 hover:bg-gray-50/80">
-                        <td class="px-3 py-1.5 font-mono text-gray-500">{{ pos.pos }}</td>
-                        <td class="px-3 py-1.5 text-gray-700">{{ pos.ancho_mm }} × {{ pos.alto_mm }}</td>
-                        <td class="px-3 py-1.5 text-gray-600">{{ pos.cantidad }}</td>
-                        <td class="px-3 py-1.5 text-gray-600">{{ pos.m2 }}</td>
-                        <td class="px-3 py-1.5 text-right text-gray-600">{{ pos.precio_unit ? formatMXN(pos.precio_unit) : '—' }}</td>
-                        <td class="px-3 py-1.5 text-right font-semibold text-gray-800">{{ pos.importe ? formatMXN(pos.importe) : '—' }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <!-- Resultado de importación -->
-              <div v-if="pdfImportResult" class="rounded-xl px-4 py-3 text-sm"
+              <!-- Resultado de importación global -->
+              <div v-if="pdfImportResult" class="mx-5 mt-4 rounded-xl px-4 py-3 text-sm flex-shrink-0"
                 :class="pdfImportResult.errores?.length ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'">
-                <p class="font-semibold text-gray-800">✅ Pedido #{{ pdfPedido.numero_pedido }} importado correctamente</p>
+                <p class="font-semibold text-gray-800">
+                  ✅ {{ pdfImportResult.creados }} pedido(s) importado(s) correctamente
+                </p>
                 <div v-if="pdfImportResult.errores?.length" class="mt-1 space-y-0.5">
                   <p v-for="e in pdfImportResult.errores" :key="e.numero_pedido" class="text-xs text-amber-600">• {{ e.error }}</p>
                 </div>
               </div>
 
-              <div class="flex gap-3">
+              <!-- Acordeón -->
+              <div class="flex flex-col divide-y divide-gray-100">
+                <div v-for="(item, idx) in pdfBatch" :key="idx">
+
+                  <!-- Fila resumen (siempre visible) -->
+                  <button type="button" @click="pdfActiveIdx = pdfActiveIdx === idx ? -1 : idx"
+                    class="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 text-left transition-colors"
+                    :class="pdfActiveIdx === idx ? 'bg-blue-50/40' : ''">
+                    <!-- Badge de estado -->
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
+                      :class="!item.parseOk ? 'bg-red-100' : (item.importStatus === 'ok' ? 'bg-emerald-100' : 'bg-blue-100')">
+                      <svg v-if="!item.parseOk" class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                      <svg v-else-if="item.importStatus === 'ok'" class="w-3 h-3 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                      </svg>
+                      <span v-else class="text-[10px] font-bold text-[#0D89CB]">{{ idx + 1 }}</span>
+                    </span>
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-sm text-gray-900">
+                          {{ item.parseOk ? `#${item.pedido.numero_pedido || '?'}` : item.fileName }}
+                        </span>
+                        <span v-if="item.parseOk" class="text-xs text-gray-400 truncate">{{ item.pedido.cliente_nombre }}</span>
+                        <span v-if="!item.parseOk" class="text-xs text-red-500 truncate">{{ item.parseError }}</span>
+                      </div>
+                      <div v-if="item.parseOk" class="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
+                        <span class="text-emerald-700 font-semibold">{{ item.totales.m2 }} m²</span>
+                        <span>{{ item.posiciones.length }} pos.</span>
+                        <span class="capitalize font-medium"
+                          :class="item.prioridad === 'alto' ? 'text-red-600' : item.prioridad === 'medio' ? 'text-amber-600' : 'text-emerald-600'">
+                          {{ item.prioridad }}
+                        </span>
+                        <span>{{ item.pedido.fecha_entrega || '' }}</span>
+                      </div>
+                    </div>
+                    <!-- Chevron -->
+                    <svg class="w-4 h-4 text-gray-300 flex-shrink-0 transition-transform duration-200"
+                      :class="pdfActiveIdx === idx ? 'rotate-180' : ''"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+
+                  <!-- Detalle expandido — pedido OK -->
+                  <div v-if="pdfActiveIdx === idx && item.parseOk" class="px-5 pb-5 pt-1 flex flex-col gap-4 bg-gray-50/40 border-t border-gray-100">
+
+                    <!-- Info cabecera -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm mt-2">
+                      <div>
+                        <span class="text-xs text-gray-400 block">N° Pedido</span>
+                        <span class="font-bold text-gray-900">#{{ item.pedido.numero_pedido || '—' }}</span>
+                      </div>
+                      <div>
+                        <span class="text-xs text-gray-400 block">Fecha de entrega</span>
+                        <span class="font-semibold text-gray-800">{{ item.pedido.fecha_entrega || '—' }}</span>
+                      </div>
+                      <div>
+                        <span class="text-xs text-gray-400 block">Cliente</span>
+                        <span class="font-semibold text-gray-800">{{ item.pedido.cliente_nombre || '—' }}</span>
+                      </div>
+                      <div>
+                        <span class="text-xs text-gray-400 block">Ruta / Ref.</span>
+                        <span class="font-semibold text-gray-800">{{ [item.pedido.ruta, item.pedido.referencia].filter(Boolean).join(' · ') || '—' }}</span>
+                      </div>
+                      <div class="col-span-2">
+                        <span class="text-xs text-gray-400 block">Dirección</span>
+                        <span class="text-gray-700 text-xs">{{ item.pedido.direccion_entrega || '—' }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Totales numéricos -->
+                    <div class="grid grid-cols-3 gap-2">
+                      <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-2.5 text-center">
+                        <p class="text-lg font-black text-emerald-700">{{ item.totales.m2 }}</p>
+                        <p class="text-xs text-gray-500">m² total</p>
+                      </div>
+                      <div class="bg-blue-50 border border-blue-100 rounded-xl p-2.5 text-center">
+                        <p class="text-lg font-black text-blue-700">{{ item.totales.piezas }}</p>
+                        <p class="text-xs text-gray-500">piezas</p>
+                      </div>
+                      <div class="bg-amber-50 border border-amber-100 rounded-xl p-2.5 text-center">
+                        <p class="text-lg font-black text-amber-700">{{ item.posiciones.length }}</p>
+                        <p class="text-xs text-gray-500">posiciones</p>
+                      </div>
+                    </div>
+
+                    <!-- Totales económicos -->
+                    <div class="bg-white border border-gray-100 rounded-xl px-4 py-2.5 grid grid-cols-3 gap-2 text-sm">
+                      <div>
+                        <p class="text-xs text-gray-400">Subtotal</p>
+                        <p class="font-bold text-gray-900">{{ formatMXN(item.totales.subtotal) }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-400">IVA 16%</p>
+                        <p class="font-semibold text-gray-600">{{ formatMXN(item.totales.iva) }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-400">Total c/ IVA</p>
+                        <p class="font-bold text-[#0D89CB]">{{ formatMXN(item.totales.total) }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Prioridad -->
+                    <div>
+                      <label class="block text-sm font-semibold text-gray-700 mb-2">Prioridad del pedido</label>
+                      <div class="flex gap-2">
+                        <label v-for="opt in prioridadOpciones" :key="opt.value"
+                          class="flex-1 flex items-center gap-2 border rounded-xl px-2.5 py-2 cursor-pointer transition-colors"
+                          :class="item.prioridad === opt.value ? opt.activeClass : 'border-gray-200 hover:bg-gray-50'">
+                          <input type="radio" :value="opt.value" :checked="item.prioridad === opt.value"
+                            @change="item.prioridad = opt.value" class="sr-only"/>
+                          <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="opt.dot"></span>
+                          <span class="text-xs font-semibold">{{ opt.label }}</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Materiales detectados → mapping a inventario -->
+                    <div>
+                      <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-semibold text-gray-700">
+                          Materiales detectados
+                          <span class="text-gray-400 font-normal text-xs ml-1">(descuenta stock automáticamente)</span>
+                        </label>
+                        <span class="text-xs text-gray-400">{{ getMateriasUnicas(item).length }} tipo(s)</span>
+                      </div>
+
+                      <div v-if="getMateriasUnicas(item).length === 0"
+                        class="text-xs text-gray-400 italic px-3 py-2 bg-white rounded-xl border border-gray-100">
+                        No se detectaron materiales. Puedes vincular manualmente:
+                        <div class="mt-2">
+                          <select v-model="item.inventarioId"
+                            class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white">
+                            <option :value="null">— Sin vincular —</option>
+                            <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
+                              {{ m.tipo }}{{ m.espesor_mm ? ` ${m.espesor_mm}mm` : '' }}{{ m.color ? ` ${m.color}` : '' }}
+                              — stock: {{ parseFloat(m.stock_m2).toFixed(2) }} m²
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div v-else class="rounded-xl border border-gray-200 overflow-hidden">
+                        <div class="grid bg-gray-50 border-b border-gray-200 px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+                          style="grid-template-columns: 1fr 60px 1fr">
+                          <span>Material (PDF)</span>
+                          <span class="text-center">m²</span>
+                          <span>Inventario a descontar</span>
+                        </div>
+                        <div v-for="mat in getMateriasUnicas(item)" :key="mat.nombre"
+                          class="grid items-center gap-px bg-gray-100 border-b border-gray-100 last:border-b-0"
+                          style="grid-template-columns: 1fr 60px 1fr">
+                          <div class="bg-white px-3 py-2 text-xs text-gray-700 font-medium truncate" :title="mat.nombre">
+                            {{ mat.nombre || '(sin nombre)' }}
+                          </div>
+                          <div class="bg-white px-2 py-2 text-xs text-center text-emerald-700 font-bold">
+                            {{ mat.m2.toFixed(3) }}
+                          </div>
+                          <select :value="item.materialMapping[mat.nombre]"
+                            @change="item.materialMapping[mat.nombre] = $event.target.value ? parseInt($event.target.value) : null"
+                            class="bg-white px-2 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-[#0D89CB]">
+                            <option :value="null">— No descontar —</option>
+                            <option v-for="m in inventarioStore.materiales" :key="m.id" :value="m.id">
+                              {{ m.tipo }}{{ m.espesor_mm ? ` ${m.espesor_mm}mm` : '' }}
+                              ({{ parseFloat(m.stock_m2).toFixed(2) }} m²)
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Alertas de stock -->
+                      <div v-for="alerta in getAlertasStock(item)" :key="alerta.matNombre"
+                        class="mt-1.5 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg"
+                        :class="alerta.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            :d="alerta.ok ? 'M5 13l4 4L19 7' : 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'"/>
+                        </svg>
+                        <strong>{{ alerta.invNombre }}:</strong>
+                        <span v-if="alerta.ok"> stock {{ alerta.disponible.toFixed(3) }} m² — quedará {{ (alerta.disponible - alerta.requerido).toFixed(3) }} m²</span>
+                        <span v-else> Stock insuficiente — disponible {{ alerta.disponible.toFixed(3) }} m², requerido {{ alerta.requerido.toFixed(3) }} m²</span>
+                      </div>
+                    </div>
+
+                    <!-- Tabla de posiciones -->
+                    <div>
+                      <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Posiciones detectadas ({{ item.posiciones.length }})</p>
+                      <div class="overflow-x-auto rounded-xl border border-gray-100 max-h-48">
+                        <table class="w-full text-xs min-w-[520px]">
+                          <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                              <th class="px-3 py-2 text-left text-gray-500 font-semibold">POS</th>
+                              <th class="px-3 py-2 text-left text-gray-500 font-semibold">Ancho × Alto (mm)</th>
+                              <th class="px-3 py-2 text-left text-gray-500 font-semibold">Cant.</th>
+                              <th class="px-3 py-2 text-left text-gray-500 font-semibold">m²</th>
+                              <th class="px-3 py-2 text-right text-gray-500 font-semibold">Precio unit.</th>
+                              <th class="px-3 py-2 text-right text-gray-500 font-semibold">Importe</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="(pos, pidx) in item.posiciones" :key="pidx"
+                              class="border-t border-gray-50 hover:bg-gray-50/80">
+                              <td class="px-3 py-1.5 font-mono text-gray-500">{{ pos.pos }}</td>
+                              <td class="px-3 py-1.5 text-gray-700">{{ pos.ancho_mm }} × {{ pos.alto_mm }}</td>
+                              <td class="px-3 py-1.5 text-gray-600">{{ pos.cantidad }}</td>
+                              <td class="px-3 py-1.5 text-gray-600">{{ pos.m2 }}</td>
+                              <td class="px-3 py-1.5 text-right text-gray-600">{{ pos.precio_unit ? formatMXN(pos.precio_unit) : '—' }}</td>
+                              <td class="px-3 py-1.5 text-right font-semibold text-gray-800">{{ pos.importe ? formatMXN(pos.importe) : '—' }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Detalle expandido — parse fallido -->
+                  <div v-if="pdfActiveIdx === idx && !item.parseOk" class="px-5 py-3 bg-red-50/40 border-t border-red-100">
+                    <p class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                      {{ item.parseError || 'No se pudo procesar este PDF.' }}
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Footer: botones de acción -->
+              <div class="flex gap-3 px-5 py-4 border-t border-gray-100 flex-shrink-0 mt-auto">
                 <button @click="pdfStep = 1" :disabled="pdfImportando || !!pdfImportResult"
                   class="btn-secondary flex-1 justify-center disabled:opacity-40">← Volver</button>
-                <button v-if="!pdfImportResult" @click="ejecutarImportPDF" :disabled="pdfImportando"
+                <button v-if="!pdfImportResult" @click="ejecutarImportPDF"
+                  :disabled="pdfImportando || pdfBatch.filter(i => i.parseOk).length === 0"
                   class="flex-1 py-2.5 rounded-xl bg-[#0D89CB] hover:bg-[#00659C] text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
                   <svg v-if="pdfImportando" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  {{ pdfImportando ? 'Importando...' : 'Importar pedido' }}
+                  {{ pdfImportando ? 'Importando...' : `Importar ${pdfBatch.filter(i => i.parseOk).length} pedido(s)` }}
                 </button>
                 <button v-else @click="cerrarImportPDF"
                   class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors">
@@ -1018,8 +1087,6 @@
                 </button>
               </div>
             </div>
-
-            <!-- (paso 3 eliminado — flujo en 2 pasos) -->
 
           </div>
         </div>
@@ -1479,37 +1546,32 @@ function exportarPDF() {
 }
 
 // ── PDF Import state ──────────────────────────────────────────────────────
-const showImportPDF    = ref(false)
-const pdfStep          = ref(1)         // 1=upload, 2=preview+confirm
-const pdfFileName      = ref('')
-const pdfParsing       = ref(false)
-const pdfPedido        = ref({})        // pedido único resultante
-const pdfPosiciones    = ref([])        // posiciones para tabla
-const pdfTotales       = ref({})        // m², piezas, subtotal, iva, total
-const pdfPrioridad     = ref('bajo')
-const pdfInventarioId  = ref(null)      // fallback si no hay materiales detectados
-const pdfImportando    = ref(false)
-const pdfImportResult  = ref(null)
-const fileInputPDF     = ref(null)
-const pdfMaterialMapping = ref({})     // { 'LAMINADO / TEMPLADO': inventario_id | null }
-const pdfFileBase64      = ref(null)   // base64 del PDF para adjuntar al pedido
+const showImportPDF      = ref(false)
+const pdfStep            = ref(1)    // 1=upload, 2=review+confirm
+const pdfParsing         = ref(false)
+const pdfParsingProgress = ref({ current: 1, total: 1 })
+// Cada item: { fileName, base64, pedido, posiciones, totales, materialMapping, inventarioId, prioridad, parseOk, parseError, importStatus }
+const pdfBatch           = ref([])
+const pdfActiveIdx       = ref(0)    // acordeón: índice abierto (-1 = ninguno)
+const pdfImportando      = ref(false)
+const pdfImportResult    = ref(null)
+const fileInputPDF       = ref(null)
 
-// Agrupa posiciones del PDF por material y suma m²
-const pdfMaterialesUnicos = computed(() => {
+// Helpers que operan sobre un item del batch
+function getMateriasUnicas(item) {
   const mapa = {}
-  for (const pos of pdfPosiciones.value) {
+  for (const pos of item.posiciones || []) {
     const nombre = pos.materiales || ''
     if (!mapa[nombre]) mapa[nombre] = { nombre, m2: 0 }
     mapa[nombre].m2 += parseFloat(pos.m2) || 0
   }
   return Object.values(mapa)
-})
+}
 
-// Alertas de stock para cada material mapeado
-const pdfAlertasStock = computed(() => {
+function getAlertasStock(item) {
   const alertas = []
-  for (const mat of pdfMaterialesUnicos.value) {
-    const invId = pdfMaterialMapping.value[mat.nombre]
+  for (const mat of getMateriasUnicas(item)) {
+    const invId = item.materialMapping[mat.nombre]
     if (!invId) continue
     const inv = inventarioStore.materiales.find(m => m.id === invId)
     if (!inv) continue
@@ -1524,18 +1586,7 @@ const pdfAlertasStock = computed(() => {
     })
   }
   return alertas
-})
-
-// Legacy stock info (para el fallback sin materiales detectados)
-const pdfStockInfo = computed(() =>
-  pdfInventarioId.value
-    ? inventarioStore.materiales.find(m => m.id === pdfInventarioId.value) || null
-    : null
-)
-const pdfStockOk = computed(() => {
-  if (!pdfStockInfo.value || !pdfTotales.value.m2) return true
-  return parseFloat(pdfStockInfo.value.stock_m2) >= parseFloat(pdfTotales.value.m2)
-})
+}
 
 // Auto-match: busca en el inventario un material que haga match con el texto del PDF
 function autoMatchMaterial(matStr) {
@@ -1577,82 +1628,114 @@ function formatMXN(v) {
 }
 
 async function handlePDFUpload(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-  pdfFileName.value = file.name
-  pdfParsing.value  = true
-  // Leer como base64 para adjuntar al pedido
-  pdfFileBase64.value = await new Promise(resolve => {
-    const reader = new FileReader()
-    reader.onload = e => resolve(e.target.result.split(',')[1]) // solo el base64 sin el prefijo
-    reader.readAsDataURL(file)
-  })
-  try {
-    const formData = new FormData()
-    formData.append('pdf', file)
-    const { data } = await axios.post('/api/pedidos/importar-pdf', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+  const files = [...(event.target.files || [])]
+  if (!files.length) return
+  pdfParsing.value = true
+  pdfParsingProgress.value = { current: 1, total: files.length }
+  const results = []
+  for (let i = 0; i < files.length; i++) {
+    pdfParsingProgress.value.current = i + 1
+    const file = files[i]
+    const base64 = await new Promise(resolve => {
+      const reader = new FileReader()
+      reader.onload = e => resolve(e.target.result.split(',')[1])
+      reader.readAsDataURL(file)
     })
-    if (!data.success) throw new Error(data.message || 'Error al parsear')
-    pdfPedido.value     = data.pedido     || {}
-    pdfPosiciones.value = data.posiciones || []
-    pdfTotales.value    = data.totales    || {}
-    pdfPrioridad.value  = 'bajo'
-    // Auto-match materiales detectados → inventario
-    const mapping = {}
-    const unicos = {}
-    for (const pos of data.posiciones || []) {
-      if (!(pos.materiales in unicos)) {
-        unicos[pos.materiales] = true
-        mapping[pos.materiales] = autoMatchMaterial(pos.materiales)
+    try {
+      const formData = new FormData()
+      formData.append('pdf', file)
+      const { data } = await axios.post('/api/pedidos/importar-pdf', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      if (!data.success) throw new Error(data.message || 'Error al parsear')
+      // Auto-match materiales detectados → inventario
+      const mapping = {}
+      for (const pos of data.posiciones || []) {
+        if (!(pos.materiales in mapping)) {
+          mapping[pos.materiales] = autoMatchMaterial(pos.materiales)
+        }
       }
+      results.push({
+        fileName:        file.name,
+        base64,
+        pedido:          data.pedido     || {},
+        posiciones:      data.posiciones || [],
+        totales:         data.totales    || {},
+        materialMapping: mapping,
+        inventarioId:    null,
+        prioridad:       'bajo',
+        parseOk:         true,
+        parseError:      null,
+        importStatus:    null,
+      })
+    } catch (err) {
+      results.push({
+        fileName:        file.name,
+        base64:          null,
+        pedido:          {},
+        posiciones:      [],
+        totales:         {},
+        materialMapping: {},
+        inventarioId:    null,
+        prioridad:       'bajo',
+        parseOk:         false,
+        parseError:      err.response?.data?.message || err.message || 'Error al leer el PDF',
+        importStatus:    null,
+      })
     }
-    pdfMaterialMapping.value = mapping
-    pdfStep.value       = 2
-  } catch (err) {
-    toast.add({ type: 'error', message: err.response?.data?.message || err.message || 'Error al leer el PDF' })
-    if (fileInputPDF.value) fileInputPDF.value.value = ''
-    pdfFileName.value = ''
-  } finally {
-    pdfParsing.value = false
   }
+  pdfBatch.value = results
+  if (results.some(r => r.parseOk)) {
+    pdfActiveIdx.value = results.findIndex(r => r.parseOk)
+    pdfStep.value = 2
+  } else {
+    toast.add({ type: 'error', message: 'No se pudo procesar ningún PDF' })
+  }
+  pdfParsing.value = false
+  if (fileInputPDF.value) fileInputPDF.value.value = ''
 }
 
 async function ejecutarImportPDF() {
-  // Bloquear si algún material mapeado tiene stock insuficiente
-  if (pdfAlertasStock.value.some(a => !a.ok)) {
-    toast.add({ type: 'error', message: 'Stock insuficiente en uno o más materiales' })
-    return
+  // Verificar stock en todos los items válidos
+  for (const item of pdfBatch.value) {
+    if (!item.parseOk) continue
+    if (getAlertasStock(item).some(a => !a.ok)) {
+      toast.add({ type: 'error', message: 'Stock insuficiente en uno o más materiales' })
+      return
+    }
   }
   pdfImportando.value = true
   try {
-    // Construir posiciones_materiales a partir del mapping
-    const posMat = pdfMaterialesUnicos.value
-      .filter(mat => pdfMaterialMapping.value[mat.nombre])
-      .map(mat => ({
-        inventario_id: pdfMaterialMapping.value[mat.nombre],
-        m2:            parseFloat(mat.m2.toFixed(4))
-      }))
-
-    // Fallback: si no hubo materiales detectados pero se eligió uno manualmente
-    const invId = pdfInventarioId.value
-    const legacyPosMat = (posMat.length === 0 && invId && parseFloat(pdfTotales.value.m2) > 0)
-      ? [{ inventario_id: invId, m2: parseFloat(pdfTotales.value.m2) }]
-      : []
-
-    const pedido = {
-      ...pdfPedido.value,
-      prioridad:             pdfPrioridad.value,
-      posiciones_materiales: posMat.length > 0 ? posMat : legacyPosMat,
-      documento_nombre:      pdfFileName.value   || null,
-      documento_base64:      pdfFileBase64.value  || null,
-    }
-    const { data } = await axios.post('/api/pedidos/importar', { pedidos: [pedido] })
+    const pedidos = pdfBatch.value
+      .filter(item => item.parseOk)
+      .map(item => {
+        const mats   = getMateriasUnicas(item)
+        const posMat = mats
+          .filter(mat => item.materialMapping[mat.nombre])
+          .map(mat => ({
+            inventario_id: item.materialMapping[mat.nombre],
+            m2:            parseFloat(mat.m2.toFixed(4))
+          }))
+        const legacyPosMat = (posMat.length === 0 && item.inventarioId && parseFloat(item.totales.m2) > 0)
+          ? [{ inventario_id: item.inventarioId, m2: parseFloat(item.totales.m2) }]
+          : []
+        return {
+          ...item.pedido,
+          prioridad:             item.prioridad,
+          posiciones_materiales: posMat.length > 0 ? posMat : legacyPosMat,
+          documento_nombre:      item.fileName || null,
+          documento_base64:      item.base64   || null,
+        }
+      })
+    const { data } = await axios.post('/api/pedidos/importar', { pedidos })
     pdfImportResult.value = data
     if (data.creados > 0) {
       await pedidosStore.fetchPedidos()
       await inventarioStore.fetchMateriales()
-      toast.add({ type: 'success', message: `Pedido #${pdfPedido.value.numero_pedido} importado correctamente` })
+      const msg = pedidos.length === 1
+        ? `Pedido #${pedidos[0].numero_pedido} importado correctamente`
+        : `${data.creados} pedido(s) importados correctamente`
+      toast.add({ type: 'success', message: msg })
     }
   } catch (e) {
     toast.add({ type: 'error', message: e.response?.data?.message || 'Error al importar' })
@@ -1664,16 +1747,11 @@ async function ejecutarImportPDF() {
 function cerrarImportPDF() {
   showImportPDF.value      = false
   pdfStep.value            = 1
-  pdfFileName.value        = ''
-  pdfPedido.value          = {}
-  pdfPosiciones.value      = []
-  pdfTotales.value         = {}
-  pdfPrioridad.value       = 'bajo'
-  pdfInventarioId.value    = null
-  pdfMaterialMapping.value = {}
-  pdfFileBase64.value      = null
-  pdfImportResult.value    = null
+  pdfBatch.value           = []
+  pdfActiveIdx.value       = 0
+  pdfParsing.value         = false
   pdfImportando.value      = false
+  pdfImportResult.value    = null
   if (fileInputPDF.value) fileInputPDF.value.value = ''
 }
 
